@@ -31,6 +31,10 @@
     "ios": {
       "splash": {
         "image": "./assets/images/splash.png"
+      },
+      "bundleIdentifier": "com.cpawl89.sinkplane",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "web": {
@@ -43,6 +47,12 @@
     },
     "newArchEnabled": true,
     "name": "sinkplane",
-    "slug": "sinkplane"
+    "slug": "sinkplane",
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "6233ebc0-94dc-488d-81df-0b82ee578bb8"
+      }
+    }
   }
 }
