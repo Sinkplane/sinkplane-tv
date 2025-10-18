@@ -34,7 +34,7 @@ export default function ExploreScreen() {
           <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText>{' '}
           (the home screen),{' '}
           <ThemedText type="defaultSemiBold">app/(tabs)/explore.tsx</ThemedText>{' '}
-          (the "Explore" screen), and{' '}
+          (the {"\"Explore\""} screen), and
           <ThemedText type="defaultSemiBold">
             app/(tabs)/tv_focus.tsx
           </ThemedText>{' '}
@@ -87,7 +87,7 @@ export default function ExploreScreen() {
         <ThemedText>
           This template has light and dark mode support. The{' '}
           <ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> hook
-          lets you inspect what the user's current color scheme is, and so you
+          lets you inspect what the user{"'s"} current color scheme is, and so you
           can adjust UI colors accordingly.
         </ThemedText>
         <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
@@ -115,7 +115,7 @@ export default function ExploreScreen() {
               </ThemedText>{' '}
               component provides a parallax effect for the header image.
             </ThemedText>
-          ),
+          )
         })}
       </Collapsible>
     </ParallaxScrollView>
@@ -129,11 +129,11 @@ const useExploreScreenStyles = function () {
       color: '#808080',
       bottom: -90 * scale,
       left: -35 * scale,
-      position: 'absolute',
+      position: 'absolute'
     },
     titleContainer: {
       flexDirection: 'row',
-      gap: 8 * scale,
-    },
+      gap: 8 * scale
+    }
   });
 };

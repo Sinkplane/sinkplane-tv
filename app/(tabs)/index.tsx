@@ -37,14 +37,14 @@ export default function HomeScreen() {
       <ThemedView style={styles.stepContainer}>
         <ThemedText type="subtitle">Step 2: Explore</ThemedText>
         <ThemedText>
-          Tap the Explore tab to learn more about what's included in this
+          Tap the Explore tab to learn more about what{"'s"} included in this
           starter app.
         </ThemedText>
       </ThemedView>
       <ThemedView style={styles.stepContainer}>
         <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
         <ThemedText>
-          When you're ready, run{' '}
+          When you{"'re"} ready, run
           <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText>{' '}
           to get a fresh <ThemedText type="defaultSemiBold">app</ThemedText>{' '}
           directory. This will move the current{' '}
@@ -62,18 +62,18 @@ const useHomeScreenStyles = function () {
     titleContainer: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 8 * scale,
+      gap: 8 * scale
     },
     stepContainer: {
       gap: 8 * scale,
-      marginBottom: 8 * scale,
+      marginBottom: 8 * scale
     },
     reactLogo: {
       height: 178 * scale,
       width: 290 * scale,
       bottom: 0,
       left: 0,
-      position: 'absolute',
-    },
+      position: 'absolute'
+    }
   });
 };

@@ -5,7 +5,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import {
   configureReanimatedLogger,
-  ReanimatedLogLevel,
+  ReanimatedLogLevel
 } from 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
@@ -16,20 +16,20 @@ SplashScreen.preventAutoHideAsync();
 // Disable reanimated warnings
 configureReanimatedLogger({
   level: ReanimatedLogLevel.warn,
-  strict: false,
+  strict: false
 });
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [loaded, error] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf')
   });
 
   useEffect(() => {
     if (loaded || error) {
       SplashScreen.hideAsync();
       if (error) {
-        console.warn(`Error in loading fonts: ${error}`);
+        console.error(`Error in loading fonts: ${error}`);
       }
     }
   }, [loaded, error]);

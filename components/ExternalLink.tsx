@@ -1,20 +1,20 @@
-import { Link } from 'expo-router';
 import * as Linking from 'expo-linking';
-import type { Href } from 'expo-router';
+import { Link, type Href } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import { type ComponentProps } from 'react';
 import { Platform, Pressable } from 'react-native';
+
 
 const openBrowserAsync =
   Platform.isTV && Platform.OS === 'ios'
     ? async () => {}
-    : require('expo-web-browser').openBrowserAsync;
+    : WebBrowser.openBrowserAsync;
 
 type Props = Omit<ComponentProps<typeof Link>, 'href'> & {
   href: string;
 };
 
-function ExternalLinkMobile({ href, ...rest }: Props) {
-  return (
+const ExternalLinkMobile = ({ href, ...rest }: Props) => (
     <Link
       target="_blank"
       {...rest}
@@ -28,23 +28,20 @@ function ExternalLinkMobile({ href, ...rest }: Props) {
         }
       }}
     />
-  );
-}
+  )
 
-function ExternalLinkTV({ href, ...rest }: Props) {
-  return (
+const ExternalLinkTV = ({ href, ...rest }: Props) => (
     <Pressable
       onPress={() =>
         Linking.openURL(href).catch((reason) => alert(`${reason}`))
       }
       style={({ pressed, focused }) => ({
-        opacity: pressed || focused ? 0.6 : 1.0,
+        opacity: pressed || focused ? 0.6 : 1.0
       })}
     >
       {rest.children}
     </Pressable>
-  );
-}
+  )
 
 export function ExternalLink(props: Props) {
   return Platform.isTV ? ExternalLinkTV(props) : ExternalLinkMobile(props);

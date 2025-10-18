@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -7,24 +8,29 @@ import {
   TouchableHighlight,
   TouchableNativeFeedback,
   TouchableOpacity,
+  useTVEventHandler as tvEventHandler
 } from 'react-native';
-import { useState } from 'react';
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useScale } from '@/hooks/useScale';
 import { useThemeColor } from '@/hooks/useThemeColor';
 
+interface TVEvent {
+  eventType: string;
+  eventKeyAction?: string;
+}
+
 const useTVEventHandler = Platform.isTV
-  ? require('react-native').useTVEventHandler
-  : (_: any) => {};
+  ? tvEventHandler
+  : (_: (event: TVEvent) => void) => {};
 
 /**
  * Demo of event handling on TV and web.
  * On TV, the buttons will respond to focus, blur, and press events.
  * On web, the buttons will respond to focus, blur, press, and hover events.
  */
-export function EventHandlingDemo() {
+export const EventHandlingDemo = () => {
   const [remoteEventLog, setRemoteEventLog] = useState<string[]>([]);
   const [pressableEventLog, setPressableEventLog] = useState<string[]>([]);
 
@@ -39,7 +45,7 @@ export function EventHandlingDemo() {
     setPressableEventLog((log) => logWithAppendedEntry(log, entry));
   };
 
-  useTVEventHandler((event: any) => {
+  useTVEventHandler((event: TVEvent) => {
     const { eventType, eventKeyAction } = event;
     if (eventType !== 'focus' && eventType !== 'blur') {
       setRemoteEventLog((log) =>
@@ -47,8 +53,8 @@ export function EventHandlingDemo() {
           log,
           `type=${eventType}, action=${
             eventKeyAction !== undefined ? eventKeyAction : ''
-          }`,
-        ),
+          }`
+        )
       );
     }
   });
@@ -116,8 +122,7 @@ const PressableButton = (props: {
           : styles.pressable
       }
     >
-      {({ focused, hovered, pressed }) => {
-        return (
+      {({ focused, hovered, pressed }) => (
           <ThemedText style={styles.pressableText}>
             {pressed
               ? `${props.title} pressed`
@@ -127,8 +132,7 @@ const PressableButton = (props: {
               ? `${props.title} hovered`
               : props.title}
           </ThemedText>
-        );
-      }}
+        )}
     </Pressable>
   );
 };
@@ -165,8 +169,8 @@ const TouchableHighlightButton = (props: {
     <TouchableHighlight
       style={styles.pressable}
       underlayColor={underlayColor}
-      onFocus={(event) => props.log(`${props.title} onFocus`)}
-      onBlur={(event) => props.log(`${props.title} onBlur`)}
+      onFocus={(_event) => props.log(`${props.title} onFocus`)}
+      onBlur={(_event) => props.log(`${props.title} onBlur`)}
       onPressIn={() => props.log(`${props.title} onPressIn`)}
       onPressOut={() => props.log(`${props.title} onPressOut`)}
       onLongPress={() => props.log(`${props.title} onLongPress`)}
@@ -208,14 +212,14 @@ const useDemoStyles = function () {
       flex: 1,
       flexDirection: 'row',
       alignItems: 'flex-start',
-      justifyContent: 'center',
+      justifyContent: 'center'
     },
     logContainer: {
       flexDirection: 'row',
       padding: 5 * scale,
       margin: 5 * scale,
       alignItems: 'flex-start',
-      justifyContent: 'flex-start',
+      justifyContent: 'flex-start'
     },
     logText: {
       maxHeight: 300 * scale,
@@ -224,25 +228,25 @@ const useDemoStyles = function () {
       margin: 5 * scale,
       lineHeight: 12 * scale,
       alignSelf: 'flex-start',
-      justifyContent: 'flex-start',
+      justifyContent: 'flex-start'
     },
     pressable: {
       borderColor: highlightColor,
       backgroundColor: textColor,
       borderWidth: 1,
       borderRadius: 5 * scale,
-      margin: 5 * scale,
+      margin: 5 * scale
     },
     pressableFocused: {
       borderColor: highlightColor,
       backgroundColor: tintColor,
       borderWidth: 1,
       borderRadius: 5 * scale,
-      margin: 5 * scale,
+      margin: 5 * scale
     },
     pressableText: {
       color: backgroundColor,
-      fontSize: 15 * scale,
-    },
+      fontSize: 15 * scale
+    }
   });
 };

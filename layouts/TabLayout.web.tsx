@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { Platform, Pressable } from 'react-native';
+
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useTextStyles } from '@/hooks/useTextStyles';
@@ -12,16 +13,16 @@ export default function TabLayout() {
   const colorScheme = useColorScheme();
   const textStyles = useTextStyles();
 
-  const tabBarButton = (props: any) => {
-    const style: any = props.style ?? {};
+  const tabBarButton = (props: React.ComponentProps<typeof Pressable>) => {
+    const style: React.ComponentProps<typeof Pressable>['style'] = props.style ?? {};
     return (
       <Pressable
         {...props}
         style={({ pressed, focused }) => [
           style,
           {
-            opacity: pressed || focused ? 0.6 : 1.0,
-          },
+            opacity: pressed || focused ? 0.6 : 1.0
+          }
         ]}
       />
     );
@@ -33,14 +34,14 @@ export default function TabLayout() {
         tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
         tabBarActiveBackgroundColor: Colors[colorScheme ?? 'light'].background,
         tabBarStyle: {
-          width: '100%',
+          width: '100%'
         },
         tabBarPosition: 'top',
         tabBarIconStyle: {
           height: textStyles.title.lineHeight,
-          width: 0,
+          width: 0
         },
-        headerShown: false,
+        headerShown: false
       }}
     >
       <Tabs.Screen
@@ -49,7 +50,7 @@ export default function TabLayout() {
           title: 'Home',
           tabBarButton,
           tabBarLabelStyle: textStyles.default,
-          tabBarIcon: () => null,
+          tabBarIcon: () => null
         }}
       />
       <Tabs.Screen
@@ -58,7 +59,7 @@ export default function TabLayout() {
           title: 'Explore',
           tabBarButton,
           tabBarLabelStyle: textStyles.default,
-          tabBarIcon: () => null,
+          tabBarIcon: () => null
         }}
       />
       <Tabs.Screen
@@ -66,13 +67,13 @@ export default function TabLayout() {
         options={
           Platform.OS === 'web'
             ? {
-                href: null,
+                href: null
               }
             : {
                 title: 'TV demo',
                 tabBarButton,
                 tabBarLabelStyle: textStyles.default,
-                tabBarIcon: () => null,
+                tabBarIcon: () => null
               }
         }
       />

@@ -2,7 +2,7 @@
 const { getDefaultConfig } = require('expo/metro-config');
 
 /** @type {import('expo/metro-config').MetroConfig} */
-const config = getDefaultConfig(__dirname); // eslint-disable-line no-undef
+const config = getDefaultConfig(__dirname);
 
 // When enabled, the optional code below will allow Metro to resolve
 // and bundle source files with TV-specific extensions
@@ -15,7 +15,7 @@ if (process.env?.EXPO_TV === '1') {
   const originalSourceExts = config.resolver.sourceExts;
   const tvSourceExts = [
     ...originalSourceExts.map((e) => `tv.${e}`),
-    ...originalSourceExts,
+    ...originalSourceExts
   ];
   config.resolver.sourceExts = tvSourceExts;
 }
