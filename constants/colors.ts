@@ -4,7 +4,7 @@
  * [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
  */
 
-const tintColorLight = '#0a7ea4';
+const tintColorLight = '#0085FF';
 const tintColorDark = '#aaa';
 
 export const Colors = {
@@ -15,7 +15,7 @@ export const Colors = {
     icon: '#687076',
     tabIconDefault: '#687076',
     tabIconSelected: tintColorLight,
-    link: '#0a7ea4'
+    link: '#0085FF',
   },
   dark: {
     text: '#ECEDEE',
@@ -24,6 +24,6 @@ export const Colors = {
     icon: '#9BA1A6',
     tabIconDefault: '#9BA1A6',
     tabIconSelected: tintColorDark,
-    link: '#0a7ea4'
-  }
+    link: '#0085FF',
+  },
 };

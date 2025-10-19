@@ -1,4 +1,4 @@
-import { use, Dispatch, createContext, PropsWithChildren } from 'react';
+import { use, createContext, PropsWithChildren } from 'react';
 
 import { ISubscription } from './subscriptions.interface';
 import { IUser } from './user.interface';
@@ -22,7 +22,7 @@ export interface AuthState {
 const AuthContext = createContext<AuthState>({
   signIn: _ => null,
   signOut: () => null,
-  isLoading: false
+  isLoading: false,
 });
 
 // This hook can be used to access the user info.
@@ -37,19 +37,27 @@ export function useSession() {
 
 export function SessionProvider({ children }: PropsWithChildren) {
   const [[isLoading, token], setToken] = useStorageState('token');
+  const [[, user], setUser] = useStorageState('user');
+  const [[, subscriptions], setSubscriptions] = useStorageState('subscriptions');
 
   return (
     <AuthContext
       value={{
-        signIn: ({ token, user, subscriptions }) => {
+        signIn: ({ token: t, user: u, subscriptions: s }) => {
           // Perform sign-in logic here
-          setToken(token);
+          setToken(t);
+          setUser(JSON.stringify(u));
+          setSubscriptions(JSON.stringify(s));
         },
         signOut: () => {
           setToken(null);
+          setUser(null);
+          setSubscriptions(null);
         },
         token,
-        isLoading
+        user: user ? JSON.parse(user) : undefined,
+        subscriptions: subscriptions ? JSON.parse(subscriptions) : undefined,
+        isLoading,
       }}
     >
       {children}

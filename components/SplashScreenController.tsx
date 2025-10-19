@@ -5,6 +5,7 @@ SplashScreen.preventAutoHideAsync();
 
 export function SplashScreenController() {
   const { isLoading } = useSession();
+  console.info('loading');
 
   if (!isLoading) {
     SplashScreen.hide();

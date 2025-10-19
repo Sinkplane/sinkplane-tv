@@ -1,97 +1,182 @@
-import { Alert, Button, Text, TextInput, View, ActivityIndicator } from 'react-native';
+import { Alert, Pressable, TextInput, View, Text, StyleSheet, Image, ImageBackground } from 'react-native';
 
 import { useSession } from '@/hooks/authentication/auth.context';
-import { useGetCaptchaInfo } from '@/hooks/authentication/use-get-capcha-info.hook';
-import TurnstileWebView from '@/components/authentication/TurnstileWebview';
 import { useState } from 'react';
+import { useGetProfile } from '@/hooks/authentication/use-get-profile';
+import { useGetSubscriptions } from '@/hooks/authentication/use-get-subscriptions.hook';
+import { Colors } from '@/constants/colors';
+
+import qrCode from '@/assets/images/qrcode.png';
+import bg from '@/assets/images/bg.jpg';
 
 export default function SignIn() {
   const { signIn } = useSession();
-  const { data: captchaInfo, isLoading: isCaptchaLoading, error: captchaError } = useGetCaptchaInfo();
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [token, setToken] = useState('');
-  const [isVerified, setIsVerified] = useState(false);
+  const [token, setToken] = useState('s%3ANOySMVT9n-0kevbgoxF21lLu6vaYC32E.CxFOWaTo%2F2VaHpUJVX5M9gV0xgt1TxQrBP%2FgdwPImkY');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+  const { refetch: refetchProfile } = useGetProfile(token);
+  const { refetch: refetchSubscriptions } = useGetSubscriptions(token);
 
   const reset = () => {
-    setIsVerified(false);
-    setUsername('');
-    setPassword('');
     setToken('');
   };
 
   const handleLogin = async () => {
-    if (!isVerified || !token) {
-      Alert.alert('Error', 'Please complete the CAPTCHA verification');
-      return;
-    }
+    if (!token) return;
 
+    setIsLoggingIn(true);
     try {
-      console.info(username, password, token);
-      //   const response = await authStore.login({
-      //     username,
-      //     password,
-      //     captchaToken: turnstileManager.token,
-      //     rememberMe: true,
-      //   });
-      //   if (response.success) {
-      //     // Navigate to main app
-      //     navigation.navigate('Main');
-      //   } else if (response.needs2FA) {
-      //     // Navigate to 2FA screen
-      //     navigation.navigate('TwoFactorAuth');
-      //   }
+      // Fetch profile and subscriptions in parallel
+      const [profileResult, subscriptionsResult] = await Promise.all([refetchProfile(), refetchSubscriptions()]);
+
+      if (profileResult.error) {
+        throw new Error('Failed to fetch profile');
+      }
+
+      if (subscriptionsResult.error) {
+        throw new Error('Failed to fetch subscriptions');
+      }
+
+      // Sign in with the fetched data
+      signIn({
+        token,
+        user: profileResult.data!.selfUser,
+        subscriptions: subscriptionsResult.data || [],
+      });
     } catch (error) {
-      Alert.alert('Login Failed');
-      // Reset the Turnstile challenge on failure
+      Alert.alert('Login Failed', error instanceof Error ? error.message : 'Please check your token and try again.');
       reset();
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
-  if (isCaptchaLoading) {
-    return (
-      <View style={{ flex: 1, padding: 20, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" />
-        <Text>Loading captcha...</Text>
-      </View>
-    );
-  }
-
-  if (captchaError || !captchaInfo) {
-    return (
-      <View style={{ flex: 1, padding: 20, justifyContent: 'center', alignItems: 'center' }}>
-        <Text>Error loading captcha. Please try again.</Text>
-      </View>
-    );
-  }
-
   return (
-    <View style={{ flex: 1, padding: 20 }}>
-      <TextInput placeholder="Username" value={username} onChangeText={setUsername} autoCapitalize="none" />
-      <TextInput placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry />
+    <ImageBackground source={bg} style={styles.container} resizeMode="cover">
+      <View style={styles.container}>
+        <View style={styles.contentContainer}>
+          {/* Token Login Section */}
+          <View style={styles.section}>
+            <Text style={styles.header}>Sign In to Floatplane</Text>
+            <Text style={styles.description}>Please enter your authentication token to continue.</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Authentication Token"
+              value={token}
+              onChangeText={setToken}
+              autoCapitalize="none"
+              secureTextEntry
+            />
+            <Pressable
+              style={({ pressed }) => [
+                styles.button,
+                (token === '' || isLoggingIn) && styles.buttonDisabled,
+                pressed && styles.buttonPressed,
+              ]}
+              onPress={handleLogin}
+              disabled={token === '' || isLoggingIn}
+            >
+              <Text style={styles.buttonText}>{isLoggingIn ? 'Logging in...' : 'Login'}</Text>
+            </Pressable>
+          </View>
 
-      <TurnstileWebView
-        siteKey={captchaInfo.siteKey}
-        theme="light"
-        onSuccess={captchaToken => {
-          setToken(captchaToken);
-          setIsVerified(true);
-        }}
-        onError={() => {
-          Alert.alert('Error', 'Captcha verification failed');
-          reset();
-        }}
-        onExpire={() => {
-          setIsVerified(false);
-          setToken('');
-        }}
-        onTimeout={() => {
-          Alert.alert('Error', 'Captcha verification timed out');
-          reset();
-        }}
-      />
+          {/* Vertical Divider */}
+          <View style={styles.divider} />
 
-      <Button title="Login" onPress={handleLogin} disabled={!isVerified} />
-    </View>
+          {/* QR Code Section */}
+          <View style={styles.section}>
+            <Image source={qrCode} style={styles.qrCode} resizeMode="contain" />
+            <Text style={styles.qrText}>
+              Scan the QR code to download the Sinkplane Sidekick app and login without an authentication token.
+            </Text>
+          </View>
+        </View>
+      </View>
+    </ImageBackground>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  contentContainer: {
+    flexDirection: 'row',
+    maxWidth: 800,
+    width: '100%',
+    alignItems: 'center',
+  },
+  section: {
+    flex: 1,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+  },
+  header: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    textAlign: 'center',
+    color: '#fff',
+  },
+  description: {
+    fontSize: 18,
+    marginBottom: 24,
+    textAlign: 'center',
+    color: '#fff',
+    fontWeight: 800,
+  },
+  input: {
+    width: '100%',
+    maxWidth: 400,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    fontSize: 16,
+  },
+  divider: {
+    width: 1,
+    height: 300,
+    backgroundColor: '#ccc',
+    marginHorizontal: 20,
+  },
+  qrCode: {
+    width: 200,
+    height: 200,
+    marginBottom: 16,
+  },
+  qrText: {
+    fontSize: 16,
+    textAlign: 'center',
+    color: '#fff',
+    maxWidth: 300,
+    fontWeight: 800,
+  },
+  button: {
+    width: '100%',
+    maxWidth: 400,
+    backgroundColor: Colors.light.tint,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonPressed: {
+    backgroundColor: Colors.light.link,
+    opacity: 0.8,
+  },
+  buttonDisabled: {
+    backgroundColor: '#ccc',
+    opacity: 0.6,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+});
