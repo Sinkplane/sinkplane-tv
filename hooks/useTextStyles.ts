@@ -1,7 +1,7 @@
 import { useScale } from './useScale';
 import { useThemeColor } from './useThemeColor';
 
-import { textStyles } from '@/constants/TextStyles';
+import { textStyles } from '@/constants/text-styles';
 
 export function useTextStyles() {
   const linkColor = useThemeColor({}, 'link');

@@ -1,6 +1,8 @@
 // https://docs.expo.dev/guides/using-eslint/
-const { defineConfig } = require("eslint/config");
-const expoConfig = require("eslint-config-expo/flat");
+const js = require("@eslint/js");
+const tseslint = require("typescript-eslint");
+const reactPlugin = require("eslint-plugin-react");
+const reactHooksPlugin = require("eslint-plugin-react-hooks");
 
 const jsOnly = {
   "arrow-body-style": "error",
@@ -17,19 +19,6 @@ const jsOnly = {
   "id-blacklist": ["error", "any", "Undefined"],
   "id-match": "error",
   "implicit-arrow-linebreak": "off",
-  "import/no-extraneous-dependencies": "off",
-  "import/order": [
-    "error",
-    {
-      alphabetize: {
-        order:
-          "asc" /* sort in ascending order. Options: ['ignore', 'asc', 'desc'] */,
-        caseInsensitive: true /* ignore case. Options: [true, false] */
-      },
-      groups: [["builtin", "external"], "parent", "sibling", "index"],
-      "newlines-between": "always"
-    }
-  ],
   "linebreak-style": ["error", "unix"],
   "max-classes-per-file": ["error", 1],
   "new-parens": "error",
@@ -133,10 +122,6 @@ const jsOnly = {
 
 const tsOnly = {
   ...jsOnly,
-  "import/extensions": "off",
-  "import/no-unresolved": "off",
-  "import/no-extraneous-dependencies": "off",
-  "import/prefer-default-export": "off",
   "max-len": ["error", { code: 140, tabWidth: 2 }],
   "react/function-component-definition": [
     2,
@@ -165,10 +150,51 @@ const tsOnly = {
   "@typescript-eslint/no-non-null-assertion": "off"
 };
 
-module.exports = defineConfig([
-  ...expoConfig,
+module.exports = [
   {
     ignores: ["dist/*", "node_modules/*", ".expo/*", "ios/*", "android/*"]
+  },
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  {
+    files: ["**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx"],
+    plugins: {
+      react: reactPlugin,
+      "react-hooks": reactHooksPlugin
+    },
+    languageOptions: {
+      parserOptions: {
+        ecmaFeatures: {
+          jsx: true
+        }
+      },
+      globals: {
+        __DEV__: "readonly",
+        ErrorUtils: false,
+        FormData: false,
+        XMLHttpRequest: false,
+        alert: false,
+        cancelAnimationFrame: false,
+        cancelIdleCallback: false,
+        clearImmediate: false,
+        fetch: false,
+        navigator: false,
+        process: false,
+        requestAnimationFrame: false,
+        requestIdleCallback: false,
+        setImmediate: false,
+        window: false,
+        console: false,
+        require: false,
+        module: false,
+        exports: false
+      }
+    },
+    settings: {
+      react: {
+        version: "detect"
+      }
+    }
   },
   {
     files: ["**/*.js", "**/*.jsx"],
@@ -191,4 +217,4 @@ module.exports = defineConfig([
       "@typescript-eslint/no-non-null-assertion": "off"
     }
   }
-]);
+];
