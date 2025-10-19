@@ -1,14 +1,22 @@
 import * as Linking from 'expo-linking';
 import { Link, type Href } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
 import { type ComponentProps } from 'react';
 import { Platform, Pressable } from 'react-native';
 
+// Conditionally import WebBrowser only for non-TV platforms
+let WebBrowser: typeof import('expo-web-browser') | null = null;
+if (!Platform.isTV) {
+  WebBrowser = require('expo-web-browser');
+}
 
-const openBrowserAsync =
-  Platform.isTV && Platform.OS === 'ios'
-    ? async () => {}
-    : WebBrowser.openBrowserAsync;
+const openBrowserAsync = async (url: string) => {
+  if (Platform.isTV || !WebBrowser) {
+    // On TV platforms, fall back to Linking.openURL
+    await Linking.openURL(url);
+  } else {
+    await WebBrowser.openBrowserAsync(url);
+  }
+};
 
 type Props = Omit<ComponentProps<typeof Link>, 'href'> & {
   href: string;
