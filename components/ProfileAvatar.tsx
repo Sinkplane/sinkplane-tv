@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Pressable, Image, StyleSheet, Modal, Text, Platform, findNodeHandle } from 'react-native';
+import { View, Pressable, Image, StyleSheet, Modal, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { useSession } from '@/hooks/authentication/auth.context';

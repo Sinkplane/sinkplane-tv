@@ -7,6 +7,30 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { useTextStyles } from '@/hooks/useTextStyles';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
 
+type Route = {
+  key: string;
+  name: string;
+};
+
+type NavigationState = {
+  index: number;
+  routes: Route[];
+};
+
+type Navigation = {
+  emit: (event: {
+    type: string;
+    target: string;
+    canPreventDefault: boolean;
+  }) => { defaultPrevented: boolean };
+  navigate: (name: string) => void;
+};
+
+type TabBarProps = {
+  state: NavigationState;
+  navigation: Navigation;
+};
+
 /**
  * This layout is required for the web platform.
  */
@@ -29,11 +53,10 @@ export default function TabLayout() {
     );
   };
 
-  const renderTabBar = (props: any) => {
-    return (
+  const renderTabBar = (props: TabBarProps) => (
       <View style={styles.tabBarContainer}>
         <View style={styles.tabBarContent}>
-          {props.state.routes.map((route: any, index: number) => {
+          {props.state.routes.map((route: Route, index: number) => {
             const isFocused = props.state.index === index;
             const onPress = () => {
               const event = props.navigation.emit({
@@ -75,7 +98,6 @@ export default function TabLayout() {
         </View>
       </View>
     );
-  };
 
   return (
     <View style={styles.container}>

@@ -6,6 +6,7 @@ import { Platform, Pressable } from 'react-native';
 // Conditionally import WebBrowser only for non-TV platforms
 let WebBrowser: typeof import('expo-web-browser') | null = null;
 if (!Platform.isTV) {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   WebBrowser = require('expo-web-browser');
 }
 
@@ -23,33 +24,31 @@ type Props = Omit<ComponentProps<typeof Link>, 'href'> & {
 };
 
 const ExternalLinkMobile = ({ href, ...rest }: Props) => (
-    <Link
-      target="_blank"
-      {...rest}
-      href={href as Href}
-      onPress={async (event) => {
-        if (Platform.OS !== 'web') {
-          // Prevent the default behavior of linking to the default browser on native.
-          event.preventDefault();
-          // Open the link in an in-app browser.
-          await openBrowserAsync(href);
-        }
-      }}
-    />
-  )
+  <Link
+    target="_blank"
+    {...rest}
+    href={href as Href}
+    onPress={async event => {
+      if (Platform.OS !== 'web') {
+        // Prevent the default behavior of linking to the default browser on native.
+        event.preventDefault();
+        // Open the link in an in-app browser.
+        await openBrowserAsync(href);
+      }
+    }}
+  />
+);
 
 const ExternalLinkTV = ({ href, ...rest }: Props) => (
-    <Pressable
-      onPress={() =>
-        Linking.openURL(href).catch((reason) => alert(`${reason}`))
-      }
-      style={({ pressed, focused }) => ({
-        opacity: pressed || focused ? 0.6 : 1.0
-      })}
-    >
-      {rest.children}
-    </Pressable>
-  )
+  <Pressable
+    onPress={() => Linking.openURL(href).catch(reason => alert(`${reason}`))}
+    style={({ pressed, focused }) => ({
+      opacity: pressed || focused ? 0.6 : 1.0,
+    })}
+  >
+    {rest.children}
+  </Pressable>
+);
 
 export function ExternalLink(props: Props) {
   return Platform.isTV ? ExternalLinkTV(props) : ExternalLinkMobile(props);

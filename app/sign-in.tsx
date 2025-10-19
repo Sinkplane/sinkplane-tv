@@ -11,7 +11,7 @@ import bg from '@/assets/images/bg.jpg';
 
 export default function SignIn() {
   const { signIn } = useSession();
-  const [token, setToken] = useState('s%3ANOySMVT9n-0kevbgoxF21lLu6vaYC32E.CxFOWaTo%2F2VaHpUJVX5M9gV0xgt1TxQrBP%2FgdwPImkY');
+  const [token, setToken] = useState(process.env.EXPO_PUBLIC_DEFAULT_AUTH_TOKEN || '');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const { refetch: refetchProfile } = useGetProfile(token);

@@ -7,6 +7,7 @@ import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useScale } from '@/hooks/useScale';
+import reactLogo from '@/assets/images/react-logo.png';
 
 export default function ExploreScreen() {
   const styles = useExploreScreenStyles();
@@ -64,7 +65,7 @@ export default function ExploreScreen() {
           provide files for different screen densities
         </ThemedText>
         <Image
-          source={require('@/assets/images/react-logo.png')}
+          source={reactLogo}
           style={{ alignSelf: 'center' }}
         />
         <ExternalLink href="https://reactnative.dev/docs/images">
