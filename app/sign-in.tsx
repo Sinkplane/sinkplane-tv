@@ -3,19 +3,22 @@ import { Alert, Pressable, TextInput, View, Text, StyleSheet, Image, ImageBackgr
 import { useSession } from '@/hooks/authentication/auth.context';
 import { useState } from 'react';
 import { useGetProfile } from '@/hooks/authentication/use-get-profile';
-import { useGetSubscriptions } from '@/hooks/authentication/use-get-subscriptions.hook';
+import { useGetSubscriptions } from '@/hooks/authentication/useGetSubscription';
 import { Colors } from '@/constants/colors';
 
 import qrCode from '@/assets/images/qrcode.png';
 import bg from '@/assets/images/bg.jpg';
+import { useGetCreatorList } from '@/hooks/authentication/useGetCreatorList';
 
 export default function SignIn() {
   const { signIn } = useSession();
   const [token, setToken] = useState(process.env.EXPO_PUBLIC_DEFAULT_AUTH_TOKEN || '');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [creatorIds, setCreatorIds] = useState([] as string[]);
 
   const { refetch: refetchProfile } = useGetProfile(token);
   const { refetch: refetchSubscriptions } = useGetSubscriptions(token);
+  const { refetch: refetchChannels } = useGetCreatorList(token, creatorIds);
 
   const reset = () => {
     setToken('');
@@ -37,11 +40,18 @@ export default function SignIn() {
         throw new Error('Failed to fetch subscriptions');
       }
 
+      const fetchedSubscriptions = subscriptionsResult.data ?? [];
+      const ids = fetchedSubscriptions.map(sub => sub.creator);
+      setCreatorIds(ids);
+
+      const fetchedChannel = await refetchChannels();
+
       // Sign in with the fetched data
       signIn({
         token,
         user: profileResult.data!.selfUser,
-        subscriptions: subscriptionsResult.data || [],
+        subscriptions: fetchedSubscriptions,
+        channels: fetchedChannel.data ?? [],
       });
     } catch (error) {
       Alert.alert('Login Failed', error instanceof Error ? error.message : 'Please check your token and try again.');

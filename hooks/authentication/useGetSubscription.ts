@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { ISubscription } from './subscriptions.interface';
+import { Subscription } from '@/types/subscriptions.interface';
 
 import { API_BASE_URL } from '@/constants/api';
 
-const fetchSubscriptions = async (token: string): Promise<ISubscription[]> => {
+const fetchSubscriptions = async (token: string): Promise<Subscription[]> => {
   const response = await fetch(`${API_BASE_URL}/api/v3/user/subscriptions?active=true`, {
     method: 'GET',
     credentials: 'include',

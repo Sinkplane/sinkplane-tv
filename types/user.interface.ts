@@ -1,4 +1,4 @@
-export interface IProfileImage {
+export interface ProfileImage {
   width: number;
   height: number;
   path: string;
@@ -9,10 +9,10 @@ export interface IProfileImage {
   }>;
 }
 
-export interface IUser {
+export interface User {
   id: string;
   username: string;
-  profileImage: IProfileImage;
+  profileImage: ProfileImage;
   email?: string;
   displayName?: string;
   creators?: string[];

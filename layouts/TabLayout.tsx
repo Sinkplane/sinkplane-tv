@@ -13,15 +13,15 @@ export default function TabLayout() {
       <NativeTabs>
         <NativeTabs.Trigger name="index">
           <Label>Home</Label>
-          <Icon sf="house" />
+          <Icon sf={{ default: 'play', selected: 'play.fill' }} />
         </NativeTabs.Trigger>
-        <NativeTabs.Trigger name="explore">
-          <Label>Explore</Label>
-          <Icon sf="atom" />
+        <NativeTabs.Trigger name="about">
+          <Label>About</Label>
+          <Icon sf={{ default: 'person', selected: 'person.fill' }} />
         </NativeTabs.Trigger>
-        <NativeTabs.Trigger name="tv_focus">
-          <Label>TV demo</Label>
-          <Icon sf="tv.fill" />
+        <NativeTabs.Trigger name="live">
+          <Label>Live</Label>
+          <Icon sf={{ default: 'tv', selected: 'tv.fill' }} />
         </NativeTabs.Trigger>
       </NativeTabs>
       <ProfileAvatar />

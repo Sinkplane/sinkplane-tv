@@ -28,7 +28,13 @@
       "splash": {
         "image": "./assets/images/splash.png"
       },
-      "package": "com.cpawl89.sinkplane"
+      "package": "com.cpawl89.sinkplane",
+      "permissions": [
+        "android.permission.ACCESS_WIFI_STATE",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.CHANGE_WIFI_MULTICAST_STATE",
+        "android.permission.INTERNET"
+      ]
     },
     "ios": {
       "splash": {
@@ -36,7 +42,11 @@
       },
       "bundleIdentifier": "com.cpawl89.sinkplane",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSBonjourServices": [
+          "sinkplane-tv._tcp"
+        ],
+        "NSLocalNetworkUsageDescription": "Allow sinkplane companion app to discover devices on the local network."
       }
     },
     "web": {

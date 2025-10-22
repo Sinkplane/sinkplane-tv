@@ -1,18 +1,23 @@
 import { use, createContext, PropsWithChildren } from 'react';
 
-import { ISubscription } from './subscriptions.interface';
-import { IUser } from './user.interface';
-import { useStorageState } from '../storage/use-storage-state.hook';
+import { Subscription } from '@/types/subscriptions.interface';
+import { User } from '@/types/user.interface';
+import { useStorageState } from '../storage/useStorageState';
+import { Creator } from '@/types/creator-list.interface';
 
 interface SignInParams {
   token: string;
-  user: IUser;
-  subscriptions: ISubscription[];
+  user: User;
+  subscriptions: Subscription[];
+  channels: Creator[];
 }
 
 export interface AuthState {
-  user?: IUser;
-  subscriptions?: ISubscription[];
+  user?: User;
+  subscriptions?: Subscription[];
+  subscription?: Subscription;
+  creators?: Creator[];
+  creator?: Creator;
   token?: string | null;
   signIn: (params: SignInParams) => void;
   signOut: () => void;
@@ -39,15 +44,21 @@ export function SessionProvider({ children }: PropsWithChildren) {
   const [[isLoading, token], setToken] = useStorageState('token');
   const [[, user], setUser] = useStorageState('user');
   const [[, subscriptions], setSubscriptions] = useStorageState('subscriptions');
+  const [[, subscription], setSubscription] = useStorageState('subscription');
+  const [[, creators], setCreators] = useStorageState('creators');
+  const [[, creator], setCreator] = useStorageState('creator');
 
   return (
     <AuthContext
       value={{
-        signIn: ({ token: t, user: u, subscriptions: s }) => {
+        signIn: ({ token: t, user: u, subscriptions: s, channels: c }) => {
           // Perform sign-in logic here
           setToken(t);
           setUser(JSON.stringify(u));
           setSubscriptions(JSON.stringify(s));
+          if (s.length) setSubscription(JSON.stringify(s[0]));
+          setCreators(JSON.stringify(c));
+          if (c.length) setCreator(JSON.stringify(c[0]));
         },
         signOut: () => {
           setToken(null);
@@ -57,6 +68,9 @@ export function SessionProvider({ children }: PropsWithChildren) {
         token,
         user: user ? JSON.parse(user) : undefined,
         subscriptions: subscriptions ? JSON.parse(subscriptions) : undefined,
+        subscription: subscription ? JSON.parse(subscription) : undefined,
+        creators: creators ? JSON.parse(creators) : undefined,
+        creator: creator ? JSON.parse(creator) : undefined,
         isLoading,
       }}
     >

@@ -1,4 +1,4 @@
-import { IUser } from '@/hooks/authentication/user.interface';
+import { IUser } from '@/types/user.interface';
 
 export interface IStatusResponse {
   selfUser: IUser;

@@ -1,45 +1,60 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import { Image, StyleSheet, NativeScrollEvent, NativeSyntheticEvent, Button } from 'react-native';
 
-import { HelloWave } from '@/components/HelloWave';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+import { AssDass, Videos, VideoView } from '@/components/videos/Videos';
 import { useScale } from '@/hooks/useScale';
-import partialReactLogo from '@/assets/images/partial-react-logo.png';
+
+import bg from '@/assets/images/bg.jpg';
+import { useSession } from '@/hooks/authentication/auth.context';
+import { ThemedView } from '@/components/ThemedView';
+import { ThemedText } from '@/components/ThemedText';
+import { useState, useCallback, useRef } from 'react';
 
 export default function HomeScreen() {
   const styles = useHomeScreenStyles();
+  const { creator, token } = useSession();
+  const [channel, setChannel] = useState(creator?.channels[0]);
+  const [view, setView] = useState(VideoView.CARD);
+  const [videOrder, setVideoOrder] = useState(AssDass.DESC);
+  const fetchMoreRef = useRef<(() => void) | null>(null);
+
+  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+
+    // Calculate if we're near the bottom (within 1000 pixels)
+    const paddingToBottom = 1000;
+    const isNearBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
+
+    if (isNearBottom && fetchMoreRef.current) {
+      fetchMoreRef.current();
+    }
+  }, []);
+
+  const openChannelDrawer = () => {
+    console.info('asdf');
+  };
+
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={<Image source={partialReactLogo} style={styles.reactLogo} />}
+      headerImage={<Image style={styles.headerImage} source={creator ? { uri: creator.cover.path } : bg} resizeMode="cover" />}
+      onScroll={handleScroll}
     >
-        <ThemedView style={styles.titleContainer}>
-          <ThemedText type="title">Welcome!</ThemedText>
-          <HelloWave />
-        </ThemedView>
-        <ThemedView style={styles.stepContainer}>
-          <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-          <ThemedText>
-            Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes. Press{' '}
-            <ThemedText type="defaultSemiBold">{Platform.select({ ios: 'cmd + d', android: 'cmd + m' })}</ThemedText> to open developer
-            tools.
-          </ThemedText>
-        </ThemedView>
-        <ThemedView style={styles.stepContainer}>
-          <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          <ThemedText>Tap the Explore tab to learn more about what{"'s"} included in this starter app.</ThemedText>
-        </ThemedView>
-        <ThemedView style={styles.stepContainer}>
-          <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-          <ThemedText>
-            When you{"'re"} ready, run
-            <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-            <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-            <ThemedText type="defaultSemiBold">app</ThemedText> to <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-          </ThemedText>
-        </ThemedView>
-      </ParallaxScrollView>
+      <ThemedView>
+        {creator && channel && token ? (
+          <>
+            <ThemedView style={styles.titleContainer}>
+              <ThemedText type="title">{channel.title} Videos</ThemedText>
+            </ThemedView>
+            <Videos token={token} creatorId={creator.id} channel={channel} view={view} assDass={videOrder} onFetchMoreRef={fetchMoreRef} />
+          </>
+        ) : (
+          <ThemedView style={styles.centerContainer}>
+            <ThemedText type="title">You are not subscribed to any creators</ThemedText>
+          </ThemedView>
+        )}
+      </ThemedView>
+    </ParallaxScrollView>
   );
 }
 
@@ -51,13 +66,14 @@ const useHomeScreenStyles = function () {
       alignItems: 'center',
       gap: 8 * scale,
     },
-    stepContainer: {
-      gap: 8 * scale,
-      marginBottom: 8 * scale,
+    centerContainer: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 20 * scale,
     },
-    reactLogo: {
+    headerImage: {
       height: 178 * scale,
-      width: 290 * scale,
+      width: '100%',
       bottom: 0,
       left: 0,
       position: 'absolute',

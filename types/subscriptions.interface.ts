@@ -1,4 +1,4 @@
-export interface ISubscriptionPlan {
+export interface SubscriptionPlan {
   id: string;
   title: string;
   description: string;
@@ -15,12 +15,12 @@ export interface ISubscriptionPlan {
   enabledGlobal: boolean;
 }
 
-export interface ISubscription {
+export interface Subscription {
   startDate: string;
   endDate: string;
   paymentID: number;
   interval: string;
   paymentCancelled: boolean;
-  plan: ISubscriptionPlan;
+  plan: SubscriptionPlan; // Corrected type from Subscription to SubscriptionPlan
   creator: string;
 }

@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { SessionProvider, useSession } from '@/hooks/authentication/auth.context';
 import { SplashScreenController } from '@/components/SplashScreenController';
+import { useTVServer } from '@/hooks/network-server/useTVServer';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -29,7 +30,10 @@ const queryClient = new QueryClient({
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-  console.info('hello world');
+
+  // Initialize the TV server
+  useTVServer();
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
@@ -44,16 +48,15 @@ export default function RootLayout() {
 
 // Create a new component that can access the SessionProvider context later.
 function RootNavigator() {
-  const { token, user, subscriptions } = useSession();
+  const { token } = useSession();
   const signedIn = !!token;
-  console.info(token, user, subscriptions);
   return (
-    <Stack>
+    <Stack screenOptions={{ headerShown: false }}>
       <Stack.Protected guard={signedIn}>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" />
       </Stack.Protected>
       <Stack.Protected guard={!signedIn}>
-        <Stack.Screen name="sign-in" options={{ headerShown: false }} />
+        <Stack.Screen name="sign-in" />
       </Stack.Protected>
       <Stack.Screen name="+not-found" />
     </Stack>
