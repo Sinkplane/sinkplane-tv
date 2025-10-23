@@ -14,7 +14,7 @@ interface VideosProps {
   token: string;
   creatorId: string;
   view: VideoView;
-  assDass: AssDass;
+  sort: AssDass;
   onFetchMoreRef?: RefObject<(() => void) | null>;
 }
 
@@ -28,21 +28,14 @@ export enum VideoView {
   LIST,
 }
 
-export const Videos = ({ token, creatorId, view, onFetchMoreRef }: VideosProps) => {
+export const Videos = ({ token, creatorId, view, onFetchMoreRef, sort }: VideosProps) => {
   const styles = useVideosStyles();
   const isLoadingMoreRef = useRef(false);
 
-  const {
-    data,
-    isLoading,
-    error,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useGetVideosInfinite(token, {
+  const { data, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage } = useGetVideosInfinite(token, {
     id: creatorId ?? '',
     limit: 20,
-    sort: 'DESC',
+    sort,
   });
 
   // Expose the fetch more function to the parent via ref

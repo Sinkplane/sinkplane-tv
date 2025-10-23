@@ -1,4 +1,4 @@
-import { Image, StyleSheet, NativeScrollEvent, NativeSyntheticEvent, Button } from 'react-native';
+import { Image, StyleSheet, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { AssDass, Videos, VideoView } from '@/components/videos/Videos';
@@ -8,6 +8,7 @@ import bg from '@/assets/images/bg.jpg';
 import { useSession } from '@/hooks/authentication/auth.context';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
+import { ThemedButton } from '@/components/ThemedButton';
 import { useState, useCallback, useRef } from 'react';
 
 export default function HomeScreen() {
@@ -33,6 +34,12 @@ export default function HomeScreen() {
   const openChannelDrawer = () => {
     console.info('asdf');
   };
+  const switchNewestOldest = () => {
+    setVideoOrder(videOrder === AssDass.ASC ? AssDass.DESC : AssDass.ASC);
+  };
+  const switchView = () => {
+    setView(view === VideoView.CARD ? VideoView.LIST : VideoView.CARD);
+  };
 
   return (
     <ParallaxScrollView
@@ -44,9 +51,14 @@ export default function HomeScreen() {
         {creator && channel && token ? (
           <>
             <ThemedView style={styles.titleContainer}>
-              <ThemedText type="title">{channel.title} Videos</ThemedText>
+              <ThemedButton onPress={openChannelDrawer} title="Change Channel" />
+              <ThemedButton onPress={switchView} title={`${view === VideoView.CARD ? 'List' : 'Card'} View`} />
+              <ThemedButton onPress={switchNewestOldest} title={`${videOrder === AssDass.ASC ? 'Oldest' : 'Newest'} Videos`} />
+              <ThemedText type="title" style={styles.title}>
+                {channel.title} Videos
+              </ThemedText>
             </ThemedView>
-            <Videos token={token} creatorId={creator.id} channel={channel} view={view} assDass={videOrder} onFetchMoreRef={fetchMoreRef} />
+            <Videos token={token} creatorId={creator.id} channel={channel} view={view} sort={videOrder} onFetchMoreRef={fetchMoreRef} />
           </>
         ) : (
           <ThemedView style={styles.centerContainer}>
@@ -61,10 +73,16 @@ export default function HomeScreen() {
 const useHomeScreenStyles = function () {
   const scale = useScale();
   return StyleSheet.create({
+    title: {
+      textAlign: 'right',
+      flexGrow: 1,
+    },
     titleContainer: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 8 * scale,
+      gap: 12 * scale,
+      marginBottom: 16 * scale,
+      flexWrap: 'wrap',
     },
     centerContainer: {
       alignItems: 'center',

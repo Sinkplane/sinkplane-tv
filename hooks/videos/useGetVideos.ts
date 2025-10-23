@@ -2,13 +2,14 @@ import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 
 import { API_BASE_URL } from '@/constants/api';
 import { Video } from '@/types/video.interface';
+import { AssDass } from '@/components/videos/Videos';
 
 export interface GetVideosParams {
   id: string;
   limit?: number;
   fetchAfter?: number;
   search?: string;
-  sort?: 'DESC' | 'ASC';
+  sort?: AssDass;
   hasVideo?: boolean;
   hasAudio?: boolean;
   hasPicture?: boolean;
