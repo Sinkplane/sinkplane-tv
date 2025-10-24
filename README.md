@@ -2,20 +2,23 @@
 
 <img width="1920" height="1080" alt="Simulator Screenshot - Apple TV 4K (3rd generation) - 2025-10-24 at 15 48 37" src="https://i.imgur.com/QNuIqCv.jpeg" />
 
-This is a fan-made AppleTV and AndroidTV app for floatplane.com. 
+This is a fan-made AppleTV and AndroidTV app for floatplane.com.
 
 ## Usage Information
+
 - This currently only works on Apple TV (planning to add Google TV soon)
 - This is not yet available in the app store / play store (will take some weeks for apple developer entitlements and app store approvals)
 - Auth is currently janky, you will need to copy your auth cookie from floatplane.com to get it to work and paste it into the text box. You will eventually be able to sign in through the companion app once everything is live in the app stores
 
 ## How can I help
-- Read the [FAQ](https://github.com/Sinkplane/sinkplane-tv/blob/main/TODO.md)
+
+- Read the [FAQ](https://github.com/Sinkplane/sinkplane-tv/blob/main/FAQ.md)
 - Help me pay Apple Developers rediculolus fees - [Buy Me A Coffee](https://buymeacoffee.com/paynoattn)
 - [File a ticket if you encounter a bug](https://github.com/Sinkplane/sinkplane-tv/issues)
-- If you know what youre doing look at the [TODO](https://github.com/Sinkplane/sinkplane-tv/blob/main/TODO.md) and open a pull request (no AI slop please).
+- If you know what youre doing look at the [TODO](https://github.com/Sinkplane/sinkplane-tv/blob/main/TODO.md) and open a pull request - [(please read contribution guidelines)](https://github.com/Sinkplane/sinkplane-tv/blob/main/CONTRIBUTING.md).
 
 ## Developer Information
+
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
 This project uses
