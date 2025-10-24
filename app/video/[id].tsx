@@ -72,6 +72,7 @@ export default function VideoDetailScreen() {
             handleError={e => {
               handleError(e.error);
             }}
+            title={videoPost.title}
           />
         )}
       </View>

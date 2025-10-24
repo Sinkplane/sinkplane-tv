@@ -1,24 +1,32 @@
 export interface VideoDeliveryResource {
-  uri: string;
+  uri?: string;
   url: string;
-  qualityLevel: number;
-  qualityLevelParams: {
+  name?: string;
+  label?: string;
+  qualityLevel?: number;
+  qualityLevelParams?: {
     level: string;
   };
-  mimeType: string;
-  order: number;
-  height: number;
-  width: number;
+  mimeType?: string;
+  order?: number;
+  height?: number;
+  width?: number;
   enabled?: boolean;
+  hidden?: boolean;
+  meta?: {
+    live?: {
+      lowLatencyExtension?: string;
+    };
+  };
 }
 
 export interface VideoDeliveryGroup {
-  id: string;
-  label: string;
+  id?: string;
+  label?: string;
   origins: {
-    id: string;
+    id?: string;
     url: string;
-    label: string;
+    label?: string;
   }[];
   variants: VideoDeliveryResource[];
 }

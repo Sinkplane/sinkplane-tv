@@ -9,21 +9,21 @@ import bg from '@/assets/images/bg.jpg';
 
 export default function ExploreScreen() {
   const styles = useExploreScreenStyles();
-  const { channel } = useSession();
+  const { creator } = useSession();
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={<Image style={styles.headerImage} source={channel ? { uri: channel.cover.path } : bg} resizeMode="cover" />}
+      headerImage={<Image style={styles.headerImage} source={creator ? { uri: creator.cover.path } : bg} resizeMode="cover" />}
     >
-      {channel && (
+      {creator && (
         <ThemedView>
           <ThemedView style={styles.titleContainer}>
-            <ThemedText type="title">{channel.about.replace('# ', '')}</ThemedText>
+            <ThemedText type="title">{creator.about.replace('# ', '')}</ThemedText>
           </ThemedView>
-          <ThemedText>{channel.description}</ThemedText>
+          <ThemedText>{creator.description}</ThemedText>
         </ThemedView>
       )}
-      {!channel && (
+      {!creator && (
         <ThemedView style={styles.titleContainer}>
           <ThemedText type="title">You are not subscribed to any creators</ThemedText>
         </ThemedView>
