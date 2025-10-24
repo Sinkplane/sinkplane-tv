@@ -9,7 +9,6 @@ interface VideoControlsProps {
 }
 
 export const VideoControls: React.FC<VideoControlsProps> = ({ playerManager, playerState }) => {
-  const scale = useScale();
   const styles = useStyles();
   const [showControls, setShowControls] = useState(true);
 

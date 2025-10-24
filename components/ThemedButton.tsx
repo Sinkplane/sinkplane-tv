@@ -14,7 +14,6 @@ interface ThemedButtonProps {
 export function ThemedButton({ onPress, title, style }: ThemedButtonProps) {
   const [isFocused, setIsFocused] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
-  const scale = useScale();
   const colorScheme = useColorScheme();
   const styles = useThemedButtonStyles();
 

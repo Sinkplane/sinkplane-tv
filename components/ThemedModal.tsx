@@ -15,8 +15,6 @@ interface ThemedModalProps<T> {
 }
 
 export function ThemedModal<T>({ visible, onClose, title, data, renderItem, keyExtractor }: ThemedModalProps<T>) {
-  const scale = useScale();
-  const colorScheme = useColorScheme();
   const styles = useThemedModalStyles();
 
   return (
