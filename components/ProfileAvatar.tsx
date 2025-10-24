@@ -22,7 +22,10 @@ export function ProfileAvatar() {
 
   return (
     <View style={styles.container}>
-      <Pressable onPress={() => setMenuVisible(true)} style={({ pressed }) => [styles.avatarButton, pressed && styles.avatarPressed]}>
+      <Pressable
+        onPress={() => setMenuVisible(true)}
+        style={({ pressed, focused }) => [styles.avatarButton, pressed && styles.avatarPressed, focused && styles.avatarFocused]}
+      >
         {!!user && !!user.profileImage ? (
           <Image source={{ uri: user.profileImage.path }} style={styles.avatar} />
         ) : (
@@ -73,6 +76,9 @@ const styles = StyleSheet.create({
   },
   avatarPressed: {
     opacity: 0.7,
+  },
+  avatarFocused: {
+    borderWidth: 6,
   },
   avatar: {
     width: '100%',
