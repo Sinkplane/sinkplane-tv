@@ -55,9 +55,7 @@ const fetchVideos = async (token: string, params: GetVideosParams): Promise<Vide
     throw new Error(`Failed to fetch videos: ${response.status} - ${errorText}`);
   }
 
-  const data = await response.json();
-  console.info(data);
-  return data;
+  return response.json();
 };
 
 export const useGetVideos = (token?: string, params?: GetVideosParams) =>

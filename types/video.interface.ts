@@ -112,6 +112,12 @@ export interface VideoMetadata {
   galleryCount: number;
 }
 
+export interface UserInteraction {
+  liked: boolean;
+  disliked: boolean;
+  favorited: boolean;
+}
+
 export interface Video {
   id: string;
   guid: string;
@@ -131,7 +137,7 @@ export interface Video {
   wasReleasedSilently: boolean;
   metadata: VideoMetadata;
   galleryAttachments: string[];
-  selfUserInteraction: any | null;
+  selfUserInteraction: UserInteraction | null;
   thumbnail: Image;
   isAccessible: boolean;
   videoAttachments: string[];
