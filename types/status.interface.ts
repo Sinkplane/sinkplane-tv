@@ -1,7 +1,7 @@
-import { IUser } from '@/types/user.interface';
+import { User } from '@/types/user.interface';
 
 export interface IStatusResponse {
-  selfUser: IUser;
+  selfUser: User;
   selfCreator: unknown | null;
   serviceMessages: unknown[];
   serviceDenied: unknown | null;

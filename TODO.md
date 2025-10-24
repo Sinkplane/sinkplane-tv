@@ -12,8 +12,8 @@
 [ ] Homepage channel switcher
 [x] About Page
 [ ] Livestream page (past livestreams only)
-[ ] Video page
-[ ] Video playback
+[x] Video page
+[x] Video playback
 
 ## Best practices
 
@@ -25,6 +25,7 @@
 
 ## Bread
 
+[ ] Video playback speed
 [ ] Push notifications?
 [ ] New livestreams appear in livestream page as featured tile
 [ ] Livestream chat rendered in page
