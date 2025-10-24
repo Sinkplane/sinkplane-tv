@@ -1,8 +1,15 @@
-# Expo Router TV demo 👋
+# Sinplane TV 👋
 
-![Apple TV screen shot](https://github.com/douglowder/examples/assets/6577821/a881466f-a7a0-4c66-b1fc-33235c466997)
-![Android TV screen shot](https://github.com/douglowder/examples/assets/6577821/815c8e01-8275-4cc1-bd57-b9c8bce1fb02)
+<img width="1920" height="1080" alt="Simulator Screenshot - Apple TV 4K (3rd generation) - 2025-10-24 at 15 48 37" src="https://i.imgur.com/QNuIqCv.jpeg" />
 
+This is a fan-made AppleTV and AndroidTV app for floatplane.com. 
+
+## Usage Information
+- This currently only works on Apple TV (planning to add Google TV soon)
+- This is not yet available in the app store / play store (will take some weeks for apple developer entitlements and app store approvals)
+- Auth is currently janky, you will need to copy your auth cookie from floatplane.com to get it to work and paste it into the text box. You will eventually be able to sign in through the companion app once everything is live in the app stores
+
+## Developer Information
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
 This project uses
@@ -23,38 +30,18 @@ yarn ios # Build and run for Apple TV
 yarn android # Build for Android TV
 yarn web # Run the project on web from localhost
 ```
-- For mobile development:
 
-```sh
-yarn
-yarn prebuild # Executes Expo prebuild with no TV modifications
-yarn ios # Build and run for iOS
-yarn android # Build for Android mobile
-yarn web # Run the project on web from localhost
-```
-
-> **_NOTE:_**
-> Setting the environment variable `EXPO_TV=1` enables the `@react-native-tvos/config-tv` plugin to modify the project for TV.
-> This can also be done by setting the parameter `isTV` to true in the `app.json`.
-
-## Development
+### Development
 
 You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
 
 This project includes a [demo](./components/EventHandlingDemo.tsx) showing how to use React Native TV APIs to highlight controls as the user navigates the screen with the remote control.
 
-## Deploy
-
-Deploy on all platforms with Expo Application Services (EAS).
-
-- Deploy the website: `npx eas-cli deploy` — [Learn more](https://docs.expo.dev/eas/hosting/get-started/)
-- Deploy on iOS and Android using: `npx eas-cli build` — [Learn more](https://expo.dev/eas)
-
-## TV specific file extensions
+### TV specific file extensions
 
 This project includes an [example Metro configuration](./metro.config.js) that allows Metro to resolve application source files with TV-specific code, indicated by specific file extensions (`*.ios.tv.tsx`, `*.android.tv.tsx`, `*.tv.tsx`).
 
-## Get a fresh project
+### Get a fresh project
 
 When you're ready, run:
 
@@ -63,17 +50,3 @@ npm run reset-project
 ```
 
 This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/learn): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
