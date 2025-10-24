@@ -66,10 +66,10 @@
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
       "eslint --fix",
-      "prettier --write"
+      "npx prettier --write"
     ],
     "*.{json,css,md}": [
-      "prettier --write"
+    "npx prettier --write"
     ]
   },
   "expo": {
