@@ -28,12 +28,13 @@ export enum VideoView {
   LIST,
 }
 
-export const Videos = ({ token, creatorId, view, onFetchMoreRef, sort }: VideosProps) => {
+export const Videos = ({ token, creatorId, channel, view, onFetchMoreRef, sort }: VideosProps) => {
   const styles = useVideosStyles();
   const isLoadingMoreRef = useRef(false);
 
   const { data, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage } = useGetVideosInfinite(token, {
-    id: creatorId ?? '',
+    id: creatorId,
+    channel: channel.id,
     limit: 20,
     sort,
   });

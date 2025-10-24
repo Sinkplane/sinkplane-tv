@@ -14,6 +14,7 @@ export interface GetVideosParams {
   hasAudio?: boolean;
   hasPicture?: boolean;
   hasText?: boolean;
+  channel?: string;
 }
 
 const fetchVideos = async (token: string, params: GetVideosParams): Promise<Video[]> => {
@@ -27,6 +28,7 @@ const fetchVideos = async (token: string, params: GetVideosParams): Promise<Vide
     hasAudio = false,
     hasPicture = false,
     hasText = false,
+    channel,
   } = params;
 
   const queryParams = new URLSearchParams({
@@ -40,6 +42,10 @@ const fetchVideos = async (token: string, params: GetVideosParams): Promise<Vide
     hasPicture: hasPicture.toString(),
     hasText: hasText.toString(),
   });
+
+  if (channel) {
+    queryParams.append('channel', channel);
+  }
 
   const response = await fetch(`${API_BASE_URL}/api/v3/content/creator?${queryParams.toString()}`, {
     method: 'GET',

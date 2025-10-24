@@ -9,7 +9,9 @@ import { useSession } from '@/hooks/authentication/auth.context';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedButton } from '@/components/ThemedButton';
+import { ThemedModal } from '@/components/ThemedModal';
 import { useState, useCallback, useRef } from 'react';
+import { Channel } from '@/types/creator-list.interface';
 
 export default function HomeScreen() {
   const styles = useHomeScreenStyles();
@@ -17,6 +19,7 @@ export default function HomeScreen() {
   const [channel, setChannel] = useState(creator?.channels[0]);
   const [view, setView] = useState(VideoView.CARD);
   const [videOrder, setVideoOrder] = useState(AssDass.DESC);
+  const [isChannelModalVisible, setIsChannelModalVisible] = useState(false);
   const fetchMoreRef = useRef<(() => void) | null>(null);
 
   const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -32,7 +35,12 @@ export default function HomeScreen() {
   }, []);
 
   const openChannelDrawer = () => {
-    console.info('asdf');
+    setIsChannelModalVisible(true);
+  };
+
+  const handleChannelSelect = (selectedChannel: Channel) => {
+    setChannel(selectedChannel);
+    setIsChannelModalVisible(false);
   };
   const switchNewestOldest = () => {
     setVideoOrder(videOrder === AssDass.ASC ? AssDass.DESC : AssDass.ASC);
@@ -59,6 +67,21 @@ export default function HomeScreen() {
               </ThemedText>
             </ThemedView>
             <Videos token={token} creatorId={creator.id} channel={channel} view={view} sort={videOrder} onFetchMoreRef={fetchMoreRef} />
+
+            <ThemedModal
+              visible={isChannelModalVisible}
+              onClose={() => setIsChannelModalVisible(false)}
+              title="Select Channel"
+              data={creator.channels}
+              keyExtractor={ch => ch.id}
+              renderItem={ch => (
+                <ThemedButton
+                  onPress={() => handleChannelSelect(ch)}
+                  title={ch.title}
+                  style={[styles.channelItem, ch.id === channel.id && styles.selectedChannel]}
+                />
+              )}
+            />
           </>
         ) : (
           <ThemedView style={styles.centerContainer}>
@@ -95,6 +118,14 @@ const useHomeScreenStyles = function () {
       bottom: 0,
       left: 0,
       position: 'absolute',
+    },
+    channelItem: {
+      marginBottom: 12 * scale,
+      width: '100%',
+    },
+    selectedChannel: {
+      borderWidth: 2 * scale,
+      borderColor: '#007AFF',
     },
   });
 };

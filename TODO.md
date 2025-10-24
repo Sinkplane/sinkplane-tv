@@ -2,33 +2,35 @@
 
 ## MVP
 
-[x] Basic Auth with copied cookie from web
-[x] Login routes with guards
-[ ] Auth from companion app
-[ ] Homepage
-[x] Homepage List View
-[x] Homepage Card View
-[x] Homepage sorting
-[ ] Homepage channel switcher
-[x] About Page
-[ ] Livestream page (past livestreams only)
-[x] Video page
-[x] Video playback
-
-## Best practices
-
-[ ] Unit tests
-[x] Linting
-[x] Prettier
-[ ] E2E Tests
-[ ] E2E tests running in pipeline
+- [x] Basic Auth with copied cookie from web
+- [x] Login routes with guards
+- [ ] Auth from companion app
+- [x] Homepage
+- [x] Homepage List View
+- [x] Homepage Card View
+- [x] Homepage sorting
+- [x] Homepage channel switcher
+- [x] About Page
+- [x] Livestream page
+- [x] Video page
+- [x] Video playback
 
 ## Bread
 
-[ ] Video playback speed
-[ ] Push notifications?
-[ ] New livestreams appear in livestream page as featured tile
-[ ] Livestream chat rendered in page
-[ ] Video quoue and add to video queue buttons
-[ ] Show list of videos in companion app
-[ ] Manipulate queue in companion app
+- [ ] Video playback speed
+- [ ] Push notifications? I think thats what firebase is for
+- [ ] Livestream chat rendered in page
+- [ ] nutflix (yeah I said it) type video detail page
+- [ ] Video comments viewed on nutflix page?
+- [ ] Video quoue and add to video queue buttons
+- [ ] Show list of videos in companion app to be added to queue
+- [ ] Manipulate queue in companion app
+
+## Dinosaurs eating bread
+
+- [ ] Unit tests
+- [x] Linting
+- [x] Prettier
+- [ ] E2E Tests
+- [ ] E2E tests / unit tests running in pipeline
+- [ ] Expo pipeline to publish to app stores
