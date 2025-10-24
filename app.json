@@ -21,7 +21,8 @@
       "expo-font",
       "expo-build-properties",
       "expo-web-browser",
-      "expo-secure-store"
+      "expo-secure-store",
+      "react-native-video"
     ],
     "android": {
       "edgeToEdgeEnabled": true,
