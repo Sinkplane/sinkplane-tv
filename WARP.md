@@ -4,7 +4,7 @@ This file provides guidance to WARP (warp.dev) when working with code in this re
 
 ## Project Overview
 
-This is an Expo-based React Native application that supports both mobile and TV platforms using the React Native TV fork (react-native-tvos). The app uses Expo Router for file-based navigation and includes TV-specific optimizations for Apple TV and Android TV.
+This is an Expo-based React Native application that supports TV platforms using the React Native TV fork (react-native-tvos). The app uses Expo Router for file-based navigation and includes TV-specific optimizations for Apple TV and Android TV.
 
 ## Common Development Commands
 

@@ -3,8 +3,17 @@ import { Platform, View, StyleSheet } from 'react-native';
 
 import WebTabLayout from './TabLayout.web';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
+import { useGetVideoDelivery } from '@/hooks/videos/useGetVideoDelivery';
+import { useSession } from '@/hooks/authentication/auth.context';
+
+const LIVESTREAM_ID = '5c13f3c006f1be15e08e05c0';
 
 export default function TabLayout() {
+  const { token } = useSession();
+  const { data: videoDelivery } = useGetVideoDelivery(token ?? undefined, LIVESTREAM_ID, true);
+
+  const isLive = !!videoDelivery;
+
   if (Platform.OS === 'android' && Platform.isTV) {
     return <WebTabLayout />;
   }
@@ -19,10 +28,12 @@ export default function TabLayout() {
           <Label>About</Label>
           <Icon sf={{ default: 'person', selected: 'person.fill' }} />
         </NativeTabs.Trigger>
-        <NativeTabs.Trigger name="live">
-          <Label>Live</Label>
-          <Icon sf={{ default: 'tv', selected: 'tv.fill' }} />
-        </NativeTabs.Trigger>
+        {isLive && (
+          <NativeTabs.Trigger name="live">
+            <Label>{isLive ? 'Live Now' : 'Not Live'}</Label>
+            <Icon sf={{ default: 'tv', selected: 'tv.fill' }} selectedColor="#FF0000" />
+          </NativeTabs.Trigger>
+        )}
       </NativeTabs>
       <ProfileAvatar />
     </View>

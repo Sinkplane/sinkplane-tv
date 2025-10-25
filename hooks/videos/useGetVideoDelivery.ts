@@ -34,4 +34,6 @@ export const useGetVideoDelivery = (token?: string, id?: string, live: boolean =
     queryKey: ['video-delivery', token, id, live],
     queryFn: () => fetchVideoDelivery(token!, id!, live),
     enabled: !!token && !!id,
+    staleTime: 30000, // 30 seconds
+    gcTime: 30000, // 30 seconds (formerly cacheTime)
   });

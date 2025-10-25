@@ -44,10 +44,8 @@
       "bundleIdentifier": "com.cpawl89.sinkplane",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSBonjourServices": [
-          "sinkplane-tv._tcp"
-        ],
-        "NSLocalNetworkUsageDescription": "Allow sinkplane companion app to discover devices on the local network."
+        "NSBonjourServices": ["sinkplane-tv._tcp"],
+        "NSLocalNetworkUsageDescription": "Allow sinkplane companion app to discover tv apps on the local network."
       }
     },
     "web": {

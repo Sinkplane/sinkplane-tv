@@ -1,5 +1,6 @@
-import { StyleSheet, Image, ActivityIndicator, Alert, View } from 'react-native';
-import { useEffect, useState } from 'react';
+import { StyleSheet, Image, ActivityIndicator, Alert, View, Pressable } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
@@ -12,6 +13,8 @@ import { VideoDelivery } from '@/types/video-delivery.interface';
 
 import bg from '@/assets/images/bg.jpg';
 
+const LIVESTREAM_ID = '5c13f3c006f1be15e08e05c0';
+
 // eslint-disable-next-line complexity
 export default function FocusDemoScreen() {
   const styles = useFocusDemoScreenStyles();
@@ -21,15 +24,45 @@ export default function FocusDemoScreen() {
     headers: { Cookie: `sails.sid=${token}` },
   });
   const [videoLoading, setIsVideoLoading] = useState(true);
+  const [_, setIsFocused] = useState(false);
+  const [isPaused, setIsPaused] = useState(true); // Start paused
 
-  const isLive = creator?.liveStream && !creator.liveStream.offline;
-  const livestreamId = creator?.liveStream?.id;
-
-  // Fetch livestream delivery URL
-  const { data: videoDelivery, error: deliveryError } = useGetVideoDelivery(
+  // Check if livestream is actually live by fetching video delivery
+  const {
+    data: videoDelivery,
+    error: deliveryError,
+    refetch: refetchVideoDelivery,
+  } = useGetVideoDelivery(
     token ?? undefined,
-    livestreamId ?? undefined,
+    LIVESTREAM_ID,
     true, // live parameter
+  );
+
+  // Stream is live if we successfully get video delivery data
+  const isLive = !!videoDelivery && !deliveryError;
+
+  // Poll for livestream status every 60 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refetchVideoDelivery();
+    }, 60000); // 60 seconds
+
+    return () => clearInterval(interval);
+  }, [refetchVideoDelivery]);
+
+  // Pause playback when navigating away from this tab
+  useFocusEffect(
+    React.useCallback(() => {
+      // Tab is focused - resume playback
+      setIsFocused(true);
+      setIsPaused(false);
+
+      return () => {
+        // Tab is losing focus - pause playback
+        setIsFocused(false);
+        setIsPaused(true);
+      };
+    }, []),
   );
 
   const handleStreamUrl = (data: VideoDelivery) => {
@@ -62,8 +95,12 @@ export default function FocusDemoScreen() {
     setIsVideoLoading(false);
   };
 
+  const handleRefresh = () => {
+    refetchVideoDelivery();
+  };
+
   // If there's a live stream, show the player
-  if (isLive && livestreamId) {
+  if (isLive) {
     return (
       <View style={styles.videoContainer}>
         {videoLoading && <ActivityIndicator />}
@@ -75,6 +112,7 @@ export default function FocusDemoScreen() {
             handleError={e => {
               handleError(e.error);
             }}
+            paused={isPaused}
           />
         )}
       </View>
@@ -98,6 +136,9 @@ export default function FocusDemoScreen() {
               <ThemedText>{creator.liveStream.offline.title}</ThemedText>
             </ThemedView>
           )}
+          <Pressable style={styles.refreshButton} onPress={handleRefresh}>
+            <ThemedText style={styles.refreshButtonText}>🔄 Refresh Stream Status</ThemedText>
+          </Pressable>
         </ThemedView>
       )}
       {!creator && (
@@ -134,6 +175,17 @@ const useFocusDemoScreenStyles = function () {
       padding: 16 * scale,
       backgroundColor: 'rgba(255, 0, 0, 0.1)',
       borderRadius: 8 * scale,
+    },
+    refreshButton: {
+      marginTop: 16 * scale,
+      padding: 12 * scale,
+      backgroundColor: 'rgba(0, 122, 255, 0.8)',
+      borderRadius: 8 * scale,
+      alignItems: 'center',
+    },
+    refreshButtonText: {
+      fontSize: 16 * scale,
+      fontWeight: 'bold',
     },
   });
 };

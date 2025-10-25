@@ -8,13 +8,15 @@ interface VideoPlayerProps {
   handleBuffer?: (e: OnBufferData) => void;
   handleError: (e: OnVideoErrorData) => void;
   thumbnailUrl?: string;
+  paused?: boolean;
 }
 
-export const VideoPlayer: FC<VideoPlayerProps> = ({ source, handleLoad, handleBuffer, handleError, thumbnailUrl }: VideoPlayerProps) => (
+export const VideoPlayer: FC<VideoPlayerProps> = ({ source, handleLoad, handleBuffer, handleError, thumbnailUrl, paused }: VideoPlayerProps) => (
   <VideoComponent
     source={source}
     style={styles.video}
     resizeMode="cover"
+    paused={paused}
     // rate={playerState.playbackRate}
     // muxOptions={muxData || undefined} // Pass mux options if available
     onLoad={handleLoad}

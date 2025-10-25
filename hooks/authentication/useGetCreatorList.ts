@@ -21,7 +21,9 @@ const fetchCreatorList = async (token: string, creatorIds: string[]): Promise<Cr
     throw new Error(`Failed to fetch creator list: ${response.status} - ${errorText}`);
   }
 
-  return response.json();
+  const data = await response.json();
+  console.info(data);
+  return data;
 };
 
 export const useGetCreatorList = (token?: string, creatorIds?: string[]) =>
@@ -29,4 +31,6 @@ export const useGetCreatorList = (token?: string, creatorIds?: string[]) =>
     queryKey: ['creatorList', token, creatorIds],
     queryFn: () => fetchCreatorList(token!, creatorIds!),
     enabled: !!token && !!creatorIds && creatorIds.length > 0,
+    staleTime: 30000, // 30 seconds
+    gcTime: 30000, // 30 seconds (formerly cacheTime)
   });

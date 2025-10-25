@@ -4,7 +4,7 @@ This file provides guidance to Claude Code when working with code in this reposi
 
 ## Project Overview
 
-This is an Expo-based React Native application that supports both mobile and TV platforms using the React Native TV fork (react-native-tvos). The app uses Expo Router for file-based navigation and includes TV-specific optimizations for Apple TV and Android TV.
+This is an Expo-based React Native application that supports TV platforms using the React Native TV fork (react-native-tvos). The app uses Expo Router for file-based navigation and includes TV-specific optimizations for Apple TV and Android TV.
 
 ## Common Development Commands
 
@@ -71,6 +71,7 @@ eas build --profile production    # Mobile production
   - `+not-found.tsx`: 404 error page
   - `+html.tsx`: Custom HTML wrapper for web
 - **components/**: Reusable UI components
+
   - Theme-aware components (`ThemedText`, `ThemedView`)
   - TV-specific demo component (`EventHandlingDemo`)
   - Navigation components
