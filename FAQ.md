@@ -31,7 +31,7 @@ Lol I wish
 
 ## 4. Can I use cursor/warp/claude code to contribute.
 
-Sure, Im all for using AI to generate ~~tokens~~ ~~carbon emissions~~ code but your code will be reviewed along the same criteria as if you were a "real boy" software developer knowing what you are doing. Questions like "how do I get my code pushed into the main repo" or "how do I create a pull request" will be closed without comment.
+Sure, Im all for using AI to generate ~~carbon emissions~~ code but your code will be reviewed along the same criteria as if you were a "real boy" software developer knowing what you are doing. Questions like "how do I get my code pushed into the main repo" or "how do I create a pull request" will be closed without comment.
 
 ## 5. Will you eject to react native?
 

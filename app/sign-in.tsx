@@ -2,7 +2,7 @@ import { Alert, Pressable, TextInput, View, Text, StyleSheet, Image, ImageBackgr
 
 import { useSession } from '@/hooks/authentication/auth.context';
 import { useState } from 'react';
-import { useGetProfile } from '@/hooks/authentication/use-get-profile';
+import { useGetProfile } from '@/hooks/authentication/useGetProfile';
 import { useGetSubscriptions } from '@/hooks/authentication/useGetSubscription';
 import { Colors } from '@/constants/colors';
 

@@ -7,6 +7,7 @@ import * as Crypto from 'expo-crypto';
 
 import { TVMessage } from '@/types/message.interface';
 import { TVDevice } from '@/types/tv-device.interface';
+import { useSession } from '@/hooks/authentication/auth.context';
 
 const clientId = Crypto.randomUUID();
 const deviceInfo: TVDevice = {
@@ -21,6 +22,7 @@ const deviceInfo: TVDevice = {
 };
 
 export function useTVServer() {
+  const { token } = useSession();
   const [server, setServer] = useState<TcpSocket.Server | null>(null);
   const [zeroconf] = useState(() => new Zeroconf());
   const [clients, setClients] = useState<Map<string, TcpSocket.Socket>>(new Map());
@@ -30,7 +32,7 @@ export function useTVServer() {
     switch (message.type) {
       case 'command': {
         const { command, params } = message.payload;
-        console.info(`Executing command: ${command}`, params);
+        console.info(`[TV Server] Executing command: ${command}`, params);
 
         // Send response
         socket.write(
@@ -49,10 +51,11 @@ export function useTVServer() {
         break;
       }
       case 'data':
-        console.info('Received data:', message.payload);
+        console.info('[TV Server] Received data:', message.payload);
         break;
 
       case 'heartbeat':
+        console.info('[TV Server] Received heartbeat, sending response');
         socket.write(
           JSON.stringify({
             id: Crypto.randomUUID(),
@@ -64,6 +67,7 @@ export function useTVServer() {
         );
         break;
       default:
+        console.info('[TV Server] Received unknown message type:', message.type);
         break;
     }
   }, []);
@@ -84,15 +88,19 @@ export function useTVServer() {
   const startTVServer = useCallback(() => {
     const tcpServer = TcpSocket.createServer(socket => {
       const socketId = Crypto.randomUUID();
-      console.info(`Client connected: ${socketId}`);
+      console.info(`[TV Server] Client connected: ${socketId}`);
 
       setClients(prev => new Map(prev).set(socketId, socket));
 
+      console.info('[TV Server] Sending discover message...');
       socket.write(
         JSON.stringify({
           id: Crypto.randomUUID(),
           type: 'discover',
-          payload: deviceInfo,
+          payload: {
+            ...deviceInfo,
+            isLoggedIn: !!token,
+          },
           timestamp: new Date(),
           from: deviceInfo.id,
         }),
@@ -100,19 +108,24 @@ export function useTVServer() {
 
       socket.on('data', data => {
         try {
+          console.info('[TV Server] Data received from client');
           const message: TVMessage = JSON.parse(data.toString());
-          console.info('Received message:', message);
+          console.info('[TV Server] Parsed message:', message);
           setReceivedMessages(prev => [...prev, message]);
           handleMessage(message, socket);
         } catch (error) {
-          console.error('Error parsing message:', error);
+          console.error('[TV Server] Error parsing message:', error);
         }
       });
 
-      socket.on('error', error => console.error('Socket error:', error));
+      socket.on('error', error => console.error('[TV Server] Socket error:', error));
+
+      socket.on('end', () => {
+        console.info(`[TV Server] Client ended connection: ${socketId}`);
+      });
 
       socket.on('close', () => {
-        console.info(`Client disconnected: ${socketId}`);
+        console.info(`[TV Server] Client disconnected: ${socketId}`);
         setClients(prev => {
           const newClients = new Map(prev);
           newClients.delete(socketId);
@@ -132,19 +145,25 @@ export function useTVServer() {
 
   const stopTVServer = useCallback(() => {
     try {
+      console.info('[TV Server] Stopping TV server...');
       zeroconf.unpublishService(deviceInfo.name);
       zeroconf.stop();
       server?.close();
       clients.forEach(client => client.destroy());
+      console.info('[TV Server] TV server stopped');
     } catch (error) {
-      console.error('Error stopping TV server:', error);
+      console.error('[TV Server] Error stopping TV server:', error);
     }
   }, [clients, server, zeroconf]);
 
   useEffect(() => {
+    console.info('[TV Server] useTVServer useEffect mounting');
     startTVServer();
-    return () => stopTVServer();
-  }, [startTVServer, stopTVServer]);
+    return () => {
+      console.info('[TV Server] useTVServer useEffect unmounting');
+      stopTVServer();
+    };
+  }, []);
 
   return { receivedMessages };
 }

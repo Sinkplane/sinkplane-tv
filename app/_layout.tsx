@@ -31,9 +31,6 @@ const queryClient = new QueryClient({
 export default function RootLayout() {
   const colorScheme = useColorScheme();
 
-  // Initialize the TV server
-  useTVServer();
-
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
@@ -50,6 +47,9 @@ export default function RootLayout() {
 function RootNavigator() {
   const { token } = useSession();
   const signedIn = !!token;
+  
+  // Initialize the TV server (must be inside SessionProvider)
+  useTVServer();
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Protected guard={signedIn}>
