@@ -18,7 +18,7 @@ export default function TabLayout() {
     return <WebTabLayout />;
   }
   return (
-    <View style={styles.container}>
+    <>
       <NativeTabs>
         <NativeTabs.Trigger name="index">
           <Label>Home</Label>
@@ -36,7 +36,7 @@ export default function TabLayout() {
         )}
       </NativeTabs>
       <ProfileAvatar />
-    </View>
+    </>
   );
 }
 

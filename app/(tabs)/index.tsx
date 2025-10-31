@@ -10,7 +10,7 @@ import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedButton } from '@/components/ThemedButton';
 import { ThemedModal } from '@/components/ThemedModal';
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { Channel } from '@/types/creator-list.interface';
 
 export default function HomeScreen() {
@@ -21,6 +21,12 @@ export default function HomeScreen() {
   const [videOrder, setVideoOrder] = useState(AssDass.DESC);
   const [isChannelModalVisible, setIsChannelModalVisible] = useState(false);
   const fetchMoreRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    if (creator) {
+      setChannel(creator.channels[0]);
+    }
+  }, [creator]);
 
   const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;

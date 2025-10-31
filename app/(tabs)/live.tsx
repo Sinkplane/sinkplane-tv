@@ -1,6 +1,7 @@
-import { StyleSheet, Image, ActivityIndicator, Alert, View, Pressable } from 'react-native';
-import React, { useEffect, useState } from 'react';
+import { StyleSheet, Image, ActivityIndicator, View, Pressable } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
+import { ToastAndroid, Platform } from 'react-native';
 
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
@@ -21,16 +22,18 @@ export default function FocusDemoScreen() {
   const { creator, token } = useSession();
   const [streamUrl, setStreamUrl] = useState<{ uri: string; headers: Record<string, string> } | null>(null);
   const [videoLoading, setIsVideoLoading] = useState(true);
-  const [_, setIsFocused] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const [isPaused, setIsPaused] = useState(true); // Start paused
+  const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Check if livestream is actually live by fetching video delivery
+  // Only fetch when the tab is focused
   const {
     data: videoDelivery,
     error: deliveryError,
     refetch: refetchVideoDelivery,
   } = useGetVideoDelivery(
-    token ?? undefined,
+    isFocused ? token ?? undefined : undefined,
     LIVESTREAM_ID,
     true, // live parameter
   );
@@ -38,14 +41,16 @@ export default function FocusDemoScreen() {
   // Stream is live if we successfully get video delivery data
   const isLive = !!videoDelivery && !deliveryError;
 
-  // Poll for livestream status every 60 seconds
+  // Poll for livestream status every 60 seconds, but only when focused
   useEffect(() => {
+    if (!isFocused) return;
+
     const interval = setInterval(() => {
       refetchVideoDelivery();
     }, 60000); // 60 seconds
 
     return () => clearInterval(interval);
-  }, [refetchVideoDelivery]);
+  }, [refetchVideoDelivery, isFocused]);
 
   // Pause playback when navigating away from this tab
   useFocusEffect(
@@ -85,8 +90,34 @@ export default function FocusDemoScreen() {
 
   const handleError = (err: Error | unknown) => {
     console.error(err);
-    Alert.alert('Error loading livestream. Please try again');
+    
+    // Clear any existing toast timeout
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+
+    // Show toast message
+    if (Platform.OS === 'android') {
+      ToastAndroid.show('Error loading livestream. Please try again', ToastAndroid.SHORT);
+    } else {
+      // For iOS/tvOS, we'll just log it since native toast isn't available
+      console.warn('Error loading livestream. Please try again');
+    }
+
+    // Auto-dismiss after 3 seconds (for platforms that need manual dismissal)
+    toastTimeoutRef.current = setTimeout(() => {
+      toastTimeoutRef.current = null;
+    }, 3000);
   };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleLoad = () => {
     setIsVideoLoading(false);

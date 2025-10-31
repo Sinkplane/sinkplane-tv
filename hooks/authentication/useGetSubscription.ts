@@ -3,15 +3,13 @@ import { useQuery } from '@tanstack/react-query';
 import { Subscription } from '@/types/subscriptions.interface';
 
 import { API_BASE_URL } from '@/constants/api';
+import { getHeaders } from './useHeaders';
 
-const fetchSubscriptions = async (token: string): Promise<Subscription[]> => {
+export const fetchSubscriptions = async (token: string, tokenExpiration?: string): Promise<Subscription[]> => {
   const response = await fetch(`${API_BASE_URL}/api/v3/user/subscriptions?active=true`, {
     method: 'GET',
     credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      Cookie: `sails.sid=${token}`,
-    },
+    headers: getHeaders({ token, tokenExpiration }),
   });
 
   if (!response.ok) {
@@ -22,9 +20,9 @@ const fetchSubscriptions = async (token: string): Promise<Subscription[]> => {
   return response.json();
 };
 
-export const useGetSubscriptions = (token?: string) =>
+export const useGetSubscriptions = (token?: string, tokenExpiration?: string) =>
   useQuery({
-    queryKey: ['subscriptions', token],
-    queryFn: () => fetchSubscriptions(token!),
+    queryKey: ['subscriptions', token, tokenExpiration],
+    queryFn: () => fetchSubscriptions(token!, tokenExpiration),
     enabled: !!token,
   });
