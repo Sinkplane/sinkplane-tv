@@ -2,23 +2,17 @@ import { Alert, Pressable, TextInput, View, Text, StyleSheet, Image, ImageBackgr
 
 import { useSession } from '@/hooks/authentication/auth.context';
 import { useState } from 'react';
-import { useGetProfile } from '@/hooks/authentication/useGetProfile';
-import { useGetSubscriptions } from '@/hooks/authentication/useGetSubscription';
 import { Colors } from '@/constants/colors';
+import { useGetProfile } from '@/hooks/authentication/useGetProfile';
 
 import qrCode from '@/assets/images/qrcode.png';
 import bg from '@/assets/images/bg.jpg';
-import { useGetCreatorList } from '@/hooks/authentication/useGetCreatorList';
 
 export default function SignIn() {
   const { signIn } = useSession();
   const [token, setToken] = useState(process.env.EXPO_PUBLIC_DEFAULT_AUTH_TOKEN || '');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [creatorIds, setCreatorIds] = useState([] as string[]);
-
-  const { refetch: refetchProfile } = useGetProfile(token);
-  const { refetch: refetchSubscriptions } = useGetSubscriptions(token);
-  const { refetch: refetchChannels } = useGetCreatorList(token, creatorIds);
+  const { refetch: refetchProfile } = useGetProfile(token ?? undefined);
 
   const reset = () => {
     setToken('');
@@ -29,29 +23,23 @@ export default function SignIn() {
 
     setIsLoggingIn(true);
     try {
-      // Fetch profile and subscriptions in parallel
-      const [profileResult, subscriptionsResult] = await Promise.all([refetchProfile(), refetchSubscriptions()]);
+      // Fetch profile first to validate token
+      const profileResult = await refetchProfile();
+
+      console.info('Profile Result:', profileResult.data);
 
       if (profileResult.error) {
-        throw new Error('Failed to fetch profile');
+        throw new Error('Invalid token or failed to fetch profile');
       }
 
-      if (subscriptionsResult.error) {
-        throw new Error('Failed to fetch subscriptions');
+      if (!profileResult.data?.selfUser) {
+        throw new Error('No user data returned from profile');
       }
 
-      const fetchedSubscriptions = subscriptionsResult.data ?? [];
-      const ids = fetchedSubscriptions.map(sub => sub.creator);
-      setCreatorIds(ids);
-
-      const fetchedChannel = await refetchChannels();
-
-      // Sign in with the fetched data
+      // Sign in with token and user data - auth context will handle the rest
       signIn({
         token,
-        user: profileResult.data!.selfUser,
-        subscriptions: fetchedSubscriptions,
-        channels: fetchedChannel.data ?? [],
+        user: profileResult.data.selfUser,
       });
     } catch (error) {
       Alert.alert('Login Failed', error instanceof Error ? error.message : 'Please check your token and try again.');

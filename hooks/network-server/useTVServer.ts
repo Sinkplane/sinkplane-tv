@@ -4,8 +4,9 @@ import Zeroconf from 'react-native-zeroconf';
 import TcpSocket from 'react-native-tcp-socket';
 import * as Device from 'expo-device';
 import * as Crypto from 'expo-crypto';
+import * as Network from 'expo-network';
 
-import { TVMessage } from '@/types/message.interface';
+import { TVCommand, TVDiscoverPayload, TVHeartbeatPayload, TVMessage } from '@/types/message.interface';
 import { TVDevice } from '@/types/tv-device.interface';
 import { useSession } from '@/hooks/authentication/auth.context';
 
@@ -18,59 +19,51 @@ const deviceInfo: TVDevice = {
   port: 9999,
   addresses: [],
   lastSeen: new Date(),
-  txt: {},
 };
 
 export function useTVServer() {
-  const { token } = useSession();
+  const { token, user, signIn } = useSession();
   const [server, setServer] = useState<TcpSocket.Server | null>(null);
   const [zeroconf] = useState(() => new Zeroconf());
   const [clients, setClients] = useState<Map<string, TcpSocket.Socket>>(new Map());
   const [receivedMessages, setReceivedMessages] = useState<TVMessage[]>([]);
 
-  const handleMessage = useCallback((message: TVMessage, socket: TcpSocket.Socket) => {
-    switch (message.type) {
-      case 'command': {
-        const { command, params } = message.payload;
-        console.info(`[TV Server] Executing command: ${command}`, params);
-
-        // Send response
-        socket.write(
-          JSON.stringify({
+  const handleMessage = useCallback(
+    async (message: TVMessage, socket: TcpSocket.Socket) => {
+      switch (message.type) {
+        case TVCommand.LOGIN: {
+          console.info('[TV Server] Received LOGIN command');
+          try {
+            // Sign in with the token from the login message
+            signIn({
+              token: message.payload.token,
+              user: message.payload.user,
+            });
+            console.info('[TV Server] Login successful');
+          } catch (error) {
+            console.error('[TV Server] Login failed:', error);
+          }
+          break;
+        }
+        case TVCommand.HEARTBEAT: {
+          console.info('[TV Server] Received heartbeat, sending response');
+          const heartbeatResponse: TVHeartbeatPayload = {
             id: Crypto.randomUUID(),
-            type: 'response',
-            payload: {
-              originalMessageId: message.id,
-              status: 'success',
-              command,
-            },
-            timestamp: new Date(),
-            from: deviceInfo.id,
-          }),
-        );
-        break;
-      }
-      case 'data':
-        console.info('[TV Server] Received data:', message.payload);
-        break;
-
-      case 'heartbeat':
-        console.info('[TV Server] Received heartbeat, sending response');
-        socket.write(
-          JSON.stringify({
-            id: Crypto.randomUUID(),
-            type: 'heartbeat',
+            type: TVCommand.HEARTBEAT,
             payload: { status: 'alive' },
             timestamp: new Date(),
             from: deviceInfo.id,
-          }),
-        );
-        break;
-      default:
-        console.info('[TV Server] Received unknown message type:', message.type);
-        break;
-    }
-  }, []);
+          };
+          socket.write(JSON.stringify(heartbeatResponse));
+          break;
+        }
+        default:
+          console.info('[TV Server] Received unknown message type:', message.type);
+          break;
+      }
+    },
+    [signIn],
+  );
 
   const publishTVService = useCallback(() => {
     try {
@@ -86,25 +79,28 @@ export function useTVServer() {
   }, [zeroconf]);
 
   const startTVServer = useCallback(() => {
-    const tcpServer = TcpSocket.createServer(socket => {
+    const tcpServer = TcpSocket.createServer(async socket => {
       const socketId = Crypto.randomUUID();
       console.info(`[TV Server] Client connected: ${socketId}`);
 
       setClients(prev => new Map(prev).set(socketId, socket));
 
+      const address = await Network.getIpAddressAsync();
+      const discoverMessage: TVDiscoverPayload = {
+        id: Crypto.randomUUID(),
+        type: TVCommand.DISCOVER,
+        payload: {
+          ...deviceInfo,
+          addresses: [address],
+          isLoggedIn: !!token,
+          userId: user?.id,
+        },
+        timestamp: new Date(),
+        from: deviceInfo.id,
+      };
+
       console.info('[TV Server] Sending discover message...');
-      socket.write(
-        JSON.stringify({
-          id: Crypto.randomUUID(),
-          type: 'discover',
-          payload: {
-            ...deviceInfo,
-            isLoggedIn: !!token,
-          },
-          timestamp: new Date(),
-          from: deviceInfo.id,
-        }),
-      );
+      socket.write(JSON.stringify(discoverMessage));
 
       socket.on('data', data => {
         try {
@@ -119,10 +115,6 @@ export function useTVServer() {
       });
 
       socket.on('error', error => console.error('[TV Server] Socket error:', error));
-
-      socket.on('end', () => {
-        console.info(`[TV Server] Client ended connection: ${socketId}`);
-      });
 
       socket.on('close', () => {
         console.info(`[TV Server] Client disconnected: ${socketId}`);

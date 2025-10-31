@@ -6,5 +6,7 @@ export interface TVDevice {
   port: number;
   addresses: string[];
   lastSeen: Date;
-  txt?: Record<string, unknown>;
+  token?: string;
+  userId?: string;
+  isLoggedIn?: boolean;
 }

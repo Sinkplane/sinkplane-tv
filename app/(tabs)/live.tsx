@@ -19,10 +19,7 @@ const LIVESTREAM_ID = '5c13f3c006f1be15e08e05c0';
 export default function FocusDemoScreen() {
   const styles = useFocusDemoScreenStyles();
   const { creator, token } = useSession();
-  const [streamUrl, setStreamUrl] = useState<{ uri: string; headers: Record<string, string> }>({
-    uri: '',
-    headers: { Cookie: `sails.sid=${token}` },
-  });
+  const [streamUrl, setStreamUrl] = useState<{ uri: string; headers: Record<string, string> } | null>(null);
   const [videoLoading, setIsVideoLoading] = useState(true);
   const [_, setIsFocused] = useState(false);
   const [isPaused, setIsPaused] = useState(true); // Start paused
@@ -66,7 +63,7 @@ export default function FocusDemoScreen() {
   );
 
   const handleStreamUrl = (data: VideoDelivery) => {
-    if (!data) return;
+    if (!data || !token) return;
     const group = (data.groups ?? [undefined])[0];
     const origin = (group?.origins ?? [undefined])[0];
     const variants = (group?.variants ?? []).filter(v => v.enabled === undefined || v.enabled !== false);
@@ -78,7 +75,7 @@ export default function FocusDemoScreen() {
     const originUrl = origin.url.endsWith('/') ? origin.url.slice(0, -1) : origin.url;
     const variantUrl = variant.url.startsWith('/') ? variant.url : '/' + variant.url;
     const url = `${originUrl}${variantUrl}`;
-    setStreamUrl({ ...streamUrl, uri: url });
+    setStreamUrl({ uri: url, headers: { Cookie: `sails.sid=${token}` } });
   };
 
   useEffect(() => {
@@ -100,21 +97,19 @@ export default function FocusDemoScreen() {
   };
 
   // If there's a live stream, show the player
-  if (isLive) {
+  if (isLive && streamUrl && streamUrl.uri) {
     return (
       <View style={styles.videoContainer}>
         {videoLoading && <ActivityIndicator />}
-        {videoDelivery && streamUrl.uri !== '' && (
-          <VideoPlayer
-            source={streamUrl}
-            handleLoad={handleLoad}
-            handleBuffer={handleLoad}
-            handleError={e => {
-              handleError(e.error);
-            }}
-            paused={isPaused}
-          />
-        )}
+        <VideoPlayer
+          source={streamUrl}
+          handleLoad={handleLoad}
+          handleBuffer={handleLoad}
+          handleError={e => {
+            handleError(e.error);
+          }}
+          paused={isPaused}
+        />
       </View>
     );
   }
