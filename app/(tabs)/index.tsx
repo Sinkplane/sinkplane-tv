@@ -15,7 +15,7 @@ import { Channel } from '@/types/creator-list.interface';
 
 export default function HomeScreen() {
   const styles = useHomeScreenStyles();
-  const { creator, token } = useSession();
+  const { creator, token, tokenExpiration } = useSession();
   const [channel, setChannel] = useState(creator?.channels[0]);
   const [view, setView] = useState(VideoView.CARD);
   const [videOrder, setVideoOrder] = useState(AssDass.DESC);
@@ -72,7 +72,7 @@ export default function HomeScreen() {
                 {channel.title} Videos
               </ThemedText>
             </ThemedView>
-            <Videos token={token} creatorId={creator.id} channel={channel} view={view} sort={videOrder} onFetchMoreRef={fetchMoreRef} />
+            <Videos token={token} tokenExpiration={tokenExpiration ?? undefined} creatorId={creator.id} channel={channel} view={view} sort={videOrder} onFetchMoreRef={fetchMoreRef} />
 
             <ThemedModal
               visible={isChannelModalVisible}

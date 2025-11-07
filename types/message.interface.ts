@@ -25,13 +25,18 @@ interface TVBaseMessage {
 
 export interface TVDiscoverPayload extends TVBaseMessage {
   type: TVCommand.DISCOVER;
-  payload: TVDevice;
+  payload: TVDevice & {
+    isLoggedIn?: boolean;
+    deviceName?: string;
+  };
 }
 
 export interface TVHeartbeatPayload extends TVBaseMessage {
   type: TVCommand.HEARTBEAT;
   payload: {
     status: 'alive' | 'dead';
+    isLoggedIn?: boolean;
+    userId?: string;
   };
 }
 
@@ -43,4 +48,11 @@ export interface TVLoginPayload extends TVBaseMessage {
   };
 }
 
-export type TVMessage = TVDiscoverPayload | TVHeartbeatPayload | TVLoginPayload;
+export interface TVLogoutPayload extends TVBaseMessage {
+  type: TVCommand.LOGOUT;
+  payload: {
+    deviceId: string;
+  };
+}
+
+export type TVMessage = TVDiscoverPayload | TVHeartbeatPayload | TVLoginPayload | TVLogoutPayload;

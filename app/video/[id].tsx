@@ -11,18 +11,18 @@ import { VideoPlayer } from '@/components/videos/VideoPlayer';
 // eslint-disable-next-line complexity
 export default function VideoDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { token } = useSession();
-  const [streamUrl, setStreamUrl] = useState<{ uri: string; headers: Record<string, string> }>({
+  const { token, tokenExpiration } = useSession();
+  const [streamUrl, setStreamUrl] = useState<{ uri: string; headers?: Record<string, string> }>({
     uri: '',
-    headers: { Cookie: `sails.sid=${token}` },
   });
   const [videoLoading, setIsVideoLoading] = useState(true);
 
   // Fetch video post details
-  const { data: videoPost, error: postError } = useGetVideoPost(token ?? undefined, id);
+  const { data: videoPost, error: postError } = useGetVideoPost(token ?? undefined, tokenExpiration ?? undefined, id);
   // Fetch video delivery/stream URL
   const { data: videoDelivery, error: deliveryError } = useGetVideoDelivery(
     token ?? undefined,
+    tokenExpiration ?? undefined,
     videoPost?.videoAttachments?.[0]?.guid ?? undefined,
   );
 

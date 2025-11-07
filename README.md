@@ -6,9 +6,12 @@ This is a fan-made AppleTV and AndroidTV app for floatplane.com.
 
 ## Usage Information
 
-- This currently only works on Apple TV (planning to add Google TV soon)
-- This is not yet available in the app store / play store (will take some weeks for apple developer entitlements and app store approvals)
-- Auth is currently janky, you will need to copy your auth cookie from floatplane.com to get it to work and paste it into the text box. You will eventually be able to sign in through the companion app once everything is live in the app stores
+- Works on both Apple TV and Android TV
+- Not yet available in the app store / play store (will take some weeks for apple developer entitlements and app store approvals)
+- **Authentication**: Use the [Sinkplane Companion app](../sinkplane-companion) to sign in to your TV
+  - Sign in on your mobile device
+  - The companion app will discover your TV on the network
+  - Send your credentials to the TV with one tap
 
 ## How can I help
 
@@ -45,6 +48,35 @@ yarn web # Run the project on web from localhost
 You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
 
 This project includes a [demo](./components/EventHandlingDemo.tsx) showing how to use React Native TV APIs to highlight controls as the user navigates the screen with the remote control.
+
+### Development with Companion App
+
+To test authentication and companion features during development:
+
+1. **Start the TV app** (this starts a TCP server on port 9999):
+   ```bash
+   EXPO_TV=1 npx expo run:android  # or run:ios for Apple TV
+   ```
+
+2. **Start the companion app** in a separate terminal:
+   ```bash
+   cd ../sinkplane-companion
+   ./scripts/setup-dev-env.sh android  # or appletv
+   npx expo start
+   ```
+
+The companion app will automatically discover and connect to your TV. See the [Companion App README](../sinkplane-companion/README.md) for detailed setup instructions.
+
+#### Verifying TV Server
+
+When the TV app starts, you should see in the logs:
+```
+[TV Server] useTVServer useEffect mounting
+TV Server listening on port 9999
+TV Service published
+```
+
+This means the TV is ready to accept connections from the companion app.
 
 ### TV specific file extensions
 

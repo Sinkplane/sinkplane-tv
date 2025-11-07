@@ -19,7 +19,7 @@ const LIVESTREAM_ID = '5c13f3c006f1be15e08e05c0';
 // eslint-disable-next-line complexity
 export default function FocusDemoScreen() {
   const styles = useFocusDemoScreenStyles();
-  const { creator, token } = useSession();
+  const { creator, token, tokenExpiration } = useSession();
   const [streamUrl, setStreamUrl] = useState<{ uri: string; headers: Record<string, string> } | null>(null);
   const [videoLoading, setIsVideoLoading] = useState(true);
   const [isFocused, setIsFocused] = useState(false);
@@ -34,6 +34,7 @@ export default function FocusDemoScreen() {
     refetch: refetchVideoDelivery,
   } = useGetVideoDelivery(
     isFocused ? token ?? undefined : undefined,
+    isFocused ? tokenExpiration ?? undefined : undefined,
     LIVESTREAM_ID,
     true, // live parameter
   );
@@ -80,7 +81,8 @@ export default function FocusDemoScreen() {
     const originUrl = origin.url.endsWith('/') ? origin.url.slice(0, -1) : origin.url;
     const variantUrl = variant.url.startsWith('/') ? variant.url : '/' + variant.url;
     const url = `${originUrl}${variantUrl}`;
-    setStreamUrl({ uri: url, headers: { Cookie: `sails.sid=${token}` } });
+    // Cookies are now managed by CookieManager, no need to pass headers
+    setStreamUrl({ uri: url });
   };
 
   useEffect(() => {

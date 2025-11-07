@@ -1,4 +1,5 @@
 import { use, createContext, PropsWithChildren, useState, useEffect } from 'react';
+import CookieManager from '@react-native-cookies/cookies';
 
 import { Subscription } from '@/types/subscriptions.interface';
 import { User } from '@/types/user.interface';
@@ -82,6 +83,18 @@ export function SessionProvider({ children }: PropsWithChildren) {
       const fetchData = async () => {
         console.info('[Auth] Starting to fetch data...');
         try {
+          // Restore cookie to CookieManager on app startup
+          await CookieManager.set('https://www.floatplane.com', {
+            name: 'sails.sid',
+            value: token,
+            domain: '.floatplane.com',
+            path: '/',
+            expires: tokenExpiration || undefined,
+            secure: true,
+            httpOnly: true,
+          });
+          console.info('[Auth] Cookie restored to CookieManager');
+
           await fetchSubscriptionCreators(token, tokenExpiration || undefined);
         } catch (error) {
           handleFetchErr(error);
@@ -106,11 +119,15 @@ export function SessionProvider({ children }: PropsWithChildren) {
   const signIn = async ({ token: t, user: u, tokenExpiration: tE }: SignInParams) => {
     try {
       console.info('[Auth] Signing in user:', u);
-      // Perform sign-in logic here
+
+      // The token is the actual cookie value (not the full cookie object)
+      // The companion app parses the cookie object and sends us the value
+      // The tokenExpiration is the cookie's expires field
       setToken(t);
       setUser(JSON.stringify(u));
       setTokenExpiration(tE && typeof tE === 'string' ? tE : tE instanceof Date ? tE.toISOString() : undefined);
-      // Fetch subscriptions
+
+      // Fetch subscriptions using the cookie value
       const safeExpiration = tE && typeof tE === 'string' ? tE : tE instanceof Date ? tE.toISOString() : undefined;
       await fetchSubscriptionCreators(t, safeExpiration);
       setIsLoading(false);
@@ -119,7 +136,15 @@ export function SessionProvider({ children }: PropsWithChildren) {
       handleFetchErr(error);
     }
   };
-  const signOut = () => {
+  const signOut = async () => {
+    // Clear cookies from CookieManager
+    try {
+      await CookieManager.clearAll();
+      console.info('[Auth] Cleared all cookies from CookieManager');
+    } catch (error) {
+      console.error('[Auth] Error clearing cookies:', error);
+    }
+    
     setToken(undefined);
     setUser(undefined);
     setSubscriptions(undefined);

@@ -17,7 +17,7 @@ export interface GetVideosParams {
   channel?: string;
 }
 
-const fetchVideos = async (token: string, params: GetVideosParams): Promise<Video[]> => {
+const fetchVideos = async (token: string, _tokenExpiration: string | undefined, params: GetVideosParams): Promise<Video[]> => {
   const {
     id,
     limit = 10,
@@ -52,7 +52,6 @@ const fetchVideos = async (token: string, params: GetVideosParams): Promise<Vide
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
-      Cookie: `sails.sid=${token}`,
     },
   });
 
@@ -64,17 +63,17 @@ const fetchVideos = async (token: string, params: GetVideosParams): Promise<Vide
   return response.json();
 };
 
-export const useGetVideos = (token?: string, params?: GetVideosParams) =>
+export const useGetVideos = (token?: string, tokenExpiration?: string, params?: GetVideosParams) =>
   useQuery({
-    queryKey: ['videos', token, params],
-    queryFn: () => fetchVideos(token!, params!),
+    queryKey: ['videos', token, tokenExpiration, params],
+    queryFn: () => fetchVideos(token!, tokenExpiration, params!),
     enabled: !!token && !!params?.id,
   });
 
-export const useGetVideosInfinite = (token?: string, params?: Omit<GetVideosParams, 'fetchAfter'>) =>
+export const useGetVideosInfinite = (token?: string, tokenExpiration?: string, params?: Omit<GetVideosParams, 'fetchAfter'>) =>
   useInfiniteQuery({
-    queryKey: ['videos-infinite', token, params],
-    queryFn: ({ pageParam = 0 }) => fetchVideos(token!, { ...params!, fetchAfter: pageParam }),
+    queryKey: ['videos-infinite', token, tokenExpiration, params],
+    queryFn: ({ pageParam = 0 }) => fetchVideos(token!, tokenExpiration, { ...params!, fetchAfter: pageParam }),
     enabled: !!token && !!params?.id,
     initialPageParam: 0,
     getNextPageParam: (lastPage, allPages) => {

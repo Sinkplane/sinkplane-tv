@@ -2,9 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 
 import { API_BASE_URL } from '@/constants/api';
 import { Creator } from '@/types/creator-list.interface';
-import { getHeaders } from './useHeaders';
 
-export const fetchCreatorList = async (token: string, tokenExpiration?: string, creatorIds?: string[]): Promise<Creator[]> => {
+export const fetchCreatorList = async (token: string, _tokenExpiration?: string, creatorIds?: string[]): Promise<Creator[]> => {
   if (!creatorIds || creatorIds.length === 0) return [];
 
   const params = new URLSearchParams();
@@ -13,7 +12,9 @@ export const fetchCreatorList = async (token: string, tokenExpiration?: string, 
   const response = await fetch(`${API_BASE_URL}/api/v3/creator/list?${params.toString()}`, {
     method: 'GET',
     credentials: 'include',
-    headers: getHeaders({ token, tokenExpiration }),
+    headers: {
+      'Content-Type': 'application/json',
+    },
   });
 
   if (!response.ok) {

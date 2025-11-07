@@ -5,6 +5,7 @@ import TcpSocket from 'react-native-tcp-socket';
 import * as Device from 'expo-device';
 import * as Crypto from 'expo-crypto';
 import * as Network from 'expo-network';
+import CookieManager from '@react-native-cookies/cookies';
 
 import { TVCommand, TVDiscoverPayload, TVHeartbeatPayload, TVMessage } from '@/types/message.interface';
 import { TVDevice } from '@/types/tv-device.interface';
@@ -22,7 +23,7 @@ const deviceInfo: TVDevice = {
 };
 
 export function useTVServer() {
-  const { token, user, signIn } = useSession();
+  const { token, user, signIn, signOut } = useSession();
   const [server, setServer] = useState<TcpSocket.Server | null>(null);
   const [zeroconf] = useState(() => new Zeroconf());
   const [clients, setClients] = useState<Map<string, TcpSocket.Socket>>(new Map());
@@ -32,16 +33,53 @@ export function useTVServer() {
     async (message: TVMessage, socket: TcpSocket.Socket) => {
       switch (message.type) {
         case TVCommand.LOGIN: {
-          console.info('[TV Server] Received LOGIN command');
+          console.info('[TV Server] Received LOGIN command', message);
           try {
-            // Sign in with the token from the login message
+            // The token is a JSON string containing the cookie object
+            // Parse it and set it in CookieManager
+            const cookieObject = JSON.parse(message.payload.token);
+
+            console.info('[TV Server] Parsed cookie:', {
+              value: cookieObject.value.substring(0, 20) + '...',
+              expires: cookieObject.expires,
+              domain: cookieObject.domain,
+            });
+
+            // Set the cookie in CookieManager so fetch can use it automatically
+            await CookieManager.set('https://www.floatplane.com', {
+              name: 'sails.sid',
+              value: cookieObject.value,
+              domain: cookieObject.domain || '.floatplane.com',
+              path: cookieObject.path || '/',
+              expires: cookieObject.expires,
+              secure: cookieObject.secure !== false,
+              httpOnly: cookieObject.httpOnly !== false,
+            });
+            console.info('[TV Server] Cookie set in CookieManager');
+
+            // Sign in - store the cookie value and expiration for reference
             signIn({
-              token: message.payload.token,
+              token: cookieObject.value,
               user: message.payload.user,
+              tokenExpiration: cookieObject.expires,
             });
             console.info('[TV Server] Login successful');
           } catch (error) {
             console.error('[TV Server] Login failed:', error);
+          }
+          break;
+        }
+        case TVCommand.LOGOUT: {
+          console.info('[TV Server] Received LOGOUT command');
+          try {
+            // Clear cookies from CookieManager
+            await CookieManager.clearAll();
+            console.info('[TV Server] Cleared cookies from CookieManager');
+
+            signOut();
+            console.info('[TV Server] Logout successful');
+          } catch (error) {
+            console.error('[TV Server] Logout failed:', error);
           }
           break;
         }
@@ -50,7 +88,7 @@ export function useTVServer() {
           const heartbeatResponse: TVHeartbeatPayload = {
             id: Crypto.randomUUID(),
             type: TVCommand.HEARTBEAT,
-            payload: { status: 'alive' },
+            payload: { status: 'alive', isLoggedIn: !!token, userId: user?.id },
             timestamp: new Date(),
             from: deviceInfo.id,
           };
@@ -62,17 +100,18 @@ export function useTVServer() {
           break;
       }
     },
-    [signIn],
+    [signIn, signOut, token, user],
   );
 
-  const publishTVService = useCallback(() => {
+  const publishTVService = useCallback(async () => {
     try {
       zeroconf.publishService('react-native-tv', 'tcp', 'local.', deviceInfo.name, 9999, {
         platform: deviceInfo.platform,
         id: deviceInfo.id,
         capabilities: JSON.stringify(['video', 'audio', 'remote']),
       });
-      console.info('TV Service published');
+      const address = await Network.getIpAddressAsync();
+      console.info(`TV Service published on ${address}:${9999}`);
     } catch (error) {
       console.error('Error publishing service:', error);
     }
@@ -86,6 +125,7 @@ export function useTVServer() {
       setClients(prev => new Map(prev).set(socketId, socket));
 
       const address = await Network.getIpAddressAsync();
+      console.info(`[TV Server] Device IP address: ${address}`, token, user);
       const discoverMessage: TVDiscoverPayload = {
         id: Crypto.randomUUID(),
         type: TVCommand.DISCOVER,

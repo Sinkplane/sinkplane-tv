@@ -9,8 +9,8 @@ import { useSession } from '@/hooks/authentication/auth.context';
 const LIVESTREAM_ID = '5c13f3c006f1be15e08e05c0';
 
 export default function TabLayout() {
-  const { token } = useSession();
-  const { data: videoDelivery } = useGetVideoDelivery(token ?? undefined, LIVESTREAM_ID, true);
+  const { token, tokenExpiration } = useSession();
+  const { data: videoDelivery } = useGetVideoDelivery(token ?? undefined, tokenExpiration ?? undefined, LIVESTREAM_ID, true);
 
   const isLive = !!videoDelivery;
 
