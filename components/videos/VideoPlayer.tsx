@@ -11,7 +11,14 @@ interface VideoPlayerProps {
   paused?: boolean;
 }
 
-export const VideoPlayer: FC<VideoPlayerProps> = ({ source, handleLoad, handleBuffer, handleError, thumbnailUrl, paused }: VideoPlayerProps) => (
+export const VideoPlayer: FC<VideoPlayerProps> = ({
+  source,
+  handleLoad,
+  handleBuffer,
+  handleError,
+  thumbnailUrl,
+  paused,
+}: VideoPlayerProps) => (
   <VideoComponent
     source={source}
     style={styles.video}

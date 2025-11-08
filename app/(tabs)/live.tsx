@@ -1,7 +1,6 @@
-import { StyleSheet, Image, ActivityIndicator, View, Pressable } from 'react-native';
+import { StyleSheet, Image, ActivityIndicator, View, Pressable, ToastAndroid, Platform } from 'react-native';
 import React, { useEffect, useState, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { ToastAndroid, Platform } from 'react-native';
 
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
@@ -92,7 +91,7 @@ export default function FocusDemoScreen() {
 
   const handleError = (err: Error | unknown) => {
     console.error(err);
-    
+
     // Clear any existing toast timeout
     if (toastTimeoutRef.current) {
       clearTimeout(toastTimeoutRef.current);
@@ -101,10 +100,8 @@ export default function FocusDemoScreen() {
     // Show toast message
     if (Platform.OS === 'android') {
       ToastAndroid.show('Error loading livestream. Please try again', ToastAndroid.SHORT);
-    } else {
-      // For iOS/tvOS, we'll just log it since native toast isn't available
-      console.warn('Error loading livestream. Please try again');
     }
+    // For iOS/tvOS, the error is already logged above
 
     // Auto-dismiss after 3 seconds (for platforms that need manual dismissal)
     toastTimeoutRef.current = setTimeout(() => {
@@ -113,13 +110,14 @@ export default function FocusDemoScreen() {
   };
 
   // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
+  useEffect(
+    () => () => {
       if (toastTimeoutRef.current) {
         clearTimeout(toastTimeoutRef.current);
       }
-    };
-  }, []);
+    },
+    [],
+  );
 
   const handleLoad = () => {
     setIsVideoLoading(false);

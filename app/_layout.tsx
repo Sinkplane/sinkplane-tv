@@ -3,7 +3,6 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import * as Cookies from '@react-native-cookies/cookies';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { SessionProvider, useSession } from '@/hooks/authentication/auth.context';

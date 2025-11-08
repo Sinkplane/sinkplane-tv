@@ -12,7 +12,8 @@
     "lint": "expo lint",
     "prebuild": "expo prebuild --clean",
     "prebuild:tv": "EXPO_TV=1 expo prebuild --clean",
-    "deploy": "npx expo export -p web && npx eas-cli@latest deploy"
+    "deploy": "npx expo export -p web && npx eas-cli@latest deploy",
+    "prepare": "husky"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",
@@ -67,11 +68,7 @@
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
-      "eslint --fix",
-      "npx prettier --write"
-    ],
-    "*.{json,css,md}": [
-      "npx prettier --write"
+      "expo lint --fix"
     ]
   },
   "expo": {

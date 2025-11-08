@@ -87,7 +87,13 @@ export default function TabLayout() {
                     { color: isFocused ? Colors[colorScheme ?? 'light'].tint : '#888' },
                   ]}
                 >
-                  {route.name === 'index' ? 'Home' : route.name === 'explore' ? 'Explore' : 'TV demo'}
+                  {route.name === 'index'
+                    ? 'Home'
+                    : route.name === 'about'
+                      ? 'About'
+                      : route.name === 'live'
+                        ? 'Live Now'
+                        : route.name}
                 </Text>
               </Pressable>
             );
@@ -127,28 +133,22 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="about"
         options={{
-          title: 'Explore',
+          title: 'About',
           tabBarButton,
           tabBarLabelStyle: textStyles.default,
           tabBarIcon: () => null
         }}
       />
       <Tabs.Screen
-        name="tv_focus"
-        options={
-          Platform.OS === 'web'
-            ? {
-                href: null
-              }
-            : {
-                title: 'TV demo',
-                tabBarButton,
-                tabBarLabelStyle: textStyles.default,
-                tabBarIcon: () => null
-              }
-        }
+        name="live"
+        options={{
+          title: 'Live Now',
+          tabBarButton,
+          tabBarLabelStyle: textStyles.default,
+          tabBarIcon: () => null
+        }}
       />
     </Tabs>
     </View>

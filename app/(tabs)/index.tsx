@@ -72,7 +72,15 @@ export default function HomeScreen() {
                 {channel.title} Videos
               </ThemedText>
             </ThemedView>
-            <Videos token={token} tokenExpiration={tokenExpiration ?? undefined} creatorId={creator.id} channel={channel} view={view} sort={videOrder} onFetchMoreRef={fetchMoreRef} />
+            <Videos
+              token={token}
+              tokenExpiration={tokenExpiration ?? undefined}
+              creatorId={creator.id}
+              channel={channel}
+              view={view}
+              sort={videOrder}
+              onFetchMoreRef={fetchMoreRef}
+            />
 
             <ThemedModal
               visible={isChannelModalVisible}
