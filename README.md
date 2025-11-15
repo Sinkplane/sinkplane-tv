@@ -4,6 +4,24 @@
 
 This is a fan-made AppleTV and AndroidTV app for floatplane.com.
 
+## ⚠️ tvOS Development Setup
+
+This project requires special configuration for tvOS support:
+
+### Cookies Module Workaround
+
+The `@react-native-cookies/cookies` package doesn't officially support tvOS yet. We're using a locally patched version until [PR #165](https://github.com/react-native-cookies/cookies/pull/165) is merged.
+
+**📖 See**: [`docs/tvos-cookies-workaround.md`](docs/tvos-cookies-workaround.md) for detailed setup instructions.
+
+### Known Build Issues
+
+There is currently a build issue with React Native Core on tvOS related to `dispatch_queue_t` properties.
+
+**📋 See**: [`docs/react-native-core-tvos-issue.md`](docs/react-native-core-tvos-issue.md) for the investigation and fix plan.
+
+---
+
 ## Usage Information
 
 - Works on both Apple TV and Android TV
@@ -30,6 +48,25 @@ This project uses
 - the [React Native TV config plugin](https://github.com/react-native-tvos/config-tv/tree/main/packages/config-tv) to allow Expo prebuild to modify the project's native files for TV builds
 
 ## 🚀 How to use
+
+### First Time Setup
+
+We provide an automated setup script that configures everything:
+
+```sh
+cd sinkplane-tv
+./scripts/setup-dev-env.sh
+```
+
+This will:
+- Clone required dependencies (cookies package, companion app)
+- Apply tvOS patches
+- Install all dependencies
+- Set up CocoaPods
+
+**See**: [`docs/QUICK_START_TVOS.md`](docs/QUICK_START_TVOS.md) for detailed setup instructions.
+
+### Development
 
 - `cd` into the project
 
