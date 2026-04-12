@@ -1,5 +1,5 @@
 import { use, createContext, PropsWithChildren, useState, useEffect } from 'react';
-import CookieManager from '@react-native-cookies/cookies';
+import CookieManager from '@preeternal/react-native-cookie-manager';
 
 import { Subscription } from '@/types/subscriptions.interface';
 import { User } from '@/types/user.interface';
@@ -144,7 +144,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
     } catch (error) {
       console.error('[Auth] Error clearing cookies:', error);
     }
-    
+
     setToken(undefined);
     setUser(undefined);
     setSubscriptions(undefined);

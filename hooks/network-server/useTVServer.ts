@@ -5,7 +5,7 @@ import TcpSocket from 'react-native-tcp-socket';
 import * as Device from 'expo-device';
 import * as Crypto from 'expo-crypto';
 import * as Network from 'expo-network';
-import CookieManager from '@react-native-cookies/cookies';
+import CookieManager from '@preeternal/react-native-cookie-manager';
 
 import { TVCommand, TVDiscoverPayload, TVHeartbeatPayload, TVMessage } from '@/types/message.interface';
 import { TVDevice } from '@/types/tv-device.interface';

@@ -13,8 +13,8 @@ This script will:
 
 - ✅ Check prerequisites (Node, npm, git, CocoaPods)
 - ✅ Clone the companion app (if not exists)
-- ✅ Clone and patch the cookies package for tvOS
 - ✅ Install all dependencies
+- ✅ Apply the in-repo cookie-manager tvOS patch during `npm install`
 - ✅ Run pod install for both projects
 
 ## Manual Setup (Alternative)
@@ -23,22 +23,15 @@ If you prefer to set things up manually:
 
 ### Prerequisites
 
-1. Clone the cookies repository with tvOS patches:
-
-```bash
-cd /Users/cpawlukiewicz/www/ltt/
-git clone https://github.com/react-native-cookies/cookies.git
-```
-
-2. Apply tvOS patches (see [`tvos-cookies-workaround.md`](./tvos-cookies-workaround.md))
-3. The `sinkplane-tv/package.json` is already configured to use the local package
+1. Make sure dependencies are installed from `package.json`
+2. Keep the repo `patches/` directory intact so `patch-package` can apply the tvOS cookie-manager patch after install
 
 ### Manual Installation
 
 ```bash
 cd /Users/cpawlukiewicz/www/ltt/sinkplane-tv
 
-# Install dependencies (will symlink the local cookies package)
+# Install dependencies (this also applies the cookie-manager tvOS patch)
 npm install
 
 # Install iOS/tvOS pods
@@ -69,7 +62,7 @@ EXPO_TV=1 npx expo run:ios --device
 
 ✅ **Working**:
 
-- Cookies module with tvOS support (via local symlink)
+- Cookies module with tvOS support (via `patch-package`)
 - Authentication flow
 - Video playback
 - Companion app pairing
@@ -94,7 +87,7 @@ RCTBridgeModule.h:164:1: error: property with 'retain (or strong)' attribute mus
 
 ## When Things Break
 
-### Metro Can't Find Cookies Module
+### Metro Can't Find Cookie Manager
 
 ```bash
 npx expo start --clear
@@ -125,13 +118,12 @@ cd ios && pod install && cd ..
 
 ## Documentation Index
 
-- **[tvOS Cookies Workaround](./tvos-cookies-workaround.md)** - Detailed setup for local cookies package
+- **[tvOS Cookies Workaround](./tvos-cookies-workaround.md)** - Details on the in-repo cookie-manager tvOS patch
 - **[React Native Core Issue](./react-native-core-tvos-issue.md)** - Investigation plan for build errors
 - **[Main README](../README.md)** - General project documentation
 
 ## Team Notes
 
-- Keep the local `cookies` repository until PR #165 is merged upstream
-- Don't commit changes to the cookies repository
-- When PR #165 is merged, update package.json to use the published version
+- Keep the `patches/` entry for the cookie manager until upstream ships tvOS support
+- If upstream adds tvOS support, remove the patch and verify pods/builds still work
 - Document any additional tvOS-specific issues in this directory

@@ -10,9 +10,9 @@ This project requires special configuration for tvOS support:
 
 ### Cookies Module Workaround
 
-The `@react-native-cookies/cookies` package doesn't officially support tvOS yet. We're using a locally patched version until [PR #165](https://github.com/react-native-cookies/cookies/pull/165) is merged.
+The app now uses `@preeternal/react-native-cookie-manager` and keeps a small `patch-package` patch in-repo so tvOS builds do not depend on a separate local `cookies` clone.
 
-**📖 See**: [`docs/tvos-cookies-workaround.md`](docs/tvos-cookies-workaround.md) for detailed setup instructions.
+**📖 See**: [`docs/tvos-cookies-workaround.md`](docs/tvos-cookies-workaround.md) for the current tvOS patch details.
 
 ### Known Build Issues
 
@@ -59,9 +59,9 @@ cd sinkplane-tv
 ```
 
 This will:
-- Clone required dependencies (cookies package, companion app)
-- Apply tvOS patches
+- Clone the companion app if needed
 - Install all dependencies
+- Apply the cookie-manager tvOS patch during `npm install`
 - Set up CocoaPods
 
 **See**: [`docs/QUICK_START_TVOS.md`](docs/QUICK_START_TVOS.md) for detailed setup instructions.

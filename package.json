@@ -13,12 +13,13 @@
     "prebuild": "expo prebuild --clean",
     "prebuild:tv": "EXPO_TV=1 expo prebuild --clean",
     "deploy": "npx expo export -p web && npx eas-cli@latest deploy",
+    "postinstall": "patch-package",
     "prepare": "husky"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",
     "@mux/mux-data-react-native-video": "^0.19.4",
-    "@react-native-cookies/cookies": "file:../cookies",
+    "@preeternal/react-native-cookie-manager": "^6.3.1",
     "@tanstack/react-query": "^5.90.5",
     "expo": "^54.0.1",
     "expo-build-properties": "~1.0.7",
@@ -63,6 +64,7 @@
     "eslint-plugin-react-hooks": "^4.6.2",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.4",
+    "patch-package": "^8.0.1",
     "typescript": "~5.9.2",
     "typescript-eslint": "^8.46.1"
   },
