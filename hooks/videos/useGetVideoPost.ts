@@ -1,20 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { API_BASE_URL } from '@/constants/api';
 import { VideoPost } from '@/types/video-post.interface';
+import { authenticatedFetch } from '@/hooks/authentication/apiClient';
 
 export interface GetVideoPostParams {
   id: string;
 }
 
 const fetchVideoPost = async (token: string, _tokenExpiration: string | undefined, id: string): Promise<VideoPost> => {
-  const response = await fetch(`${API_BASE_URL}/api/v3/content/post?id=${id}`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const response = await authenticatedFetch(`/api/v3/content/post?id=${id}`, token);
 
   if (!response.ok) {
     const errorText = await response.text();

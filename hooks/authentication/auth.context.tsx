@@ -1,4 +1,4 @@
-import { use, createContext, PropsWithChildren, useState, useEffect } from 'react';
+import { use, createContext, PropsWithChildren, useState, useEffect, useRef, useCallback } from 'react';
 
 import { Subscription } from '@/types/subscriptions.interface';
 import { User } from '@/types/user.interface';
@@ -6,10 +6,13 @@ import { useStorageState } from '../storage/useStorageState';
 import { Creator } from '@/types/creator-list.interface';
 import { fetchSubscriptions } from './useGetSubscription';
 import { fetchCreatorList } from './useGetCreatorList';
+import { refreshAccessToken, isTokenExpiringSoon } from './tokenRefresh';
+import { registerRefreshCallback, unregisterRefreshCallback } from './apiClient';
 
 interface SignInParams {
   token: string;
   user: User;
+  refreshToken?: string;
   tokenExpiration?: Date | string;
 }
 
@@ -21,15 +24,18 @@ export interface AuthState {
   creator?: Creator;
   token?: string | null;
   tokenExpiration?: string | null;
+  refreshToken?: string | null;
   signIn: (params: SignInParams) => void;
   signOut: () => void;
   isLoading: boolean;
+  refreshSession: () => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthState>({
   signIn: _ => null,
   signOut: () => null,
   isLoading: false,
+  refreshSession: async () => null,
 });
 
 // This hook can be used to access the user info.
@@ -45,6 +51,7 @@ export function useSession() {
 export function SessionProvider({ children }: PropsWithChildren) {
   const [[tokenLoading, token], setToken] = useStorageState('fptoken');
   const [[tokenExpirationLoading, tokenExpiration], setTokenExpiration] = useStorageState('fptokenExpiration');
+  const [[refreshTokenLoading, refreshToken], setRefreshToken] = useStorageState('fprefreshToken');
   const [[userLoading, user], setUser] = useStorageState('fpuser');
   const [isLoading, setIsLoading] = useState(true);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>();
@@ -52,10 +59,24 @@ export function SessionProvider({ children }: PropsWithChildren) {
   const [creators, setCreators] = useState<Creator[]>();
   const [creator, setCreator] = useState<Creator>();
 
+  // Ref for proactive refresh timer
+  const refreshTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Guard to prevent multiple simultaneous refreshes
+  const isRefreshingRef = useRef(false);
+
+  const clearRefreshTimer = useCallback(() => {
+    if (refreshTimerRef.current) {
+      clearInterval(refreshTimerRef.current);
+      refreshTimerRef.current = null;
+    }
+  }, []);
+
   const handleFetchErr = (err?: Error | unknown) => {
     console.error('[Auth] Error during data fetch:', err);
     setToken(undefined);
     setUser(undefined);
+    setRefreshToken(undefined);
+    setTokenExpiration(undefined);
     return err;
   };
 
@@ -77,8 +98,87 @@ export function SessionProvider({ children }: PropsWithChildren) {
     setCreator(creatorsListResult[0]);
   };
 
+  // Refresh the session using the stored refresh token
+  const refreshSession = useCallback(async (): Promise<string | null> => {
+    if (!refreshToken) {
+      // eslint-disable-next-line no-console
+      console.warn('[Auth] No refresh token available');
+      return null;
+    }
+
+    if (isRefreshingRef.current) {
+      console.info('[Auth] Refresh already in progress');
+      return token ?? null;
+    }
+
+    isRefreshingRef.current = true;
+    console.info('[Auth] Refreshing access token...');
+
+    try {
+      const result = await refreshAccessToken(refreshToken);
+      const newExpiration = new Date(Date.now() + result.expiresIn * 1000).toISOString();
+
+      setToken(result.accessToken);
+      setTokenExpiration(newExpiration);
+
+      // Update refresh token if the provider rotates it
+      if (result.refreshToken && result.refreshToken !== refreshToken) {
+        setRefreshToken(result.refreshToken);
+      }
+
+      console.info('[Auth] Token refreshed successfully, expires at:', newExpiration);
+      return result.accessToken;
+    } catch (error) {
+      console.error('[Auth] Token refresh failed:', error);
+      // If refresh fails, the refresh token is likely expired/revoked — sign out
+      handleFetchErr(error);
+      return null;
+    } finally {
+      isRefreshingRef.current = false;
+    }
+  }, [refreshToken, token, setToken, setTokenExpiration, setRefreshToken]);
+
+  // Register the refresh callback with the API client
   useEffect(() => {
-    if (token && !tokenLoading && !userLoading && !tokenExpirationLoading) {
+    registerRefreshCallback(refreshSession);
+    return () => {
+      unregisterRefreshCallback();
+    };
+  }, [refreshSession]);
+
+  // Proactive token refresh timer
+  useEffect(() => {
+    clearRefreshTimer();
+
+    if (!token || !refreshToken) {
+      return;
+    }
+
+    // Check every 60 seconds if the token needs refreshing
+    refreshTimerRef.current = setInterval(async () => {
+      if (isTokenExpiringSoon(tokenExpiration, 5)) {
+        console.info('[Auth] Token expiring soon, triggering proactive refresh');
+        try {
+          await refreshSession();
+        } catch (error) {
+          console.error('[Auth] Proactive refresh failed:', error);
+        }
+      }
+    }, 60 * 1000); // Check every minute
+
+    return clearRefreshTimer;
+  }, [token, refreshToken, tokenExpiration, clearRefreshTimer, refreshSession]);
+
+  // Also do an immediate check on mount/when token changes
+  useEffect(() => {
+    if (token && refreshToken && isTokenExpiringSoon(tokenExpiration, 5) && !isRefreshingRef.current) {
+      console.info('[Auth] Token already expiring soon on load, refreshing immediately');
+      refreshSession();
+    }
+  }, [token, refreshToken, tokenExpiration, refreshSession]);
+
+  useEffect(() => {
+    if (token && !tokenLoading && !userLoading && !tokenExpirationLoading && !refreshTokenLoading) {
       const fetchData = async () => {
         console.info('[Auth] Starting to fetch data...');
         try {
@@ -103,13 +203,16 @@ export function SessionProvider({ children }: PropsWithChildren) {
     }
   }, [token, tokenLoading, setToken]);
 
-  const signIn = async ({ token: t, user: u, tokenExpiration: tE }: SignInParams) => {
+  const signIn = async ({ token: t, user: u, tokenExpiration: tE, refreshToken: rT }: SignInParams) => {
     try {
       console.info('[Auth] Signing in user:', u);
 
       setToken(t);
       setUser(JSON.stringify(u));
       setTokenExpiration(tE && typeof tE === 'string' ? tE : tE instanceof Date ? tE.toISOString() : undefined);
+      if (rT) {
+        setRefreshToken(rT);
+      }
 
       // Fetch subscriptions using the Bearer token
       const safeExpiration = tE && typeof tE === 'string' ? tE : tE instanceof Date ? tE.toISOString() : undefined;
@@ -121,11 +224,14 @@ export function SessionProvider({ children }: PropsWithChildren) {
     }
   };
   const signOut = async () => {
+    clearRefreshTimer();
     setToken(undefined);
     setUser(undefined);
     setSubscriptions(undefined);
     setCreators(undefined);
     setCreator(undefined);
+    setRefreshToken(undefined);
+    setTokenExpiration(undefined);
   };
 
   return (
@@ -135,12 +241,14 @@ export function SessionProvider({ children }: PropsWithChildren) {
         signOut,
         token,
         tokenExpiration,
+        refreshToken,
         user: user ? JSON.parse(user) : undefined,
         subscriptions,
         subscription,
         creators,
         creator,
         isLoading,
+        refreshSession,
       }}
     >
       {children}

@@ -1,8 +1,8 @@
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 
-import { API_BASE_URL } from '@/constants/api';
 import { Video } from '@/types/video.interface';
 import { AssDass } from '@/components/videos/Videos';
+import { authenticatedFetch } from '@/hooks/authentication/apiClient';
 
 export interface GetVideosParams {
   id: string;
@@ -47,13 +47,7 @@ const fetchVideos = async (token: string, _tokenExpiration: string | undefined, 
     queryParams.append('channel', channel);
   }
 
-  const response = await fetch(`${API_BASE_URL}/api/v3/content/creator?${queryParams.toString()}`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const response = await authenticatedFetch(`/api/v3/content/creator?${queryParams.toString()}`, token);
 
   if (!response.ok) {
     const errorText = await response.text();

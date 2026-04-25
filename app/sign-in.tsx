@@ -67,6 +67,7 @@ export default function SignIn() {
           token: tokenResponse.accessToken,
           user: profileResult.data.selfUser,
           tokenExpiration,
+          refreshToken: tokenResponse.refreshToken,
         });
       } catch (error) {
         // eslint-disable-next-line no-console

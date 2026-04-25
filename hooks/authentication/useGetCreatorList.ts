@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { API_BASE_URL } from '@/constants/api';
 import { Creator } from '@/types/creator-list.interface';
+import { authenticatedFetch } from './apiClient';
 
 export const fetchCreatorList = async (token: string, _tokenExpiration?: string, creatorIds?: string[]): Promise<Creator[]> => {
   if (!creatorIds || creatorIds.length === 0) return [];
@@ -9,13 +9,7 @@ export const fetchCreatorList = async (token: string, _tokenExpiration?: string,
   const params = new URLSearchParams();
   creatorIds.forEach((id, index) => params.append(`ids[${index}]`, id));
 
-  const response = await fetch(`${API_BASE_URL}/api/v3/creator/list?${params.toString()}`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const response = await authenticatedFetch(`/api/v3/creator/list?${params.toString()}`, token);
 
   if (!response.ok) {
     const errorText = await response.text();

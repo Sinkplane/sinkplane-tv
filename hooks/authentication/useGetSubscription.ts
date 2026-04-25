@@ -1,17 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { Subscription } from '@/types/subscriptions.interface';
-
-import { API_BASE_URL } from '@/constants/api';
+import { authenticatedFetch } from './apiClient';
 
 export const fetchSubscriptions = async (token: string, _tokenExpiration?: string): Promise<Subscription[]> => {
-  const response = await fetch(`${API_BASE_URL}/api/v3/user/subscriptions?active=true`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const response = await authenticatedFetch('/api/v3/user/subscriptions?active=true', token);
 
   if (!response.ok) {
     const errorText = await response.text();

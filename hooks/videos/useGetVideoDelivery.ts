@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { API_BASE_URL } from '@/constants/api';
 import { VideoDelivery } from '@/types/video-delivery.interface';
+import { authenticatedFetch } from '@/hooks/authentication/apiClient';
 
 export interface GetVideoDeliveryParams {
   videoId: string;
@@ -17,13 +17,7 @@ const fetchVideoDelivery = async (
 ): Promise<VideoDelivery> => {
   const scenario = live ? 'live' : 'onDemand';
   const entityKind = live ? '&entityKind=livestream' : '';
-  const response = await fetch(`${API_BASE_URL}/api/v3/delivery/info?scenario=${scenario}&entityId=${id}${entityKind}`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const response = await authenticatedFetch(`/api/v3/delivery/info?scenario=${scenario}&entityId=${id}${entityKind}`, token);
 
   if (!response.ok) {
     const errorText = await response.text();
