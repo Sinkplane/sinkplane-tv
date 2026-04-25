@@ -10,9 +10,9 @@ export interface GetVideoPostParams {
 const fetchVideoPost = async (token: string, _tokenExpiration: string | undefined, id: string): Promise<VideoPost> => {
   const response = await fetch(`${API_BASE_URL}/api/v3/content/post?id=${id}`, {
     method: 'GET',
-    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
     },
   });
 

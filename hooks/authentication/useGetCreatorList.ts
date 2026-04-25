@@ -11,9 +11,9 @@ export const fetchCreatorList = async (token: string, _tokenExpiration?: string,
 
   const response = await fetch(`${API_BASE_URL}/api/v3/creator/list?${params.toString()}`, {
     method: 'GET',
-    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
     },
   });
 

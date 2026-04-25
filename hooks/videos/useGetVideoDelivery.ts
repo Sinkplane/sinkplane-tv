@@ -9,14 +9,19 @@ export interface GetVideoDeliveryParams {
   live?: boolean;
 }
 
-const fetchVideoDelivery = async (token: string, _tokenExpiration: string | undefined, id: string, live: boolean = false): Promise<VideoDelivery> => {
+const fetchVideoDelivery = async (
+  token: string,
+  _tokenExpiration: string | undefined,
+  id: string,
+  live: boolean = false,
+): Promise<VideoDelivery> => {
   const scenario = live ? 'live' : 'onDemand';
   const entityKind = live ? '&entityKind=livestream' : '';
   const response = await fetch(`${API_BASE_URL}/api/v3/delivery/info?scenario=${scenario}&entityId=${id}${entityKind}`, {
     method: 'GET',
-    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
     },
   });
 

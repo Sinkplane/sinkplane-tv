@@ -7,9 +7,9 @@ import { API_BASE_URL } from '@/constants/api';
 export const fetchSubscriptions = async (token: string, _tokenExpiration?: string): Promise<Subscription[]> => {
   const response = await fetch(`${API_BASE_URL}/api/v3/user/subscriptions?active=true`, {
     method: 'GET',
-    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
     },
   });
 

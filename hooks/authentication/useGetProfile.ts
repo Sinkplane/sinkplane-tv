@@ -2,14 +2,13 @@ import { useQuery } from '@tanstack/react-query';
 
 import { API_BASE_URL } from '@/constants/api';
 import { IStatusResponse } from '@/types/status.interface';
-import { ApiResponse } from '@/types/api-response.interface';
 
-export const fetchProfile = async (token: string, _tokenExpiration?: string): Promise<ApiResponse<IStatusResponse>> => {
+export const fetchProfile = async (token: string, _tokenExpiration?: string): Promise<IStatusResponse> => {
   const response = await fetch(`${API_BASE_URL}/api/v3/status?platform=web&version=4.4.8`, {
     method: 'GET',
-    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
     },
   });
 

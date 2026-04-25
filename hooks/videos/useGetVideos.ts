@@ -49,9 +49,9 @@ const fetchVideos = async (token: string, _tokenExpiration: string | undefined, 
 
   const response = await fetch(`${API_BASE_URL}/api/v3/content/creator?${queryParams.toString()}`, {
     method: 'GET',
-    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
     },
   });
 
