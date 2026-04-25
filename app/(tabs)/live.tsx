@@ -1,5 +1,5 @@
 import { StyleSheet, Image, ActivityIndicator, View, Pressable, ToastAndroid, Platform } from 'react-native';
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 
 import ParallaxScrollView from '@/components/ParallaxScrollView';
@@ -19,11 +19,12 @@ const LIVESTREAM_ID = '5c13f3c006f1be15e08e05c0';
 export default function FocusDemoScreen() {
   const styles = useFocusDemoScreenStyles();
   const { creator, token, tokenExpiration } = useSession();
-  const [streamUrl, setStreamUrl] = useState<{ uri: string; headers: Record<string, string> } | null>(null);
+  const [streamUrl, setStreamUrl] = useState<{ uri: string; headers?: Record<string, string> } | null>(null);
   const [videoLoading, setIsVideoLoading] = useState(true);
   const [isFocused, setIsFocused] = useState(false);
   const [isPaused, setIsPaused] = useState(true); // Start paused
-  const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isFocusedRef = useRef(false);
 
   // Check if livestream is actually live by fetching video delivery
   // Only fetch when the tab is focused
@@ -32,8 +33,8 @@ export default function FocusDemoScreen() {
     error: deliveryError,
     refetch: refetchVideoDelivery,
   } = useGetVideoDelivery(
-    isFocused ? token ?? undefined : undefined,
-    isFocused ? tokenExpiration ?? undefined : undefined,
+    isFocused ? (token ?? undefined) : undefined,
+    isFocused ? (tokenExpiration ?? undefined) : undefined,
     LIVESTREAM_ID,
     true, // live parameter
   );
@@ -49,7 +50,9 @@ export default function FocusDemoScreen() {
       refetchVideoDelivery();
     }, 60000); // 60 seconds
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+    };
   }, [refetchVideoDelivery, isFocused]);
 
   // Pause playback when navigating away from this tab
@@ -58,31 +61,44 @@ export default function FocusDemoScreen() {
       // Tab is focused - resume playback
       setIsFocused(true);
       setIsPaused(false);
+      isFocusedRef.current = true;
 
       return () => {
         // Tab is losing focus - pause playback
         setIsFocused(false);
         setIsPaused(true);
+        isFocusedRef.current = false;
       };
     }, []),
   );
 
-  const handleStreamUrl = (data: VideoDelivery) => {
-    if (!data || !token) return;
-    const group = (data.groups ?? [undefined])[0];
-    const origin = (group?.origins ?? [undefined])[0];
-    const variants = (group?.variants ?? []).filter(v => v.enabled === undefined || v.enabled !== false);
-    const variant = variants[0]; // For live streams, use the first variant (typically "live-abr")
-    if (!origin || !variant) {
-      return handleError(new Error('API Error, please reload'));
-    }
-    // Remove trailing slash from origin and leading slash from variant to avoid double slashes
-    const originUrl = origin.url.endsWith('/') ? origin.url.slice(0, -1) : origin.url;
-    const variantUrl = variant.url.startsWith('/') ? variant.url : '/' + variant.url;
-    const url = `${originUrl}${variantUrl}`;
-    // Cookies are now managed by CookieManager, no need to pass headers
-    setStreamUrl({ uri: url });
-  };
+  const handleStreamUrl = useCallback(
+    (data: VideoDelivery) => {
+      if (!data || !token) return;
+      const group = (data.groups ?? [undefined])[0];
+      const origin = (group?.origins ?? [undefined])[0];
+      const variants = (group?.variants ?? []).filter(v => v.enabled === undefined || v.enabled !== false);
+      const variant = variants[0]; // For live streams, use the first variant (typically "live-abr")
+      if (!origin || !variant) {
+        return handleError(new Error('API Error, please reload'));
+      }
+      // Remove trailing slash from origin and leading slash from variant to avoid double slashes
+      const originUrl = origin.url.endsWith('/') ? origin.url.slice(0, -1) : origin.url;
+      const variantUrl = variant.url.startsWith('/') ? variant.url : '/' + variant.url;
+      const url = `${originUrl}${variantUrl}`;
+      // Only update state if the base URL (without query params) actually changed.
+      // The API returns signed URLs with rotating JWT tokens, so the full URL changes
+      // on every fetch even though it's the same stream.
+      const getBaseUrl = (fullUrl: string) => fullUrl.split('?')[0];
+      setStreamUrl(prev => {
+        if (prev?.uri && getBaseUrl(prev.uri) === getBaseUrl(url)) {
+          return prev;
+        }
+        return { uri: url };
+      });
+    },
+    [token],
+  );
 
   useEffect(() => {
     if (deliveryError) handleError(deliveryError);
@@ -123,6 +139,29 @@ export default function FocusDemoScreen() {
     setIsVideoLoading(false);
   };
 
+  // Auto-resume playback after buffering ends (prevents random pauses)
+  const handleBuffer = useCallback((e: { isBuffering: boolean }) => {
+    setIsVideoLoading(e.isBuffering);
+    if (!e.isBuffering && isFocusedRef.current) {
+      setIsPaused(false);
+    }
+  }, []);
+
+  // On stream error, attempt to reload after a short delay
+  const handleVideoError = useCallback(
+    (e: { error: Error | unknown }) => {
+      handleError(e.error);
+      // Auto-reload the stream after 5 seconds
+      setTimeout(() => {
+        if (isFocusedRef.current) {
+          refetchVideoDelivery();
+          setIsPaused(false);
+        }
+      }, 5000);
+    },
+    [refetchVideoDelivery],
+  );
+
   const handleRefresh = () => {
     refetchVideoDelivery();
   };
@@ -135,10 +174,8 @@ export default function FocusDemoScreen() {
         <VideoPlayer
           source={streamUrl}
           handleLoad={handleLoad}
-          handleBuffer={handleLoad}
-          handleError={e => {
-            handleError(e.error);
-          }}
+          handleBuffer={handleBuffer}
+          handleError={handleVideoError}
           paused={isPaused}
         />
       </View>
