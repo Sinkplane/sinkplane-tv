@@ -10,6 +10,7 @@ import { useSession } from '@/hooks/authentication/auth.context';
 import { useGetVideoDelivery } from '@/hooks/videos/useGetVideoDelivery';
 import { VideoPlayer } from '@/components/videos/VideoPlayer';
 import { VideoDelivery } from '@/types/video-delivery.interface';
+import { OnVideoErrorData } from 'react-native-video';
 
 import bg from '@/assets/images/bg.jpg';
 
@@ -23,6 +24,7 @@ export default function FocusDemoScreen() {
   const [videoLoading, setIsVideoLoading] = useState(true);
   const [isFocused, setIsFocused] = useState(false);
   const [isPaused, setIsPaused] = useState(true); // Start paused
+  const [playerError, setPlayerError] = useState<OnVideoErrorData['error'] | null>(null);
   const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isFocusedRef = useRef(false);
 
@@ -31,16 +33,20 @@ export default function FocusDemoScreen() {
   const {
     data: videoDelivery,
     error: deliveryError,
+    isLoading: isDeliveryLoading,
+    isFetching: isDeliveryFetching,
     refetch: refetchVideoDelivery,
   } = useGetVideoDelivery(
     isFocused ? (token ?? undefined) : undefined,
     isFocused ? (tokenExpiration ?? undefined) : undefined,
-    LIVESTREAM_ID,
+    creator?.liveStream?.id || LIVESTREAM_ID,
     true, // live parameter
   );
 
   // Stream is live if we successfully get video delivery data
   const isLive = !!videoDelivery && !deliveryError;
+  const is404 = deliveryError && (deliveryError as Error).message.includes('404');
+  const isPlayer404 = playerError && (playerError.code === -1100 || playerError.localizedDescription?.includes('not found'));
 
   // Poll for livestream status every 60 seconds, but only when focused
   useEffect(() => {
@@ -101,9 +107,12 @@ export default function FocusDemoScreen() {
   );
 
   useEffect(() => {
-    if (deliveryError) handleError(deliveryError);
-    if (videoDelivery) handleStreamUrl(videoDelivery);
-  }, [videoDelivery, deliveryError]);
+    if (deliveryError && !is404) handleError(deliveryError);
+    if (videoDelivery) {
+      handleStreamUrl(videoDelivery);
+      setPlayerError(null);
+    }
+  }, [videoDelivery, deliveryError, is404]);
 
   const handleError = (err: Error | unknown) => {
     console.error(err);
@@ -149,7 +158,9 @@ export default function FocusDemoScreen() {
 
   // On stream error, attempt to reload after a short delay
   const handleVideoError = useCallback(
-    (e: { error: Error | unknown }) => {
+    (e: OnVideoErrorData) => {
+      setPlayerError(e.error);
+      setIsVideoLoading(false);
       handleError(e.error);
       // Auto-reload the stream after 5 seconds
       setTimeout(() => {
@@ -166,11 +177,22 @@ export default function FocusDemoScreen() {
     refetchVideoDelivery();
   };
 
-  // If there's a live stream, show the player
-  if (isLive && streamUrl && streamUrl.uri) {
+  // If there's a live stream and no critical player error, show the player
+  if (isLive && streamUrl && streamUrl.uri && !isPlayer404) {
     return (
       <View style={styles.videoContainer}>
-        {videoLoading && <ActivityIndicator />}
+        {videoLoading && <ActivityIndicator size="large" color="#fff" />}
+        {playerError && (
+          <ThemedView style={[styles.offlineContainer, { position: 'absolute', zIndex: 1, backgroundColor: 'rgba(255, 0, 0, 0.7)' }]}>
+            <ThemedText type="subtitle">Video Player Error</ThemedText>
+            <ThemedText style={{ color: '#fff' }}>
+              {playerError.localizedDescription || playerError.message || 'The video could not be loaded.'}
+            </ThemedText>
+            <Pressable style={[styles.refreshButton, { marginTop: 10, backgroundColor: '#fff' }]} onPress={handleRefresh}>
+              <ThemedText style={[styles.refreshButtonText, { color: '#000' }]}>Try Again</ThemedText>
+            </Pressable>
+          </ThemedView>
+        )}
         <VideoPlayer
           source={streamUrl}
           handleLoad={handleLoad}
@@ -192,15 +214,27 @@ export default function FocusDemoScreen() {
         <ThemedView>
           <ThemedView style={styles.titleContainer}>
             <ThemedText type="title">{creator.title}</ThemedText>
+            {(isDeliveryLoading || isDeliveryFetching) && <ActivityIndicator size="small" color="#fff" style={{ marginLeft: 10 }} />}
           </ThemedView>
-          {creator.liveStream?.offline && (
+          {is404 || isPlayer404 ? (
+            <ThemedView style={styles.offlineContainer}>
+              <ThemedText type="subtitle">{creator.title} is not live right now.</ThemedText>
+            </ThemedView>
+          ) : deliveryError ? (
+            <ThemedView style={[styles.offlineContainer, { backgroundColor: 'rgba(255, 0, 0, 0.2)' }]}>
+              <ThemedText type="subtitle">Error checking stream status</ThemedText>
+              <ThemedText>{(deliveryError as Error).message}</ThemedText>
+            </ThemedView>
+          ) : creator.liveStream?.offline && (
             <ThemedView style={styles.offlineContainer}>
               <ThemedText type="subtitle">Stream Offline</ThemedText>
               <ThemedText>{creator.liveStream.offline.title}</ThemedText>
             </ThemedView>
           )}
-          <Pressable style={styles.refreshButton} onPress={handleRefresh}>
-            <ThemedText style={styles.refreshButtonText}>🔄 Refresh Stream Status</ThemedText>
+          <Pressable style={styles.refreshButton} onPress={handleRefresh} disabled={isDeliveryFetching}>
+            <ThemedText style={styles.refreshButtonText}>
+              {isDeliveryFetching ? '🔄 Checking...' : '🔄 Refresh Stream Status'}
+            </ThemedText>
           </Pressable>
         </ThemedView>
       )}
