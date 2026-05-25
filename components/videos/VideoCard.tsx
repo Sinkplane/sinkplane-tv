@@ -10,6 +10,7 @@ import { Video } from '@/types/video.interface';
 
 interface VideoCardProps {
   video: Video;
+  progress?: number;
 }
 
 const formatDuration = (seconds: number): string => {
@@ -33,7 +34,7 @@ const formatLikes = (likes: number): string => {
   return likes.toString();
 };
 
-export const VideoCard = ({ video }: VideoCardProps) => {
+export const VideoCard = ({ video, progress }: VideoCardProps) => {
   const scale = useScale();
   const styles = useVideoCardStyles();
   const [isFocused, setIsFocused] = useState(false);
@@ -43,12 +44,19 @@ export const VideoCard = ({ video }: VideoCardProps) => {
     router.push(`/video/${video.id}`);
   };
 
+  const progressPercentage = progress ?? 0;
+
   return (
     <Pressable onPress={handlePress} onFocus={() => setIsFocused(true)} onBlur={() => setIsFocused(false)} style={styles.container}>
       <ThemedView style={[styles.shadow, isFocused && styles.shadowFocused]}>
         <ThemedView style={[styles.card, isFocused && styles.cardFocused]}>
           <View style={styles.thumbnailContainer}>
             <Image source={{ uri: video?.thumbnail?.path ?? '' }} style={styles.thumbnail} resizeMode="cover" />
+            {progress !== undefined && progress > 0 && (
+              <View style={styles.progressBarContainer}>
+                <View style={[styles.progressBar, { width: `${Math.min(progressPercentage, 100)}%` }]} />
+              </View>
+            )}
             <View style={styles.overlayContainer}>
               <View style={styles.overlayItem}>
                 <Ionicons name="heart" size={14 * scale} color="#fff" />
@@ -111,6 +119,18 @@ const useVideoCardStyles = function () {
     thumbnail: {
       width: '100%',
       aspectRatio: 16 / 9,
+    },
+    progressBarContainer: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      height: 4 * scale,
+      backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    },
+    progressBar: {
+      height: '100%',
+      backgroundColor: '#FF0000',
     },
     overlayContainer: {
       position: 'absolute',

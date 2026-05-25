@@ -1,5 +1,5 @@
 import { StyleSheet, ActivityIndicator } from 'react-native';
-import { useRef, useEffect, type RefObject } from 'react';
+import { useRef, useEffect, type RefObject, useMemo, useState } from 'react';
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
@@ -8,6 +8,7 @@ import { useScale } from '@/hooks/useScale';
 import { useGetVideosInfinite } from '@/hooks/videos/useGetVideos';
 import { Channel } from '@/types/creator-list.interface';
 import { VideoListItem } from './VideoList';
+import { useGetVideoProgress } from '@/hooks/videos/useGetVideoProgress';
 
 interface VideosProps {
   channel: Channel;
@@ -40,6 +41,30 @@ export const Videos = ({ token, tokenExpiration, creatorId, channel, view, onFet
     sort,
   });
 
+  // Flatten all pages into a single array of videos
+  const videos = useMemo(() => data?.pages.flatMap(page => page) ?? [], [data?.pages]);
+
+  // Collect video IDs to fetch progress
+  const videoIds = useMemo(() => videos.map(v => v.id), [videos]);
+
+  // Fetch progress for all videos
+  const { data: progressData } = useGetVideoProgress(token, videoIds);
+
+  // Create a map for quick progress lookup - persisted in state to avoid flickering
+  const [persistedProgressMap, setPersistedProgressMap] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    if (progressData) {
+      setPersistedProgressMap(prev => {
+        const next = { ...prev };
+        progressData.forEach(p => {
+          next[p.id] = p.progress;
+        });
+        return next;
+      });
+    }
+  }, [progressData]);
+
   // Expose the fetch more function to the parent via ref
   useEffect(() => {
     if (onFetchMoreRef) {
@@ -53,9 +78,6 @@ export const Videos = ({ token, tokenExpiration, creatorId, channel, view, onFet
       };
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage, onFetchMoreRef]);
-
-  // Flatten all pages into a single array of videos
-  const videos = data?.pages.flatMap(page => page) ?? [];
 
   return (
     <ThemedView>
@@ -75,7 +97,11 @@ export const Videos = ({ token, tokenExpiration, creatorId, channel, view, onFet
         <>
           <ThemedView style={view === VideoView.CARD ? styles.gridContainer : styles.videosContainer}>
             {videos.map(video =>
-              view === VideoView.CARD ? <VideoCard key={video.id} video={video} /> : <VideoListItem key={video.id} video={video} />,
+              view === VideoView.CARD ? (
+                <VideoCard key={video.id} video={video} progress={persistedProgressMap[video.id]} />
+              ) : (
+                <VideoListItem key={video.id} video={video} progress={persistedProgressMap[video.id]} />
+              ),
             )}
           </ThemedView>
 

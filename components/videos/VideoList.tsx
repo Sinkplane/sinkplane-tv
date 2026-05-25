@@ -11,10 +11,11 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 
 interface VideoListItemProps {
   video: Video;
+  progress?: number;
   onPress?: (video: Video) => void;
 }
 
-export const VideoListItem = ({ video, onPress }: VideoListItemProps) => {
+export const VideoListItem = ({ video, progress, onPress }: VideoListItemProps) => {
   const styles = useVideoListItemStyles();
   const [isFocused, setIsFocused] = useState(false);
   const router = useRouter();
@@ -27,6 +28,8 @@ export const VideoListItem = ({ video, onPress }: VideoListItemProps) => {
       router.push(`/video/${video.id}`);
     }
   };
+
+  const progressPercentage = progress ?? 0;
 
   // Strip HTML tags from description
   const stripHtml = (html: string) =>
@@ -62,7 +65,14 @@ export const VideoListItem = ({ video, onPress }: VideoListItemProps) => {
     <Pressable onPress={handlePress} onFocus={() => setIsFocused(true)} onBlur={() => setIsFocused(false)} style={styles.container}>
       <View style={[styles.shadow, isFocused && styles.shadowFocused]}>
         <View style={[styles.card, isFocused && styles.cardFocused]}>
-          <Image source={{ uri: video?.thumbnail?.path ?? '' }} style={styles.thumbnail} resizeMode="cover" />
+          <View style={styles.thumbnailContainer}>
+            <Image source={{ uri: video?.thumbnail?.path ?? '' }} style={styles.thumbnail} resizeMode="cover" />
+            {progress !== undefined && progress > 0 && (
+              <View style={styles.progressBarContainer}>
+                <View style={[styles.progressBar, { width: `${Math.min(progressPercentage, 100)}%` }]} />
+              </View>
+            )}
+          </View>
           <ThemedView style={styles.textColumn}>
             <ThemedView style={styles.titleRow}>
               <ThemedText type="defaultSemiBold" numberOfLines={2} style={styles.title}>
@@ -131,6 +141,23 @@ const useVideoListItemStyles = function () {
       height: '100%',
       aspectRatio: 16 / 9,
       flexShrink: 0,
+    },
+    thumbnailContainer: {
+      position: 'relative',
+      height: '100%',
+      aspectRatio: 16 / 9,
+    },
+    progressBarContainer: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      height: 4 * scale,
+      backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    },
+    progressBar: {
+      height: '100%',
+      backgroundColor: '#FF0000',
     },
     textColumn: {
       marginLeft: 15,
