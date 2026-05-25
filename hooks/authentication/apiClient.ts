@@ -82,13 +82,21 @@ export async function authenticatedFetch(url: string, token: string, options: Au
     ...customHeaders,
   };
 
+  // If we have a token and auth is enabled
   if (auth && token) {
-    headers.Authorization = `Bearer ${token}`;
+    // If the token starts with 'ey', it's a JWT — use Bearer auth
+    if (token.startsWith('ey')) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+    // If it's not a JWT, it's likely a sails.sid cookie from the companion app.
+    // We set this cookie in CookieManager, but we can also pass it explicitly
+    // or rely on credentials: 'include' if the fetch implementation supports it.
   }
 
   let response = await fetch(fullUrl, {
     ...restOptions,
     headers,
+    credentials: 'include', // Ensure cookies are sent (especially important for sails.sid)
   });
 
   // On 401, attempt token refresh and retry once

@@ -17,6 +17,12 @@ export interface VideoDeliveryResource {
     live?: {
       lowLatencyExtension?: string;
     };
+    common?: {
+      access?: {
+        deniedReason?: string;
+        deniedMessage?: string;
+      };
+    };
   };
 }
 

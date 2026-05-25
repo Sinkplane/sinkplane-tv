@@ -32,16 +32,43 @@ export default function VideoDetailScreen() {
     if (!data) return;
     const group = (data.groups ?? [undefined])[0];
     const origin = (group?.origins ?? [undefined])[0];
-    const variants = (group.variants ?? []).filter(v => v.enabled === undefined || v.enabled !== false);
-    const variant = variants[variants.length - 1]; // get highest quality variant for now, will get device resolution later and match.
+    // Filter variants: must be enabled, have a non-empty URL, and not be explicitly denied in metadata
+    const variants = (group.variants ?? []).filter(v => {
+      const isEnabled = v.enabled === undefined || v.enabled !== false;
+      const hasUrl = v.url && v.url !== '';
+      const isDenied = v.meta?.common?.access?.deniedReason;
+      return isEnabled && hasUrl && !isDenied;
+    });
+
+    const variant = variants[variants.length - 1]; // get highest quality variant for now
+
     if (!origin || !variant) {
-      return handleError(new Error('API Error, please reload'));
+      return handleError(new Error('No playable video variants found. You may lack permission for this content.'));
     }
+
     // Remove trailing slash from origin and leading slash from variant to avoid double slashes
     const originUrl = origin.url.endsWith('/') ? origin.url.slice(0, -1) : origin.url;
     const variantUrl = variant.url.startsWith('/') ? variant.url : '/' + variant.url;
     const url = `${originUrl}${variantUrl}`;
-    setStreamUrl({ ...streamUrl, uri: url });
+
+    console.info(`[VideoDetail] Selected quality: ${variant.label || variant.name} - ${url.split('?')[0]}`);
+
+    // Pass both Authorization and Cookie headers to the video player
+    // This ensures that the CDN can authenticate the request regardless of whether it expects a JWT or a session cookie
+    const headers: Record<string, string> = {
+      'User-Agent': 'SinkplaneTV/1.0 (AppleTV; iOS)', // Use a consistent User-Agent
+    };
+
+    if (token) {
+      // If it looks like a JWT (starts with ey), use Bearer. Otherwise, it's likely a sails.sid cookie.
+      if (token.startsWith('ey')) {
+        headers.Authorization = `Bearer ${token}`;
+      } else {
+        headers.Cookie = `sails.sid=${token}`;
+      }
+    }
+
+    setStreamUrl({ uri: url, headers });
   };
 
   useEffect(() => {
