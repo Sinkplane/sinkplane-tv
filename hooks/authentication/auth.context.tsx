@@ -27,6 +27,8 @@ export interface AuthState {
   refreshToken?: string | null;
   signIn: (params: SignInParams) => void;
   signOut: () => void;
+  setSubscription: (subscription: Subscription) => void;
+  setCreator: (creator: Creator) => void;
   isLoading: boolean;
   refreshSession: () => Promise<string | null>;
 }
@@ -34,6 +36,8 @@ export interface AuthState {
 const AuthContext = createContext<AuthState>({
   signIn: _ => null,
   signOut: () => null,
+  setSubscription: () => null,
+  setCreator: () => null,
   isLoading: false,
   refreshSession: async () => null,
 });
@@ -239,6 +243,8 @@ export function SessionProvider({ children }: PropsWithChildren) {
       value={{
         signIn,
         signOut,
+        setSubscription,
+        setCreator,
         token,
         tokenExpiration,
         refreshToken,

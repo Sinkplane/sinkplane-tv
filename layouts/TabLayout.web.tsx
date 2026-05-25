@@ -54,103 +54,103 @@ export default function TabLayout() {
   };
 
   const renderTabBar = (props: TabBarProps) => (
-      <View style={styles.tabBarContainer}>
-        <View style={styles.tabBarContent}>
-          {props.state.routes.map((route: Route, index: number) => {
-            const isFocused = props.state.index === index;
-            const onPress = () => {
-              const event = props.navigation.emit({
-                type: 'tabPress',
-                target: route.key,
-                canPreventDefault: true,
-              });
+    <View style={styles.tabBarContainer}>
+      <View style={styles.avatarContainer}>
+        <ProfileAvatar />
+      </View>
+      <View style={styles.tabBarContent}>
+        {props.state.routes.map((route: Route, index: number) => {
+          const isFocused = props.state.index === index;
+          const onPress = () => {
+            const event = props.navigation.emit({
+              type: 'tabPress',
+              target: route.key,
+              canPreventDefault: true,
+            });
 
-              if (!isFocused && !event.defaultPrevented) {
-                props.navigation.navigate(route.name);
-              }
-            };
+            if (!isFocused && !event.defaultPrevented) {
+              props.navigation.navigate(route.name);
+            }
+          };
 
-            return (
-              <Pressable
-                key={route.key}
-                onPress={onPress}
-                style={({ pressed, focused }) => [
-                  styles.tabButton,
-                  {
-                    opacity: pressed || focused ? 0.6 : 1.0,
-                  },
+          return (
+            <Pressable
+              key={route.key}
+              onPress={onPress}
+              style={({ pressed, focused }) => [
+                styles.tabButton,
+                {
+                  opacity: pressed || focused ? 0.6 : 1.0,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  textStyles.default,
+                  { color: isFocused ? Colors[colorScheme ?? 'light'].tint : '#888' },
                 ]}
               >
-                <Text
-                  style={[
-                    textStyles.default,
-                    { color: isFocused ? Colors[colorScheme ?? 'light'].tint : '#888' },
-                  ]}
-                >
-                  {route.name === 'index'
-                    ? 'Home'
-                    : route.name === 'about'
-                      ? 'About'
-                      : route.name === 'live'
-                        ? 'Live Now'
-                        : route.name}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-        <View style={styles.avatarContainer}>
-          <ProfileAvatar />
-        </View>
+                {route.name === 'index'
+                  ? 'Home'
+                  : route.name === 'about'
+                    ? 'About'
+                    : route.name === 'live'
+                      ? 'Live Now'
+                      : route.name}
+              </Text>
+            </Pressable>
+          );
+        })}
       </View>
-    );
+    </View>
+  );
 
   return (
     <View style={styles.container}>
       <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        tabBarActiveBackgroundColor: Colors[colorScheme ?? 'light'].background,
-        tabBarStyle: {
-          width: '100%'
-        },
-        tabBarPosition: 'top',
-        tabBarIconStyle: {
-          height: textStyles.title.lineHeight,
-          width: 0
-        },
-        headerShown: false
-      }}
-      tabBar={renderTabBar}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarButton,
-          tabBarLabelStyle: textStyles.default,
-          tabBarIcon: () => null
+        screenOptions={{
+          tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+          tabBarActiveBackgroundColor: Colors[colorScheme ?? 'light'].background,
+          tabBarStyle: {
+            width: '100%'
+          },
+          tabBarPosition: 'top',
+          tabBarIconStyle: {
+            height: textStyles.title.lineHeight,
+            width: 0
+          },
+          headerShown: false
         }}
-      />
-      <Tabs.Screen
-        name="about"
-        options={{
-          title: 'About',
-          tabBarButton,
-          tabBarLabelStyle: textStyles.default,
-          tabBarIcon: () => null
-        }}
-      />
-      <Tabs.Screen
-        name="live"
-        options={{
-          title: 'Live Now',
-          tabBarButton,
-          tabBarLabelStyle: textStyles.default,
-          tabBarIcon: () => null
-        }}
-      />
-    </Tabs>
+        tabBar={renderTabBar}
+      >
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: 'Home',
+            tabBarButton,
+            tabBarLabelStyle: textStyles.default,
+            tabBarIcon: () => null
+          }}
+        />
+        <Tabs.Screen
+          name="about"
+          options={{
+            title: 'About',
+            tabBarButton,
+            tabBarLabelStyle: textStyles.default,
+            tabBarIcon: () => null
+          }}
+        />
+        <Tabs.Screen
+          name="live"
+          options={{
+            title: 'Live Now',
+            tabBarButton,
+            tabBarLabelStyle: textStyles.default,
+            tabBarIcon: () => null
+          }}
+        />
+      </Tabs>
     </View>
   );
 }
@@ -178,6 +178,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   avatarContainer: {
-    marginLeft: 'auto',
+    marginRight: 16,
+    width: 60, // Give it some space since ProfileAvatar is absolute and might need it
   },
 });
