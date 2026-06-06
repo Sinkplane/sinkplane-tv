@@ -128,7 +128,7 @@ export interface Video {
   channel: Channel;
   tags: string[];
   attachmentOrder: string[];
-  releaseDate: string;
+  releaseDate: string | null;
   likes: number;
   dislikes: number;
   score: number;
@@ -143,4 +143,5 @@ export interface Video {
   videoAttachments: string[];
   audioAttachments: string[];
   pictureAttachments: string[];
+  progress?: number | null;
 }

@@ -29,7 +29,8 @@ export const VideoListItem = ({ video, progress, onPress }: VideoListItemProps) 
     }
   };
 
-  const progressPercentage = progress ?? 0;
+  const duration = video.metadata.videoDuration;
+  const progressPercentage = progress && duration ? (progress / duration) * 100 : 0;
 
   // Strip HTML tags from description
   const stripHtml = (html: string) =>

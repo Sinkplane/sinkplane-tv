@@ -157,7 +157,8 @@ export interface VideoPost {
   channel: ChannelInfo;
   tags: string[];
   attachmentOrder: string[];
-  releaseDate: string;
+  releaseDate: string | null;
+  duration?: number;
   likes: number;
   dislikes: number;
   score: number;
@@ -173,4 +174,5 @@ export interface VideoPost {
   videoAttachments: VideoAttachment[];
   audioAttachments: AudioAttachment[];
   pictureAttachments: PictureAttachment[];
+  progress?: number | null;
 }

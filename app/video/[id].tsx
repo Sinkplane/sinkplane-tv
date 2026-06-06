@@ -4,9 +4,10 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import { useGetVideoPost } from '@/hooks/videos/useGetVideoPost';
 import { useGetVideoDelivery } from '@/hooks/videos/useGetVideoDelivery';
 import { useSession } from '@/hooks/authentication/auth.context';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { VideoDelivery } from '@/types/video-delivery.interface';
 import { VideoPlayer } from '@/components/videos/VideoPlayer';
+import { useGetVideoProgress } from '@/hooks/videos/useGetVideoProgress';
 
 // eslint-disable-next-line complexity
 export default function VideoDetailScreen() {
@@ -15,10 +16,11 @@ export default function VideoDetailScreen() {
   const [streamUrl, setStreamUrl] = useState<{ uri: string; headers?: Record<string, string> }>({
     uri: '',
   });
-  const [videoLoading, setIsVideoLoading] = useState(true);
+  const [videoLoading, setVideoLoading] = useState(true);
 
   // Fetch video post details
   const { data: videoPost, error: postError } = useGetVideoPost(token ?? undefined, tokenExpiration ?? undefined, id);
+
   // Fetch video delivery/stream URL
   const { data: videoDelivery, error: deliveryError } = useGetVideoDelivery(
     token ?? undefined,
@@ -26,13 +28,31 @@ export default function VideoDetailScreen() {
     videoPost?.videoAttachments?.[0]?.guid ?? undefined,
   );
 
+  // Fallback: Fetch progress from the batch endpoint
+  const videoIds = useMemo(() => (id ? [id] : []), [id]);
+  const { data: batchProgressData } = useGetVideoProgress(token ?? undefined, videoIds);
+
+  // Determine initial seek time
+  const initialProgress = useMemo(() => {
+    // 1. Check videoPost root
+    if (videoPost?.progress && videoPost.progress > 0) {
+      return videoPost.progress;
+    }
+
+    // 2. Check batch endpoint (treating as seconds)
+    if (batchProgressData && batchProgressData.length > 0) {
+      return batchProgressData[0].progress;
+    }
+
+    return 0;
+  }, [videoPost, batchProgressData]);
+
   const error = postError || deliveryError;
 
-  const handleStreamUrl = (data: VideoDelivery) => {
+  const handleStreamUrl = useCallback((data: VideoDelivery) => {
     if (!data) return;
     const group = (data.groups ?? [undefined])[0];
     const origin = (group?.origins ?? [undefined])[0];
-    // Filter variants: must be enabled, have a non-empty URL, and not be explicitly denied in metadata
     const variants = (group.variants ?? []).filter(v => {
       const isEnabled = v.enabled === undefined || v.enabled !== false;
       const hasUrl = v.url && v.url !== '';
@@ -40,27 +60,21 @@ export default function VideoDetailScreen() {
       return isEnabled && hasUrl && !isDenied;
     });
 
-    const variant = variants[variants.length - 1]; // get highest quality variant for now
+    const variant = variants[variants.length - 1];
 
     if (!origin || !variant) {
-      return handleError(new Error('No playable video variants found. You may lack permission for this content.'));
+      return handleError(new Error('No playable video variants found.'));
     }
 
-    // Remove trailing slash from origin and leading slash from variant to avoid double slashes
     const originUrl = origin.url.endsWith('/') ? origin.url.slice(0, -1) : origin.url;
     const variantUrl = variant.url.startsWith('/') ? variant.url : '/' + variant.url;
     const url = `${originUrl}${variantUrl}`;
 
-    console.info(`[VideoDetail] Selected quality: ${variant.label || variant.name} - ${url.split('?')[0]}`);
-
-    // Pass both Authorization and Cookie headers to the video player
-    // This ensures that the CDN can authenticate the request regardless of whether it expects a JWT or a session cookie
     const headers: Record<string, string> = {
-      'User-Agent': 'SinkplaneTV/1.0 (AppleTV; iOS)', // Use a consistent User-Agent
+      'User-Agent': 'SinkplaneTV/1.0 (AppleTV; iOS)',
     };
 
     if (token) {
-      // If it looks like a JWT (starts with ey), use Bearer. Otherwise, it's likely a sails.sid cookie.
       if (token.startsWith('ey')) {
         headers.Authorization = `Bearer ${token}`;
       } else {
@@ -69,43 +83,52 @@ export default function VideoDetailScreen() {
     }
 
     setStreamUrl({ uri: url, headers });
-  };
+  }, [token]);
 
   useEffect(() => {
     if (error) handleError(error);
     if (videoDelivery) handleStreamUrl(videoDelivery);
-  }, [videoDelivery, error]);
+  }, [videoDelivery, error, handleStreamUrl]);
 
   const handleError = (err: Error | unknown) => {
     console.error(err);
-    Alert.alert('Error launching video. Please go back and try again');
+    Alert.alert('Error', 'Error launching video. Please try again');
   };
+
   const handleLoad = () => {
-    setIsVideoLoading(!videoLoading);
+    setVideoLoading(false);
+  };
+
+  const handleBuffer = (data: { isBuffering: boolean }) => {
+    setVideoLoading(data.isBuffering);
   };
 
   const styles = useVideoDetailStyles();
+
+  const isReady = videoPost && videoDelivery && streamUrl.uri !== '';
 
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.container}>
-        {videoLoading && <ActivityIndicator />}
-        {videoPost && videoDelivery && streamUrl.uri !== '' && (
+        {(!isReady || videoLoading) && <ActivityIndicator style={styles.loader} size="large" />}
+        {isReady && (
           <VideoPlayer
+            id={id}
+            token={token ?? undefined}
             source={streamUrl}
             handleLoad={handleLoad}
-            handleBuffer={handleLoad}
-            handleError={e => {
-              handleError(e.error);
-            }}
+            handleBuffer={handleBuffer}
+            handleError={e => handleError(e.error)}
             title={videoPost.title}
+            initialSeek={initialProgress}
           />
         )}
       </View>
     </>
   );
 }
+
 const useVideoDetailStyles = function () {
   return StyleSheet.create({
     container: {
@@ -114,6 +137,10 @@ const useVideoDetailStyles = function () {
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
+    },
+    loader: {
+      position: 'absolute',
+      zIndex: 1,
     },
   });
 };

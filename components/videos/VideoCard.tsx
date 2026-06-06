@@ -44,7 +44,8 @@ export const VideoCard = ({ video, progress }: VideoCardProps) => {
     router.push(`/video/${video.id}`);
   };
 
-  const progressPercentage = progress ?? 0;
+  const duration = video.metadata.videoDuration;
+  const progressPercentage = progress && duration ? (progress / duration) * 100 : 0;
 
   return (
     <Pressable onPress={handlePress} onFocus={() => setIsFocused(true)} onBlur={() => setIsFocused(false)} style={styles.container}>
