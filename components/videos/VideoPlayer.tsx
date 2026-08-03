@@ -15,10 +15,12 @@ interface VideoPlayerProps {
   handleLoad?: (e: OnLoadData) => void;
   handleBuffer?: (e: OnBufferData) => void;
   handleError: (e: OnVideoErrorData) => void;
+  handleEnd?: () => void;
   thumbnailUrl?: string;
   paused?: boolean;
   title?: string;
   initialSeek?: number;
+  replayToken?: number;
 }
 
 export const VideoPlayer: FC<VideoPlayerProps> = ({
@@ -28,14 +30,17 @@ export const VideoPlayer: FC<VideoPlayerProps> = ({
   handleLoad,
   handleBuffer,
   handleError,
+  handleEnd,
   thumbnailUrl,
   paused = false,
   title,
   initialSeek,
+  replayToken,
 }: VideoPlayerProps) => {
   const videoRef = useRef<VideoComponent>(null);
   const hasSeekedRef = useRef(false);
   const [isInitialSeeking, setIsInitialSeeking] = useState(!!initialSeek && initialSeek > 0);
+  const [isReplaying, setIsReplaying] = useState(false);
   const currentTimeRef = useRef(initialSeek || 0);
   const lastSavedProgressRef = useRef(initialSeek || 0);
   const { mutate: updateProgressMutation } = useUpdateVideoProgress(token);
@@ -72,6 +77,17 @@ export const VideoPlayer: FC<VideoPlayerProps> = ({
     }
   }, [id, token]);
 
+  // Handle replay request from parent
+  useEffect(() => {
+    if (replayToken === undefined) return;
+    if (videoRef.current) {
+      videoRef.current.seek(0);
+      currentTimeRef.current = 0;
+      lastSavedProgressRef.current = 0;
+      setIsReplaying(true);
+    }
+  }, [replayToken]);
+
   const onVideoError = (e: OnVideoErrorData) => {
     console.error(`[VideoPlayer] Error playing ${title || 'video'}:`, e.error);
     handleError(e);
@@ -100,6 +116,11 @@ export const VideoPlayer: FC<VideoPlayerProps> = ({
 
   const onProgress = (data: { currentTime: number }) => {
     currentTimeRef.current = data.currentTime;
+
+    // Clear replaying flag once playback resumes from the start
+    if (isReplaying && data.currentTime > 0) {
+      setIsReplaying(false);
+    }
 
     // If we are in the initial seeking phase
     if (isInitialSeeking && initialSeek && initialSeek > 0) {
@@ -138,6 +159,7 @@ export const VideoPlayer: FC<VideoPlayerProps> = ({
         onBuffer={onBuffer}
         onProgress={onProgress}
         onError={onVideoError}
+        onEnd={handleEnd}
         controls
         poster={{ source: { uri: thumbnailUrl } }}
         playInBackground={false}

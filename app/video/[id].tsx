@@ -7,6 +7,7 @@ import { useSession } from '@/hooks/authentication/auth.context';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { VideoDelivery } from '@/types/video-delivery.interface';
 import { VideoPlayer } from '@/components/videos/VideoPlayer';
+import { RelatedVideosGrid } from '@/components/videos/RelatedVideosGrid';
 import { useGetVideoProgress } from '@/hooks/videos/useGetVideoProgress';
 
 // eslint-disable-next-line complexity
@@ -17,6 +18,8 @@ export default function VideoDetailScreen() {
     uri: '',
   });
   const [videoLoading, setVideoLoading] = useState(true);
+  const [hasEnded, setHasEnded] = useState(false);
+  const [replayToken, setReplayToken] = useState(0);
 
   // Fetch video post details
   const { data: videoPost, error: postError } = useGetVideoPost(token ?? undefined, tokenExpiration ?? undefined, id);
@@ -107,6 +110,16 @@ export default function VideoDetailScreen() {
 
   const isReady = videoPost && videoDelivery && streamUrl.uri !== '';
 
+  const handleEnd = useCallback(() => {
+    setHasEnded(true);
+  }, []);
+
+  const handleReplay = useCallback(() => {
+    setHasEnded(false);
+    setVideoLoading(false);
+    setReplayToken(t => t + 1);
+  }, []);
+
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
@@ -120,8 +133,18 @@ export default function VideoDetailScreen() {
             handleLoad={handleLoad}
             handleBuffer={handleBuffer}
             handleError={e => handleError(e.error)}
+            handleEnd={handleEnd}
             title={videoPost.title}
             initialSeek={initialProgress}
+            replayToken={replayToken}
+          />
+        )}
+        {hasEnded && id && (
+          <RelatedVideosGrid
+            videoId={id}
+            token={token ?? undefined}
+            tokenExpiration={tokenExpiration ?? undefined}
+            onReplay={handleReplay}
           />
         )}
       </View>
