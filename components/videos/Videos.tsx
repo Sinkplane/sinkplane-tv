@@ -3,7 +3,7 @@ import { useRef, useEffect, type RefObject, useMemo, useState } from 'react';
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { VideoCard } from '@/components/videos/VideoCard';
+import { VideoGrid } from '@/components/videos/VideoGrid';
 import { useScale } from '@/hooks/useScale';
 import { useGetVideosInfinite } from '@/hooks/videos/useGetVideos';
 import { Channel } from '@/types/creator-list.interface';
@@ -95,15 +95,15 @@ export const Videos = ({ token, tokenExpiration, creatorId, channel, view, onFet
 
       {videos && videos.length > 0 && (
         <>
-          <ThemedView style={view === VideoView.CARD ? styles.gridContainer : styles.videosContainer}>
-            {videos.map(video =>
-              view === VideoView.CARD ? (
-                <VideoCard key={video.id} video={video} progress={persistedProgressMap[video.id]} />
-              ) : (
+          {view === VideoView.CARD ? (
+            <VideoGrid videos={videos} progressMap={persistedProgressMap} />
+          ) : (
+            <ThemedView style={styles.videosContainer}>
+              {videos.map(video => (
                 <VideoListItem key={video.id} video={video} progress={persistedProgressMap[video.id]} />
-              ),
-            )}
-          </ThemedView>
+              ))}
+            </ThemedView>
+          )}
 
           {isFetchingNextPage && (
             <ThemedView style={styles.centerContainer}>
@@ -133,13 +133,6 @@ const useVideosStyles = function () {
     },
     videosContainer: {
       marginTop: 16 * scale,
-    },
-    gridContainer: {
-      marginTop: 16 * scale,
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 12 * scale,
-      alignItems: 'stretch',
     },
     loadingText: {
       marginTop: 8 * scale,

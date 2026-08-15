@@ -24,9 +24,9 @@ export default function TabLayout() {
           <Label>Home</Label>
           <Icon sf={{ default: 'play', selected: 'play.fill' }} />
         </NativeTabs.Trigger>
-        <NativeTabs.Trigger name="about">
-          <Label>About</Label>
-          <Icon sf={{ default: 'person', selected: 'person.fill' }} />
+        <NativeTabs.Trigger name="history">
+          <Label>History</Label>
+          <Icon sf={{ default: 'clock', selected: 'clock.fill' }} />
         </NativeTabs.Trigger>
         {isLive && (
           <NativeTabs.Trigger name="live">

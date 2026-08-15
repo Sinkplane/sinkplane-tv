@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { SessionProvider, useSession } from '@/hooks/authentication/auth.context';
+import { ThemeProvider as AppThemeProvider } from '@/hooks/theme.context';
 import { SplashScreenController } from '@/components/SplashScreenController';
 import { useTVServer } from '@/hooks/network-server/useTVServer';
 
@@ -29,6 +30,15 @@ const queryClient = new QueryClient({
 });
 
 export default function RootLayout() {
+  return (
+    <AppThemeProvider>
+      <RootNavigation />
+    </AppThemeProvider>
+  );
+}
+
+// Inner component so the navigation theme reacts to the app theme override.
+function RootNavigation() {
   const colorScheme = useColorScheme();
 
   return (

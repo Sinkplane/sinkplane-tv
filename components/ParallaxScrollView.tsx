@@ -1,5 +1,5 @@
 import type { PropsWithChildren, ReactElement } from 'react';
-import { StyleSheet, useColorScheme, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
+import { StyleSheet, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import Animated, {
   interpolate,
   useAnimatedRef,
@@ -8,6 +8,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { ThemedView } from '@/components/ThemedView';
+import { useColorScheme } from '@/hooks/useColorScheme';
 import { useScale } from '@/hooks/useScale';
 
 type Props = PropsWithChildren<{

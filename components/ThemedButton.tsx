@@ -17,13 +17,16 @@ export function ThemedButton({ onPress, title, style }: ThemedButtonProps) {
   const colorScheme = useColorScheme();
   const styles = useThemedButtonStyles();
 
-  const backgroundColor = isFocused
-    ? Colors[colorScheme ?? 'light'].tint
-    : Colors[colorScheme ?? 'light'].background;
+  const palette = Colors[colorScheme ?? 'light'];
 
+  const backgroundColor = isFocused
+    ? palette.tint
+    : palette.background;
+
+  // Dark mode tint (#aaa) needs dark text for contrast; light mode tint (#0085FF) needs white text.
   const textColor = isFocused
-    ? '#FFFFFF'
-    : Colors[colorScheme ?? 'light'].text;
+    ? (colorScheme === 'dark' ? Colors.dark.background : '#FFFFFF')
+    : palette.text;
 
   return (
     <Pressable
@@ -51,13 +54,14 @@ export function ThemedButton({ onPress, title, style }: ThemedButtonProps) {
 
 const useThemedButtonStyles = function () {
   const scale = useScale();
+  const colorScheme = useColorScheme();
   return StyleSheet.create({
     button: {
       paddingHorizontal: 20 * scale,
       paddingVertical: 12 * scale,
       borderRadius: 8 * scale,
       borderWidth: 2 * scale,
-      borderColor: 'rgba(255, 255, 255, 0.2)',
+      borderColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)',
       alignItems: 'center',
       justifyContent: 'center',
     },

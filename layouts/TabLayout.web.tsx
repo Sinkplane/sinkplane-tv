@@ -37,6 +37,7 @@ type TabBarProps = {
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const textStyles = useTextStyles();
+  const styles = useTabLayoutStyles();
 
   const tabBarButton = (props: React.ComponentProps<typeof Pressable>) => {
     const style: React.ComponentProps<typeof Pressable>['style'] = props.style ?? {};
@@ -87,13 +88,13 @@ export default function TabLayout() {
               <Text
                 style={[
                   textStyles.default,
-                  { color: isFocused ? Colors[colorScheme ?? 'light'].tint : '#888' },
+                  { color: isFocused ? Colors[colorScheme ?? 'light'].tint : Colors[colorScheme ?? 'light'].tabIconDefault },
                 ]}
               >
                 {route.name === 'index'
                   ? 'Home'
-                  : route.name === 'about'
-                    ? 'About'
+                  : route.name === 'history'
+                    ? 'History'
                     : route.name === 'live'
                       ? 'Live Now'
                       : route.name}
@@ -133,9 +134,9 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="about"
+          name="history"
           options={{
-            title: 'About',
+            title: 'History',
             tabBarButton,
             tabBarLabelStyle: textStyles.default,
             tabBarIcon: () => null
@@ -155,30 +156,34 @@ export default function TabLayout() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  tabBarContainer: {
-    flexDirection: 'row',
-    backgroundColor: Colors.light.background,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    alignItems: 'center',
-  },
-  tabBarContent: {
-    flexDirection: 'row',
-    flex: 1,
-    gap: 16,
-  },
-  tabButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-  },
-  avatarContainer: {
-    marginRight: 16,
-    width: 60, // Give it some space since ProfileAvatar is absolute and might need it
-  },
-});
+const useTabLayoutStyles = function () {
+  const colorScheme = useColorScheme();
+
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    tabBarContainer: {
+      flexDirection: 'row',
+      backgroundColor: Colors[colorScheme ?? 'light'].background,
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colorScheme === 'dark' ? '#333' : '#e0e0e0',
+      alignItems: 'center',
+    },
+    tabBarContent: {
+      flexDirection: 'row',
+      flex: 1,
+      gap: 16,
+    },
+    tabButton: {
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+    },
+    avatarContainer: {
+      marginRight: 16,
+      width: 60, // Give it some space since ProfileAvatar is absolute and might need it
+    },
+  });
+};

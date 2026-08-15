@@ -3,6 +3,7 @@ import { Image, StyleSheet, NativeScrollEvent, NativeSyntheticEvent } from 'reac
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { AssDass, Videos, VideoView } from '@/components/videos/Videos';
 import { useScale } from '@/hooks/useScale';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 import bg from '@/assets/images/bg.jpg';
 import { useSession } from '@/hooks/authentication/auth.context';
@@ -109,6 +110,7 @@ export default function HomeScreen() {
 
 const useHomeScreenStyles = function () {
   const scale = useScale();
+  const tintColor = useThemeColor({}, 'tint');
   return StyleSheet.create({
     title: {
       textAlign: 'right',
@@ -139,7 +141,7 @@ const useHomeScreenStyles = function () {
     },
     selectedChannel: {
       borderWidth: 2 * scale,
-      borderColor: '#007AFF',
+      borderColor: tintColor,
     },
   });
 };

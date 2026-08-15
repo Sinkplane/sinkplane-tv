@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { View, Pressable, Image, StyleSheet, Modal, Text, TouchableHighlight } from 'react-native';
+import { View, Pressable, Image, StyleSheet, Modal, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { useSession } from '@/hooks/authentication/auth.context';
-import { Colors } from '@/constants/colors';
+import { useTheme } from '@/hooks/theme.context';
+import { useColorScheme } from '@/hooks/useColorScheme';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Creator } from '@/types/creator-list.interface';
@@ -12,11 +13,20 @@ import { useScale } from '@/hooks/useScale';
 export function ProfileAvatar() {
   const [menuVisible, setMenuVisible] = useState(false);
   const { user, signOut, creators, creator: currentCreator, subscriptions, setCreator, setSubscription } = useSession();
+  const { toggleColorScheme } = useTheme();
+  const resolvedColorScheme = useColorScheme();
   const router = useRouter();
   const tintColor = useThemeColor({}, 'tint');
   const backgroundColor = useThemeColor({}, 'background');
   const styles = useProfileAvatarStyles();
   const scale = useScale();
+
+  const isDarkMode = resolvedColorScheme === 'dark';
+
+  const handleToggleTheme = () => {
+    toggleColorScheme();
+    setMenuVisible(false);
+  };
 
   const handleLogout = () => {
     setMenuVisible(false);
@@ -93,6 +103,30 @@ export function ProfileAvatar() {
             })}
             <View style={styles.divider} />
             <Pressable
+              onPress={handleToggleTheme}
+              style={({ pressed, focused }) => [
+                styles.menuItem,
+                (pressed || focused) && { backgroundColor: tintColor }
+              ]}
+            >
+              {({ focused }) => (
+                <View style={styles.creatorItem}>
+                  <Ionicons
+                    size={20 * scale}
+                    name={isDarkMode ? 'sunny' : 'moon'}
+                    color={focused ? backgroundColor : tintColor}
+                  />
+                  <Text style={[
+                    styles.menuItemTextNormal,
+                    focused && { color: backgroundColor }
+                  ]}>
+                    {isDarkMode ? 'Light Mode' : 'Dark Mode'}
+                  </Text>
+                </View>
+              )}
+            </Pressable>
+            <View style={styles.divider} />
+            <Pressable
               onPress={handleLogout}
               style={({ pressed, focused }) => [
                 styles.menuItem,
@@ -117,6 +151,11 @@ export function ProfileAvatar() {
 
 const useProfileAvatarStyles = function () {
   const scale = useScale();
+  const tint = useThemeColor({}, 'tint');
+  const background = useThemeColor({}, 'background');
+  const text = useThemeColor({}, 'text');
+  const icon = useThemeColor({}, 'icon');
+
   return StyleSheet.create({
     container: {
       position: 'absolute',
@@ -127,7 +166,7 @@ const useProfileAvatarStyles = function () {
     avatarButton: {
       borderRadius: 25 * scale,
       borderWidth: 2 * scale,
-      borderColor: Colors.light.tint,
+      borderColor: tint,
       overflow: 'hidden',
     },
     avatarContainer: {
@@ -149,7 +188,7 @@ const useProfileAvatarStyles = function () {
       paddingLeft: 20 * scale,
     },
     menu: {
-      backgroundColor: '#fff',
+      backgroundColor: background,
       borderRadius: 12 * scale,
       padding: 16 * scale,
       minWidth: 300 * scale,
@@ -163,7 +202,7 @@ const useProfileAvatarStyles = function () {
       fontSize: 18 * scale,
       fontWeight: 'bold',
       marginBottom: 12 * scale,
-      color: '#333',
+      color: text,
       paddingHorizontal: 8 * scale,
     },
     creatorItem: {
@@ -178,14 +217,14 @@ const useProfileAvatarStyles = function () {
     },
     activeMenuItem: {
       borderLeftWidth: 4 * scale,
-      borderLeftColor: Colors.light.tint,
+      borderLeftColor: tint,
     },
     activeMenuItemText: {
       fontWeight: 'bold',
     },
     divider: {
       height: 1 * scale,
-      backgroundColor: '#e0e0e0',
+      backgroundColor: icon + '40',
       marginVertical: 8 * scale,
     },
     menuItem: {
@@ -195,7 +234,7 @@ const useProfileAvatarStyles = function () {
     },
     menuItemTextNormal: {
       fontSize: 16 * scale,
-      color: '#000',
+      color: text,
       fontWeight: '400',
     },
     menuItemLogoutText: {
