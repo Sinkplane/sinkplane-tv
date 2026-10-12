@@ -1,4 +1,4 @@
-import { Modal, StyleSheet, Pressable, FlatList, View } from 'react-native';
+import { Modal, StyleSheet, Pressable, View } from 'react-native';
 import { ThemedView } from './ThemedView';
 import { ThemedText } from './ThemedText';
 import { useScale } from '@/hooks/useScale';
@@ -31,17 +31,15 @@ export function ThemedModal<T>({ visible, onClose, title, data, renderItem, keyE
               <ThemedText type="title" style={styles.headerTitle}>
                 {title}
               </ThemedText>
-              <Pressable onPress={onClose} style={styles.closeButton}>
+              <Pressable onPress={onClose} style={styles.closeButton} testID="modal-close-button">
                 <ThemedText style={styles.closeButtonText}>✕</ThemedText>
               </Pressable>
             </ThemedView>
-            <FlatList
-              data={data}
-              renderItem={({ item }) => renderItem(item)}
-              keyExtractor={keyExtractor}
-              style={styles.listView}
-              contentContainerStyle={styles.listContent}
-            />
+            <View style={styles.listView}>
+              {data.map(item => (
+                <View key={keyExtractor(item)}>{renderItem(item)}</View>
+              ))}
+            </View>
           </ThemedView>
         </View>
       </View>
@@ -96,9 +94,6 @@ const useThemedModalStyles = function () {
     },
     listView: {
       maxHeight: 400 * scale,
-    },
-    listContent: {
-      paddingBottom: 12 * scale,
     },
   });
 };

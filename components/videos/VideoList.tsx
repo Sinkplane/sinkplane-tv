@@ -63,7 +63,13 @@ export const VideoListItem = ({ video, progress, onPress }: VideoListItemProps) 
   };
 
   return (
-    <Pressable onPress={handlePress} onFocus={() => setIsFocused(true)} onBlur={() => setIsFocused(false)} style={styles.container}>
+    <Pressable
+      testID={`video-list-item-${video.id}`}
+      onPress={handlePress}
+      onFocus={() => setIsFocused(true)}
+      onBlur={() => setIsFocused(false)}
+      style={styles.container}
+    >
       <View style={[styles.shadow, isFocused && styles.shadowFocused]}>
         <View style={[styles.card, isFocused && styles.cardFocused]}>
           <View style={styles.thumbnailContainer}>

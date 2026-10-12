@@ -46,6 +46,7 @@ export function ProfileAvatar() {
   return (
     <View style={styles.container}>
       <Pressable
+        testID="profile-avatar-button"
         onPress={() => setMenuVisible(true)}
         style={({ pressed, focused }) => [
           styles.avatarButton,

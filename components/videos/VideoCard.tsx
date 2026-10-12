@@ -48,14 +48,23 @@ export const VideoCard = ({ video, progress }: VideoCardProps) => {
   const progressPercentage = progress && duration ? (progress / duration) * 100 : 0;
 
   return (
-    <Pressable onPress={handlePress} onFocus={() => setIsFocused(true)} onBlur={() => setIsFocused(false)} style={styles.container}>
+    <Pressable
+      testID={`video-card-${video.id}`}
+      onPress={handlePress}
+      onFocus={() => setIsFocused(true)}
+      onBlur={() => setIsFocused(false)}
+      style={styles.container}
+    >
       <ThemedView style={[styles.shadow, isFocused && styles.shadowFocused]}>
         <ThemedView style={[styles.card, isFocused && styles.cardFocused]}>
           <View style={styles.thumbnailContainer}>
             <Image source={{ uri: video?.thumbnail?.path ?? '' }} style={styles.thumbnail} resizeMode="cover" />
             {progress !== undefined && progress > 0 && (
               <View style={styles.progressBarContainer}>
-                <View style={[styles.progressBar, { width: `${Math.min(progressPercentage, 100)}%` }]} />
+                <View
+                  testID={`video-progress-${video.id}`}
+                  style={[styles.progressBar, { width: `${Math.min(progressPercentage, 100)}%` }]}
+                />
               </View>
             )}
             <View style={styles.overlayContainer}>
