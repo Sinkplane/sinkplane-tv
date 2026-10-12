@@ -1,0 +1,97 @@
+name: Android TV Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: EAS build profile
+        type: choice
+        options:
+          - preview_tv
+          - production_tv
+          - development_tv
+        default: preview_tv
+      mark_prerelease:
+        description: Mark the GitHub release as a pre-release
+        type: boolean
+        default: false
+
+concurrency:
+  group: android-tv-release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  android-tv-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install EAS CLI
+        run: npm install --global eas-cli@latest
+
+      - name: Resolve release tag
+        id: tag
+        run: |
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            echo "tag=$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
+          else
+            VERSION=$(jq -r '.expo.version' app.json)
+            echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run EAS build for Android TV
+        id: build
+        run: |
+          PROFILE="${{ inputs.profile || 'preview_tv' }}"
+          eas build \
+            --platform android \
+            --profile "$PROFILE" \
+            --non-interactive \
+            --json \
+            | tee eas-build.json
+          BUILD_URL=$(jq -r '.[0].artifacts.buildUrl' eas-build.json)
+          if [ -z "$BUILD_URL" ] || [ "$BUILD_URL" = "null" ]; then
+            echo "EAS build did not return an artifact URL" >&2
+            exit 1
+          fi
+          echo "url=$BUILD_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Download build artifact
+        run: |
+          URL="${{ steps.build.outputs.url }}"
+          EXT="${URL##*.}"
+          TAG="${{ steps.tag.outputs.tag }}"
+          curl --fail --location --output "sinkplane-tv-${TAG#v}.${EXT}" "$URL"
+
+      - name: Create or update GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.tag.outputs.tag }}
+          PRERELEASE_FLAG: ${{ inputs.mark_prerelease && '--prerelease' || '' }}
+        run: |
+          FILE=$(ls sinkplane-tv-*)
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            gh release upload "$TAG" "$FILE" --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$TAG" "$FILE" \
+              --title "Sinkplane TV $TAG" \
+              --generate-notes \
+              --target "$GITHUB_SHA" \
+              $PRERELEASE_FLAG \
+              --repo "$GITHUB_REPOSITORY"
+          fi
