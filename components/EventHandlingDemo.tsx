@@ -16,14 +16,9 @@ import { ThemedView } from '@/components/ThemedView';
 import { useScale } from '@/hooks/useScale';
 import { useThemeColor } from '@/hooks/useThemeColor';
 
-interface TVEvent {
-  eventType: string;
-  eventKeyAction?: string;
-}
-
 const useTVEventHandler = Platform.isTV
   ? tvEventHandler
-  : (_: (event: TVEvent) => void) => {};
+  : () => {};
 
 /**
  * Demo of event handling on TV and web.
@@ -45,7 +40,7 @@ export const EventHandlingDemo = () => {
     setPressableEventLog((log) => logWithAppendedEntry(log, entry));
   };
 
-  useTVEventHandler((event: TVEvent) => {
+  useTVEventHandler((event) => {
     const { eventType, eventKeyAction } = event;
     if (eventType !== 'focus' && eventType !== 'blur') {
       setRemoteEventLog((log) =>
@@ -116,20 +111,18 @@ const PressableButton = (props: {
       onPressIn={() => props.log(`${props.title} onPressIn`)}
       onPressOut={() => props.log(`${props.title} onPressOut`)}
       onLongPress={() => props.log(`${props.title} onLongPress`)}
-      style={({ pressed, focused, hovered }) =>
-        pressed || focused || hovered
+      style={({ pressed, focused }) =>
+        pressed || focused
           ? styles.pressableFocused
           : styles.pressable
       }
     >
-      {({ focused, hovered, pressed }) => (
+      {({ focused, pressed }) => (
           <ThemedText style={styles.pressableText}>
             {pressed
               ? `${props.title} pressed`
               : focused
               ? `${props.title} focused`
-              : hovered
-              ? `${props.title} hovered`
               : props.title}
           </ThemedText>
         )}

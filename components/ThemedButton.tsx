@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, ViewStyle } from 'react-native';
+import { Pressable, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { useState } from 'react';
 import { ThemedText } from './ThemedText';
 import { useScale } from '@/hooks/useScale';
@@ -8,7 +8,7 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 interface ThemedButtonProps {
   onPress: () => void;
   title: string;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
 export function ThemedButton({ onPress, title, style }: ThemedButtonProps) {
@@ -17,7 +17,7 @@ export function ThemedButton({ onPress, title, style }: ThemedButtonProps) {
   const colorScheme = useColorScheme();
   const styles = useThemedButtonStyles();
 
-  const palette = Colors[colorScheme ?? 'light'];
+  const palette = Colors[colorScheme === 'dark' ? 'dark' : 'light'];
 
   const backgroundColor = isFocused
     ? palette.tint

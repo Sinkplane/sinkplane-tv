@@ -61,7 +61,7 @@ cd sinkplane-tv
 This will:
 - Clone the companion app if needed
 - Install all dependencies
-- Apply the cookie-manager tvOS patch during `npm install`
+- Install dependencies with `pnpm install`
 - Set up CocoaPods
 
 **See**: [`docs/QUICK_START_TVOS.md`](docs/QUICK_START_TVOS.md) for detailed setup instructions.
@@ -92,14 +92,14 @@ To test authentication and companion features during development:
 
 1. **Start the TV app** (this starts a TCP server on port 9999):
    ```bash
-   EXPO_TV=1 npx expo run:android  # or run:ios for Apple TV
+   EXPO_TV=1 pnpm exec expo run:android  # or run:ios for Apple TV
    ```
 
 2. **Start the companion app** in a separate terminal:
    ```bash
    cd ../sinkplane-companion
    ./scripts/setup-dev-env.sh android  # or appletv
-   npx expo start
+   pnpm exec expo start
    ```
 
 The companion app will automatically discover and connect to your TV. See the [Companion App README](../sinkplane-companion/README.md) for detailed setup instructions.
@@ -124,7 +124,7 @@ This project includes an [example Metro configuration](./metro.config.js) that a
 When you're ready, run:
 
 ```bash
-npm run reset-project
+pnpm run reset-project
 ```
 
 This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.

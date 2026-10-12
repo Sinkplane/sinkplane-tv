@@ -10,7 +10,7 @@ interface ThemedModalProps<T> {
   onClose: () => void;
   title: string;
   data: T[];
-  renderItem: (item: T) => React.ReactNode;
+  renderItem: (item: T) => React.ReactElement | null;
   keyExtractor: (item: T) => string;
 }
 
@@ -80,7 +80,7 @@ const useThemedModalStyles = function () {
       alignItems: 'center',
       marginBottom: 20 * scale,
       borderBottomWidth: 1,
-      borderBottomColor: Colors[colorScheme ?? 'light'].tint + '40',
+      borderBottomColor: Colors[colorScheme === 'dark' ? 'dark' : 'light'].tint + '40',
       paddingBottom: 12 * scale,
     },
     headerTitle: {

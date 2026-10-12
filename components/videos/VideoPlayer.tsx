@@ -4,7 +4,8 @@ import VideoComponent, {
   OnBufferData,
   OnLoadData,
   OnVideoErrorData,
-  ReactVideoSource
+  ReactVideoSource,
+  VideoRef
 } from 'react-native-video';
 import { useUpdateVideoProgress, updateVideoProgress } from '@/hooks/videos/useUpdateVideoProgress';
 
@@ -37,7 +38,7 @@ export const VideoPlayer: FC<VideoPlayerProps> = ({
   initialSeek,
   replayToken,
 }: VideoPlayerProps) => {
-  const videoRef = useRef<VideoComponent>(null);
+  const videoRef = useRef<VideoRef>(null);
   const hasSeekedRef = useRef(false);
   const [isInitialSeeking, setIsInitialSeeking] = useState(!!initialSeek && initialSeek > 0);
   const [isReplaying, setIsReplaying] = useState(false);
@@ -184,10 +185,10 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   video: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0,0,0,0.7)',
     justifyContent: 'center',
     alignItems: 'center',

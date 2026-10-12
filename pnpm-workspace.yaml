@@ -1,0 +1,20 @@
+# pnpm v12+ reads ALL settings from this file (auth/registry only from .npmrc).
+# This is NOT a monorepo workspace declaration; single-project settings only.
+
+# React Native/Expo needs a flat node_modules layout for Metro resolution
+# and iOS Podfile node_modules paths.
+nodeLinker: hoisted
+allowBuilds:
+  # Native binding used by eslint-config-airbnb's import resolver
+  unrs-resolver: true
+overrides:
+  # Keep metro-config aligned with the react-native-tvos 0.86 fork
+  # (@react-native/community-cli-plugin@0.86.3 peers @react-native/metro-config@0.86.3).
+  '@react-native/metro-config': 0.86.3
+# Explicitly allowed past the machine's minimumReleaseAge supply-chain policy
+# (also excluded in the user's global pnpm config).
+minimumReleaseAgeExclude:
+  - '@tanstack/query-core@5.104.2'
+  - '@tanstack/react-query@5.104.2'
+patchedDependencies:
+  '@preeternal/react-native-cookie-manager@7.0.0': patches/@preeternal__react-native-cookie-manager@7.0.0.patch

@@ -1,6 +1,6 @@
 import { StyleSheet, Image, ActivityIndicator, View, Pressable, ToastAndroid, Platform } from 'react-native';
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect } from 'expo-router';
 
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
@@ -186,7 +186,7 @@ export default function FocusDemoScreen() {
           <ThemedView style={[styles.offlineContainer, { position: 'absolute', zIndex: 1, backgroundColor: 'rgba(255, 0, 0, 0.7)' }]}>
             <ThemedText type="subtitle">Video Player Error</ThemedText>
             <ThemedText style={{ color: '#fff' }}>
-              {playerError.localizedDescription || playerError.message || 'The video could not be loaded.'}
+              {playerError.localizedDescription || playerError.errorString || 'The video could not be loaded.'}
             </ThemedText>
             <Pressable style={[styles.refreshButton, { marginTop: 10, backgroundColor: '#fff' }]} onPress={handleRefresh}>
               <ThemedText style={[styles.refreshButtonText, { color: '#000' }]}>Try Again</ThemedText>
@@ -195,6 +195,7 @@ export default function FocusDemoScreen() {
         )}
         <VideoPlayer
           source={streamUrl}
+          id={LIVESTREAM_ID}
           handleLoad={handleLoad}
           handleBuffer={handleBuffer}
           handleError={handleVideoError}

@@ -1,6 +1,6 @@
-import { Tabs } from 'expo-router';
+import { Tabs, type BottomTabBarButtonProps, type BottomTabBarProps } from 'expo-router/js-tabs';
 import React from 'react';
-import { Platform, Pressable, View, StyleSheet, Text } from 'react-native';
+import { Pressable, View, StyleSheet, Text } from 'react-native';
 
 import { Colors } from '@/constants/colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
@@ -12,35 +12,17 @@ type Route = {
   name: string;
 };
 
-type NavigationState = {
-  index: number;
-  routes: Route[];
-};
-
-type Navigation = {
-  emit: (event: {
-    type: string;
-    target: string;
-    canPreventDefault: boolean;
-  }) => { defaultPrevented: boolean };
-  navigate: (name: string) => void;
-};
-
-type TabBarProps = {
-  state: NavigationState;
-  navigation: Navigation;
-};
-
 /**
  * This layout is required for the web platform.
  */
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const palette = Colors[colorScheme === 'dark' ? 'dark' : 'light'];
   const textStyles = useTextStyles();
   const styles = useTabLayoutStyles();
 
-  const tabBarButton = (props: React.ComponentProps<typeof Pressable>) => {
-    const style: React.ComponentProps<typeof Pressable>['style'] = props.style ?? {};
+  const tabBarButton = ({ ref: _ref, href: _href, ...props }: BottomTabBarButtonProps) => {
+    const style: BottomTabBarButtonProps['style'] = props.style ?? {};
     return (
       <Pressable
         {...props}
@@ -54,7 +36,7 @@ export default function TabLayout() {
     );
   };
 
-  const renderTabBar = (props: TabBarProps) => (
+  const renderTabBar = (props: BottomTabBarProps) => (
     <View style={styles.tabBarContainer}>
       <View style={styles.avatarContainer}>
         <ProfileAvatar />
@@ -88,7 +70,7 @@ export default function TabLayout() {
               <Text
                 style={[
                   textStyles.default,
-                  { color: isFocused ? Colors[colorScheme ?? 'light'].tint : Colors[colorScheme ?? 'light'].tabIconDefault },
+                  { color: isFocused ? palette.tint : palette.tabIconDefault },
                 ]}
               >
                 {route.name === 'index'
@@ -110,8 +92,8 @@ export default function TabLayout() {
     <View style={styles.container}>
       <Tabs
         screenOptions={{
-          tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-          tabBarActiveBackgroundColor: Colors[colorScheme ?? 'light'].background,
+          tabBarActiveTintColor: palette.tint,
+          tabBarActiveBackgroundColor: palette.background,
           tabBarStyle: {
             width: '100%'
           },
@@ -165,7 +147,7 @@ const useTabLayoutStyles = function () {
     },
     tabBarContainer: {
       flexDirection: 'row',
-      backgroundColor: Colors[colorScheme ?? 'light'].background,
+      backgroundColor: Colors[colorScheme === 'dark' ? 'dark' : 'light'].background,
       paddingVertical: 8,
       paddingHorizontal: 16,
       borderBottomWidth: 1,

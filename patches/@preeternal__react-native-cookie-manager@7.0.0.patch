@@ -1,0 +1,163 @@
+diff --git a/CookieManager.podspec b/CookieManager.podspec
+index fceaedf0b6cff0471208156c8f0babf9358251c0..f5ca7c68d4225b2cd8b748e669638d922a55299d 100644
+--- a/CookieManager.podspec
++++ b/CookieManager.podspec
+@@ -10,7 +10,7 @@ Pod::Spec.new do |s|
+   s.license      = package["license"]
+   s.authors      = package["author"]
+ 
+-  s.platforms    = { :ios => min_ios_version_supported }
++  s.platforms    = { :ios => min_ios_version_supported, :tvos => '13.0' }
+   s.source       = { :git => "https://github.com/Preeternal/react-native-cookie-manager.git", :tag => "#{s.version}" }
+   s.swift_version = "5.9"
+   s.pod_target_xcconfig = {
+diff --git a/ios/CookieChangeObserver.swift b/ios/CookieChangeObserver.swift
+index 7d4405a02670abe68e32f44029d931d21a94efde..fac973f788912493bf6e6f4a688e444e78446a56 100644
+--- a/ios/CookieChangeObserver.swift
++++ b/ios/CookieChangeObserver.swift
+@@ -1,5 +1,7 @@
+ import Foundation
++#if canImport(WebKit)
+ import WebKit
++#endif
+ 
+ enum CookieChangeStore: String, Equatable {
+   case foundation
+@@ -42,11 +44,13 @@ final class CookieChangeObservationLifecycle {
+   }
+ }
+ 
+-final class SystemCookieChangeObserver: NSObject, WKHTTPCookieStoreObserver {
++final class SystemCookieChangeObserver: NSObject {
+   typealias Handler = CookieChangeObservationLifecycle.Handler
+ 
+   private var foundationToken: NSObjectProtocol?
++#if canImport(WebKit)
+   private var webKitStore: WKHTTPCookieStore?
++#endif
+   private var handler: Handler?
+ 
+   func start(handler: @escaping Handler) {
+@@ -60,9 +64,11 @@ final class SystemCookieChangeObserver: NSObject, WKHTTPCookieStoreObserver {
+       self?.handler?(.foundation)
+     }
+ 
++#if canImport(WebKit)
+     let store = WKWebsiteDataStore.default().httpCookieStore
+     store.add(self)
+     webKitStore = store
++#endif
+   }
+ 
+   func stop() {
+@@ -70,15 +76,22 @@ final class SystemCookieChangeObserver: NSObject, WKHTTPCookieStoreObserver {
+       NotificationCenter.default.removeObserver(foundationToken)
+       self.foundationToken = nil
+     }
++#if canImport(WebKit)
+     webKitStore?.remove(self)
+     webKitStore = nil
++#endif
+     handler = nil
+   }
+ 
++}
++
++#if canImport(WebKit)
++extension SystemCookieChangeObserver: WKHTTPCookieStoreObserver {
+   func cookiesDidChange(in cookieStore: WKHTTPCookieStore) {
+     handler?(.webKit)
+   }
+ }
++#endif
+ 
+ final class CookieChangeObserver {
+   typealias Handler = CookieChangeObservationLifecycle.Handler
+diff --git a/ios/CookieStoreAccess.swift b/ios/CookieStoreAccess.swift
+index 023c397e195ffd217e4fc5aed6769b7f147359d2..48252830ff9a2f9cf90d0d2deb83f271d87be5af 100644
+--- a/ios/CookieStoreAccess.swift
++++ b/ios/CookieStoreAccess.swift
+@@ -1,5 +1,7 @@
+ import Foundation
++#if canImport(WebKit)
+ import WebKit
++#endif
+ 
+ enum CookieStoreKind {
+   case foundation
+@@ -17,6 +19,7 @@ enum CookieStoreAccess {
+       HTTPCookieStorage.shared.setCookie(cookie)
+       completion()
+     case .webKit:
++#if canImport(WebKit)
+       guard #available(iOS 11.0, macOS 10.13, *) else {
+         completion()
+         return
+@@ -27,6 +30,10 @@ enum CookieStoreAccess {
+           completionHandler: completion
+         )
+       }
++#else
++      // tvOS has no WebKit; behave as a no-op.
++      completion()
++#endif
+     }
+   }
+ 
+@@ -38,6 +45,7 @@ enum CookieStoreAccess {
+     case .foundation:
+       completion(HTTPCookieStorage.shared.cookies ?? [])
+     case .webKit:
++#if canImport(WebKit)
+       guard #available(iOS 11.0, macOS 10.13, *) else {
+         completion([])
+         return
+@@ -45,6 +53,10 @@ enum CookieStoreAccess {
+       DispatchQueue.main.async {
+         WKWebsiteDataStore.default().httpCookieStore.getAllCookies(completion)
+       }
++#else
++      // tvOS has no WebKit; report an empty store.
++      completion([])
++#endif
+     }
+   }
+ 
+@@ -85,6 +97,7 @@ enum CookieStoreAccess {
+       HTTPCookieStorage.shared.deleteCookie(cookie)
+       completion()
+     case .webKit:
++#if canImport(WebKit)
+       guard #available(iOS 11.0, macOS 10.13, *) else {
+         completion()
+         return
+@@ -95,6 +108,10 @@ enum CookieStoreAccess {
+           completionHandler: completion
+         )
+       }
++#else
++      // tvOS has no WebKit; behave as a no-op.
++      completion()
++#endif
+     }
+   }
+ 
+@@ -108,6 +125,7 @@ enum CookieStoreAccess {
+       storage.cookies?.forEach { storage.deleteCookie($0) }
+       completion()
+     case .webKit:
++#if canImport(WebKit)
+       guard #available(iOS 11.0, macOS 10.13, *) else {
+         completion()
+         return
+@@ -119,6 +137,10 @@ enum CookieStoreAccess {
+           completionHandler: completion
+         )
+       }
++#else
++      // tvOS has no WebKit; behave as a no-op.
++      completion()
++#endif
+     }
+   }
+ }

@@ -17,6 +17,7 @@
           }
         }
       ],
+      "./plugins/with-tv-scene-lifecycle",
       "expo-router",
       "expo-font",
       "expo-build-properties",

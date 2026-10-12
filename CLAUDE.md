@@ -4,134 +4,199 @@ This file provides guidance to Claude Code when working with code in this reposi
 
 ## Project Overview
 
-This is an Expo-based React Native application that supports TV platforms using the React Native TV fork (react-native-tvos). The app uses Expo Router for file-based navigation and includes TV-specific optimizations for Apple TV and Android TV.
+Sinkplane TV is a fan-made React Native app for [floatplane.com](https://www.floatplane.com), targeting **Apple TV (tvOS)** and **Android TV**. Built on Expo (SDK 57) with the [`react-native-tvos`](https://github.com/react-native-tvos/react-native-tvos) fork and Expo Router for file-based navigation. Package manager is **pnpm** (config in `pnpm-workspace.yaml`; settings like `nodeLinker: hoisted` live there, NOT in `.npmrc`).
 
-## Common Development Commands
+Authentication is handled via a **companion mobile app** ([sinkplane-companion](https://github.com/Sinkplane/sinkplane-companion)) that discovers the TV on the local network (Bonjour/Zeroconf) and sends credentials over a **TCP server on port 9999**. This exists because TV platforms cannot render WebView for Cloudflare Turnstile. A manual cookie (`sails.sid`) entry fallback also exists on the sign-in screen.
 
-### TV Development
+## Essential Commands
 
 ```bash
-# Install dependencies
-npm install
+# Setup (first time) — clones companion app, installs deps, runs pod install
+./scripts/setup-dev-env.sh
 
-# Start development for TV
-npm start           # Starts Expo with EXPO_TV=1 enabled
-npm run ios        # Build and run for Apple TV
-npm run android    # Build for Android TV
+# Install dependencies (postinstall runs patch-package, currently a no-op)
+pnpm install
 
-# Prebuild for TV (generates native code)
-npm run prebuild:tv  # Clean prebuild with TV modifications
+# TV development (EXPO_TV=1 is set by these scripts)
+pnpm start           # Expo bundler for TV
+pnpm run ios         # Build & run on Apple TV
+pnpm run android     # Build & run on Android TV
+pnpm run prebuild:tv # Clean Expo prebuild WITH TV modifications (required before first TV run)
+
+# Mobile development
+pnpm run prebuild     # Clean prebuild WITHOUT TV modifications
+pnpm exec expo run:ios     # iOS mobile
+pnpm exec expo run:android # Android mobile
+
+# Quality gates — run these before considering work done
+pnpm run lint        # ESLint (expo lint)
+pnpm exec tsc --noEmit     # Typecheck (no dedicated script; use tsc directly)
+
+# Other
+pnpm run web         # Web dev server
+pnpm run deploy      # Export web + EAS deploy
+pnpm run reset-project
 ```
 
-### Mobile Development
+### EAS Build Profiles
 
 ```bash
-# Prebuild for mobile (no TV modifications)
-npm run prebuild    # Clean prebuild for mobile platforms
-
-# Run on mobile (after prebuild)
-npx expo run:ios     # iOS mobile
-npx expo run:android # Android mobile
-```
-
-### Other Commands
-
-```bash
-npm run web         # Run on web from localhost
-npm run lint        # Run linting with expo lint
-npm run deploy      # Deploy web version via EAS
-npm run reset-project # Reset to blank starter project
-```
-
-### EAS Build Commands
-
-```bash
-# Development builds
-eas build --platform ios --profile development_tv     # Apple TV dev
-eas build --platform android --profile development_tv  # Android TV dev
-eas build --platform ios --profile development        # iOS mobile dev
-eas build --platform android --profile development    # Android mobile dev
-
-# Preview builds
-eas build --profile preview_tv    # TV preview builds
-eas build --profile preview       # Mobile preview builds
-
-# Production builds
-eas build --profile production_tv # TV production
-eas build --profile production    # Mobile production
+eas build --profile development_tv   # TV dev (internal, simulator/apk)
+eas build --profile preview_tv       # TV preview (internal)
+eas build --profile production_tv    # TV production
+eas build --profile development      # Mobile dev
+eas build --profile preview          # Mobile preview
+eas build --profile production       # Mobile production
 ```
 
 ## Architecture
 
-### Project Structure
+### Directory Structure
 
-- **app/**: Contains all screen components using Expo Router's file-based routing
-  - `_layout.tsx`: Root layout with theme provider and font loading
-  - `(tabs)/`: Tab-based navigation screens
-  - `+not-found.tsx`: 404 error page
-  - `+html.tsx`: Custom HTML wrapper for web
-- **components/**: Reusable UI components
-
-  - Theme-aware components (`ThemedText`, `ThemedView`)
-  - TV-specific demo component (`EventHandlingDemo`)
-  - Navigation components
-
-- **hooks/**: Custom React hooks including `useScale` for responsive sizing
-
-- **constants/**: App constants and configuration
-
-- **layouts/**: Layout components (DualLayoutGridScreen, FocusLayoutFlexbox)
-
-- **assets/**: Images, fonts, and TV-specific icons
+- **`app/`** — Expo Router screens (file-based routing, typed routes enabled).
+  - `_layout.tsx` — Root layout (theme provider, font loading).
+  - `(tabs)/` — Tab navigation (Home, Live, About).
+  - `video/[id].tsx` — Video player screen.
+  - `sign-in.tsx` — Authentication screen.
+  - `+not-found.tsx`, `+html.tsx` — 404 and web HTML wrapper.
+- **`components/`** — Reusable UI.
+  - `ThemedText`, `ThemedView` — Theme-aware base components (use these for light/dark support).
+  - `authentication/` — Auth UI (QR codes, status).
+  - `videos/` — Video listing and player components.
+  - `EventHandlingDemo.tsx` — Reference for TV focus-handling patterns.
+- **`hooks/`** — Business logic and platform integration.
+  - `authentication/` — OIDC device flow, profile management.
+  - `videos/` — Fetching video lists and delivery data (TanStack Query).
+  - `useScale.ts` — Scaling factor (`width / 1000`) for responsive TV layouts. **Always use this** for dimensions/margins/font sizes on TV.
+- **`constants/`** — API endpoints (`api.ts`), colors, text styles.
+- **`layouts/`** — Layout components (`DualLayoutGridScreen`, `FocusLayoutFlexbox`, `TabLayout`).
+- **`types/`** — TypeScript interfaces (API responses, video, user, etc.).
+- **`assets/`** — Images, fonts, TV-specific app icons.
+- **`scripts/`** — `setup-dev-env.sh` (env setup), `reset-project.js`.
+- **`docs/`** — tvOS setup and known-issue docs.
+- **`patches/`** — pnpm patches (`patchedDependencies` in `pnpm-workspace.yaml`); notably the cookie-manager tvOS patch. **Do not delete.**
+- **`plugins/`** — Expo config plugins (`with-tv-scene-lifecycle.js` — UIKit scene lifecycle adoption required by iOS/tvOS 27).
 
 ### Key Technologies
 
-- **React Native TV Fork**: Uses `react-native-tvos` for TV support
-- **Expo Router**: File-based routing with typed routes
-- **React Native Reanimated**: Animation library (v4.1.0)
-- **TV Config Plugin**: `@react-native-tvos/config-tv` for TV-specific modifications
+| Concern | Library |
+|---|---|
+| React Native (TV fork) | `react-native-tvos@0.86.3-0` |
+| Routing | `expo-router` v57 (typed routes) |
+| Data fetching | `@tanstack/react-query` |
+| Animations | `react-native-reanimated` v4.5 |
+| Video | `react-native-video` + `@mux/mux-data-react-native-video` |
+| Auth/token storage | `expo-secure-store` |
+| Companion comms | `react-native-tcp-socket` (port 9999), `react-native-zeroconf` (discovery) |
+| Cookies | `@preeternal/react-native-cookie-manager` (tvOS-patched via `patches/`) |
+| TV config plugin | `@react-native-tvos/config-tv` |
 
-### TV-Specific Features
+## TV-Specific Development
 
-- **File Extensions**: Metro resolves TV-specific files (`.tv.tsx`, `.ios.tv.tsx`, `.android.tv.tsx`)
-- **Focus Management**: TV remote control navigation with onFocus/onBlur handlers
-- **Scaling**: Responsive sizing using the `useScale` hook for different screen sizes
-- **TV Icons**: Configured in app.json for Apple TV and Android TV home screens
+### The `EXPO_TV` Environment Variable
 
-### Environment Variables
+`EXPO_TV=1` controls TV vs. mobile mode. It is set automatically by `pnpm start`, `pnpm run ios`, `pnpm run android`, and the `*_tv` EAS profiles. For manual commands, prefix with `EXPO_TV=1`.
 
-- `EXPO_TV=1`: Enables TV mode for builds and development
+### TV File Extensions
 
-### TypeScript Configuration
+When `EXPO_TV=1`, Metro (see `metro.config.js`) resolves TV-specific source files in this priority order: `.ios.tv.tsx`, `.android.tv.tsx`, `.tv.tsx`, then standard extensions. Use these for platform-specific overrides.
 
-- Strict mode enabled
-- Path alias: `@/*` maps to project root
-- Includes expo types and environment definitions
+### Focus Management
+
+TV navigation is remote-based and focus-driven:
+- Use `onFocus` / `onBlur` handlers.
+- Use `TouchableHighlight` or `Pressable` with focus states.
+- Ensure all interactive elements are focusable.
+- Consider focus trapping for modals/overlays.
+- Reference: `components/EventHandlingDemo.tsx`.
+
+### Scaling
+
+Use the `useScale()` hook for all dimensions, margins, and font sizes so the UI stays consistent across TV resolutions.
+
+### TV Builds Require Clean Prebuild
+
+TV builds need `pnpm run prebuild:tv` (clean prebuild with TV modifications) to properly generate native code. Mobile uses `pnpm run prebuild` (no TV modifications).
+
+## Code Style & Conventions
+
+### TypeScript
+
+- **Strict mode** is on (`tsconfig.json` extends `expo/tsconfig.base`).
+- **Path alias**: `@/*` maps to project root — prefer `@/components/...` over relative imports.
+- **No `any`** (`@typescript-eslint/no-explicit-any: error`).
+- Avoid `any` types; document complex types/interfaces.
+- Prefer functional components with hooks over class components.
+
+### Linting / Formatting (enforced)
+
+- ESLint config in `eslint.config.js` runs on commit via Husky `pre-commit` → `lint-staged` → `expo lint --fix`.
+- Notable rules: `max-len: 140`, `complexity: 12`, `eqeqeq: smart`, `no-var`, `prefer-const`, `no-shadow`, `camelcase`, `no-bitwise`.
+- Prettier (`.prettierrc`): single quotes, no trailing comma issues (trailingComma `all`), 2-space indent, `printWidth: 140`, LF line endings, `arrowParens: avoid`.
+
+### File Naming
+
+- Component files: **PascalCase** (`MyComponent.tsx`).
+- Utility files: **kebab-case** (`my-utility.ts`).
+- TV-specific variants: `.tv.tsx`, `.ios.tv.tsx`, `.android.tv.tsx`.
 
 ### Validation
 
-User prefers joi over yup for validation in projects (based on user rules).
+- Use **joi** for validation (not yup). Keep schemas near their usage.
 
-### Testing
+### Components
 
-No test framework currently configured. When adding tests:
+- Use `ThemedText` / `ThemedView` for automatic light/dark mode.
+- Named exports preferred.
+- Reusable components → `/components`; screen components → `/app` (Expo Router conventions).
 
-- Integration tests should go in `apps/api-provisioning-api-e2e` folder (based on user rules)
-- Consider adding test scripts to package.json
+## Known Issues & Gotchas
+
+1. **Cookie-manager tvOS patch** — `@preeternal/react-native-cookie-manager` declares iOS-only in its podspec and its Swift uses WebKit (unavailable on tvOS). The pnpm patch in `patches/` adds the `:tvos` platform and guards WebKit code with `#if canImport(WebKit)`. Without it, Expo autolinking (SDK 57+) silently drops the pod on tvOS and the app crashes with `TurboModuleRegistry.getEnforcing(...): 'CookieManager' could not be found`. The `postinstall` `patch-package` script is a no-op leftover; patches now apply via pnpm's `patchedDependencies`.
+
+2. **iOS/tvOS 27 require scene lifecycle** — UIKit asserts at launch unless the app adopts scene-based lifecycle. `plugins/with-tv-scene-lifecycle.js` registers `ExpoAppSceneDelegate` (shipped with Expo) via a config plugin. Drop the plugin when the Expo template adopts scenes natively.
+
+3. **React Native Core tvOS build error (historical)** — the old Xcode 16 `dispatch_queue_t strong` issue in `RCTBridgeModule.h` is fixed upstream in RN 0.86; no Podfile hook is needed anymore. See `docs/react-native-core-tvos-issue.md`.
+
+4. **pnpm settings live in `pnpm-workspace.yaml`** — pnpm v12 no longer reads the `pnpm` field in `package.json` or settings from `.npmrc`. `nodeLinker: hoisted` (required for RN/Metro/CocoaPods), `allowBuilds`, `patchedDependencies`, the `@react-native/metro-config` override, and `minimumReleaseAgeExclude` live there. EAS detects pnpm from `pnpm-lock.yaml` / the `packageManager` field. `react-native` is aliased to `npm:react-native-tvos@...` in dependencies and excluded via `expo.install.exclude`.
+
+5. **CocoaPods on Homebrew Ruby** — `pod` installs to `/opt/homebrew/lib/ruby/gems/<ver>/bin`, which is NOT on PATH by default. It is exported in `~/.zshrc`; `expo run:ios` from non-interactive shells may fail with `spawn pod ENOENT`.
+
+6. **Companion app is a sibling repo** — Expected at `../sinkplane-companion` (cloned by `setup-dev-env.sh`). The TV app publishes a Bonjour service `sinkplane-tv._tcp`.
+
+## Testing
+
+No automated test framework is currently configured. Current gates are **lint + typecheck**. When adding tests in the future:
+- Unit tests alongside source files.
+- Integration / E2E tests in `apps/api-provisioning-api-e2e` (per project convention).
+- Planned: Jest, React Testing Library, Detox.
+
+## Commit Conventions
+
+Follow **Conventional Commits**:
+
+```
+<type>(<scope>): <subject>
+
+feat(tv): add focus management for Android TV navigation
+fix(mobile): resolve crash on iOS device rotation
+docs(readme): update installation instructions
+refactor(hooks): simplify useScale hook logic
+```
+
+Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`, `ci`.
+
+### Pull Requests
+
+- Lint + typecheck must pass.
+- Test on relevant platforms (iOS/Android, TV/Mobile).
+- Include screenshots/videos for UI changes (especially TV).
+- Reference related issues.
+- **Do not commit unless explicitly asked.** Only stage intended files; never commit secrets.
 
 ## Development Tips
 
-- The EXPO_TV environment variable controls whether the app builds for TV or mobile platforms
-- Use absolute paths when running commands to avoid cd navigation issues
-- TV builds require clean prebuild to properly configure native code
-- The EventHandlingDemo component demonstrates TV-specific focus handling patterns
-- Scale values using the useScale hook for responsive TV interfaces
-
-## Code Style and Patterns
-
-- Use TypeScript strict mode for all new code
-- Prefer functional components with hooks over class components
-- Use the `@/*` path alias for cleaner imports
-- Follow Expo Router conventions for navigation and routing
-- Create TV-specific variants using `.tv.tsx` file extensions when needed
-- Use the `useScale` hook for TV-responsive layouts
+- Use absolute paths when running commands (avoid `cd` chains).
+- If Metro can't resolve modules, run `pnpm exec expo start --clear` and/or `rm -rf node_modules/.cache`.
+- If pod install fails: `cd ios && rm -rf Pods Podfile.lock ~/Library/Developer/Xcode/DerivedData/sinkplane-* && pod install`.
+- Verifying the TV server is running — logs should show `TV Server listening on port 9999` and `TV Service published`.

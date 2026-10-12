@@ -169,6 +169,13 @@ const useProfileAvatarStyles = function () {
       borderColor: tint,
       overflow: 'hidden',
     },
+    avatarFocused: {
+      borderColor: tint,
+      borderWidth: 3 * scale,
+    },
+    avatarPressed: {
+      opacity: 0.7,
+    },
     avatarContainer: {
       width: 50 * scale,
       height: 50 * scale,

@@ -34,7 +34,7 @@ We are committed to providing a welcoming and inclusive environment for all cont
    ```
 4. **Install dependencies**:
    ```bash
-   npm install
+   pnpm install
    ```
 
 ## Development Setup
@@ -42,7 +42,7 @@ We are committed to providing a welcoming and inclusive environment for all cont
 ### Prerequisites
 
 - Node.js (LTS version recommended)
-- npm or yarn
+- pnpm (https://pnpm.io/installation)
 - Expo CLI
 - For iOS development: Xcode 15+ and macOS
 - For Android development: Android Studio and Android SDK
@@ -52,29 +52,29 @@ We are committed to providing a welcoming and inclusive environment for all cont
 
 The project uses the `EXPO_TV` environment variable to control TV vs. mobile builds:
 
-- **TV Development**: `EXPO_TV=1` (automatically set by `npm start`)
+- **TV Development**: `EXPO_TV=1` (automatically set by `pnpm start`)
 - **Mobile Development**: Unset or `EXPO_TV=0`
 
 ### Running the App
 
 **For TV:**
 ```bash
-npm start           # Starts Expo with TV mode
-npm run ios         # Build and run for Apple TV
-npm run android     # Build for Android TV
-npm run prebuild:tv # Generate native code for TV
+pnpm start           # Starts Expo with TV mode
+pnpm run ios         # Build and run for Apple TV
+pnpm run android     # Build for Android TV
+pnpm run prebuild:tv # Generate native code for TV
 ```
 
 **For Mobile:**
 ```bash
-npm run prebuild    # Generate native code for mobile
-npx expo run:ios    # Run on iOS mobile
-npx expo run:android # Run on Android mobile
+pnpm run prebuild    # Generate native code for mobile
+pnpm exec expo run:ios    # Run on iOS mobile
+pnpm exec expo run:android # Run on Android mobile
 ```
 
 **For Web:**
 ```bash
-npm run web         # Run web version
+pnpm run web         # Run web version
 ```
 
 ## Development Workflow
@@ -90,7 +90,7 @@ npm run web         # Run web version
 
 4. **Lint your code**:
    ```bash
-   npm run lint
+   pnpm run lint
    ```
 
 5. **Commit your changes** following our commit guidelines

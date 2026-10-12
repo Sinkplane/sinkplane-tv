@@ -53,11 +53,11 @@ if ! command -v node &> /dev/null; then
 fi
 print_success "Node.js $(node --version) is installed"
 
-if ! command -v npm &> /dev/null; then
-    print_error "npm is not installed. Please install npm first."
+if ! command -v pnpm &> /dev/null; then
+    print_error "pnpm is not installed. Install it first (https://pnpm.io/installation)."
     exit 1
 fi
-print_success "npm $(npm --version) is installed"
+print_success "pnpm $(pnpm --version) is installed"
 
 if ! command -v git &> /dev/null; then
     print_error "git is not installed. Please install git first."
@@ -101,8 +101,8 @@ fi
 print_header "Installing Sinkplane TV Dependencies"
 
 cd "$PROJECT_DIR"
-print_info "Running npm install (patch-package will apply the tvOS cookie-manager patch)..."
-npm install
+print_info "Running pnpm install..."
+pnpm install
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
     print_info "Installing iOS/tvOS pods..."
@@ -120,8 +120,12 @@ if [ -d "$COMPANION_DIR" ]; then
     cd "$COMPANION_DIR"
 
     if [ -f "package.json" ]; then
-        print_info "Running npm install..."
-        npm install
+        print_info "Detecting package manager and installing companion app dependencies..."
+        if [ -f "pnpm-lock.yaml" ]; then
+            pnpm install
+        else
+            npm install
+        fi
 
         if [[ "$OSTYPE" == "darwin"* ]] && [ -d "ios" ]; then
             print_info "Installing iOS pods..."
@@ -148,7 +152,7 @@ echo ""
 echo "Next Steps:"
 echo "1. Start the TV app:"
 echo "   cd $PROJECT_DIR"
-echo "   EXPO_TV=1 npx expo start"
+echo "   EXPO_TV=1 pnpm exec expo start"
 echo ""
 echo "2. In another terminal, start the companion app:"
 echo "   cd $COMPANION_DIR"
