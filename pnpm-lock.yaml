@@ -167,6 +167,7 @@ overrides:
 
 patchedDependencies:
   '@preeternal/react-native-cookie-manager@7.0.0': b2e1cd6f44dfa9dac63d6326a9fae39bb09fd9d16de1cd553c546079f1453ca1
+  react-native-video@6.19.3: feb8eee3f0adc6652c20719259d87de42909535cf716c0ab15c7cc13dd7d9837
 
 importers:
 
@@ -177,7 +178,7 @@ importers:
         version: 15.1.1(expo-font@57.0.4)(react-native-tvos@0.86.3-0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react-native-tvos@0.86.3-0)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)
       '@mux/mux-data-react-native-video':
         specifier: ^0.19.21
-        version: 0.19.21(react-native-video@6.19.3(react-native-tvos@0.86.3-0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react-native-tvos@0.86.3-0)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3))(react@19.2.3)
+        version: 0.19.21(react-native-video@6.19.3(patch_hash=feb8eee3f0adc6652c20719259d87de42909535cf716c0ab15c7cc13dd7d9837)(react-native-tvos@0.86.3-0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react-native-tvos@0.86.3-0)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3))(react@19.2.3)
       '@preeternal/react-native-cookie-manager':
         specifier: ^7.0.0
         version: 7.0.0(patch_hash=b2e1cd6f44dfa9dac63d6326a9fae39bb09fd9d16de1cd553c546079f1453ca1)(react-native-tvos@0.86.3-0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react-native-tvos@0.86.3-0)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)
@@ -258,7 +259,7 @@ importers:
         version: 6.4.3(react-native-tvos@0.86.3-0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react-native-tvos@0.86.3-0)(react@19.2.3)(supports-color@8.1.1))
       react-native-video:
         specifier: ^6.19.3
-        version: 6.19.3(react-native-tvos@0.86.3-0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react-native-tvos@0.86.3-0)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)
+        version: 6.19.3(patch_hash=feb8eee3f0adc6652c20719259d87de42909535cf716c0ab15c7cc13dd7d9837)(react-native-tvos@0.86.3-0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react-native-tvos@0.86.3-0)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)
       react-native-web:
         specifier: ~0.21.0
         version: 0.21.4(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -5546,10 +5547,10 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.6.0
 
-  '@mux/mux-data-react-native-video@0.19.21(react-native-video@6.19.3(react-native-tvos@0.86.3-0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react-native-tvos@0.86.3-0)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3))(react@19.2.3)':
+  '@mux/mux-data-react-native-video@0.19.21(react-native-video@6.19.3(patch_hash=feb8eee3f0adc6652c20719259d87de42909535cf716c0ab15c7cc13dd7d9837)(react-native-tvos@0.86.3-0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react-native-tvos@0.86.3-0)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3))(react@19.2.3)':
     dependencies:
       react: 19.2.3
-      react-native-video: 6.19.3(react-native-tvos@0.86.3-0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react-native-tvos@0.86.3-0)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)
+      react-native-video: 6.19.3(patch_hash=feb8eee3f0adc6652c20719259d87de42909535cf716c0ab15c7cc13dd7d9837)(react-native-tvos@0.86.3-0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react-native-tvos@0.86.3-0)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)
 
   '@napi-rs/wasm-runtime@1.2.5(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)':
     dependencies:
@@ -8867,7 +8868,7 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  react-native-video@6.19.3(react-native-tvos@0.86.3-0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react-native-tvos@0.86.3-0)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3):
+  react-native-video@6.19.3(patch_hash=feb8eee3f0adc6652c20719259d87de42909535cf716c0ab15c7cc13dd7d9837)(react-native-tvos@0.86.3-0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react-native-tvos@0.86.3-0)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3):
     dependencies:
       react: 19.2.3
       react-native: react-native-tvos@0.86.3-0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react-native-tvos@0.86.3-0)(react@19.2.3)(supports-color@8.1.1)

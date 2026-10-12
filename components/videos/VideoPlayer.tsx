@@ -8,6 +8,7 @@ import VideoComponent, {
   VideoRef
 } from 'react-native-video';
 import { useUpdateVideoProgress, updateVideoProgress } from '@/hooks/videos/useUpdateVideoProgress';
+import { PLAYBACK_SPEEDS } from '@/constants/video';
 
 interface VideoPlayerProps {
   source: ReactVideoSource;
@@ -162,6 +163,7 @@ export const VideoPlayer: FC<VideoPlayerProps> = ({
         onError={onVideoError}
         onEnd={handleEnd}
         controls
+        playbackSpeeds={PLAYBACK_SPEEDS}
         poster={{ source: { uri: thumbnailUrl } }}
         playInBackground={false}
         playWhenInactive={false}

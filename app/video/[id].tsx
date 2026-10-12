@@ -52,6 +52,16 @@ export default function VideoDetailScreen() {
 
   const error = postError || deliveryError;
 
+  // Shown in the native player's info panel and Now Playing.
+  const title = videoPost?.title;
+  const subtitle = videoPost?.channel?.title;
+  const description = videoPost?.text?.replace(/<[^>]*>/g, '').trim();
+  const imageUri = videoPost?.thumbnail?.path;
+  const source = useMemo(
+    () => ({ ...streamUrl, metadata: { title, subtitle, description, imageUri } }),
+    [streamUrl, title, subtitle, description, imageUri],
+  );
+
   const handleStreamUrl = useCallback((data: VideoDelivery) => {
     if (!data) return;
     const group = (data.groups ?? [undefined])[0];
@@ -129,7 +139,7 @@ export default function VideoDetailScreen() {
           <VideoPlayer
             id={id}
             token={token ?? undefined}
-            source={streamUrl}
+            source={source}
             handleLoad={handleLoad}
             handleBuffer={handleBuffer}
             handleError={e => handleError(e.error)}

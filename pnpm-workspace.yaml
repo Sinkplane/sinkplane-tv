@@ -18,3 +18,4 @@ minimumReleaseAgeExclude:
   - '@tanstack/react-query@5.104.2'
 patchedDependencies:
   '@preeternal/react-native-cookie-manager@7.0.0': patches/@preeternal__react-native-cookie-manager@7.0.0.patch
+  react-native-video@6.19.3: patches/react-native-video@6.19.3.patch

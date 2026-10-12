@@ -1,0 +1,136 @@
+diff --git a/ios/Video/RCTVideo.swift b/ios/Video/RCTVideo.swift
+index 5f2f5f668bf3d01718db0b7d5c737f959157a290..f6e608ec1c75eccf78ad2076f3aa1a69d39a9031 100644
+--- a/ios/Video/RCTVideo.swift
++++ b/ios/Video/RCTVideo.swift
+@@ -33,6 +33,7 @@ class RCTVideo: UIView, RCTVideoPlayerViewControllerDelegate, RCTPlayerObserverH
+     var _audioOutput: String = "speaker"
+     private var _volume: Float = 1.0
+     private var _rate: Float = 1.0
++    private var _playbackSpeeds: [Float]?
+     private var _maxBitRate: Float?
+ 
+     private var _automaticallyWaitsToMinimizeStalling = true
+@@ -1082,6 +1083,34 @@ class RCTVideo: UIView, RCTVideoPlayerViewControllerDelegate, RCTPlayerObserverH
+         _chapters = chapters
+     }
+ 
++    @objc
++    func setPlaybackSpeeds(_ speeds: [NSNumber]?) {
++        _playbackSpeeds = speeds?.map { $0.floatValue }.filter { $0 > 0 }
++        if let _playerViewController {
++            applyPlaybackSpeeds(to: _playerViewController)
++        }
++    }
++
++    func applyPlaybackSpeeds(to viewController: AVPlayerViewController) {
++        guard #available(iOS 16.0, tvOS 16.0, *) else { return }
++
++        if let rates = _playbackSpeeds, !rates.isEmpty {
++            let formatter = NumberFormatter()
++            formatter.minimumFractionDigits = 0
++            formatter.maximumFractionDigits = 2
++            viewController.speeds = rates.map { rate in
++                let label = formatter.string(from: NSNumber(value: rate)) ?? "\(rate)"
++                return AVPlaybackSpeed(rate: rate, localizedName: "\(label)×")
++            }
++        } else {
++            viewController.speeds = AVPlaybackSpeed.systemDefaultSpeeds
++        }
++
++        if let initialSpeed = viewController.speeds.first(where: { $0.rate == _rate }) {
++            viewController.selectSpeed(initialSpeed)
++        }
++    }
++
+     @objc
+     func setFullscreen(_ fullscreen: Bool) {
+         let alreadyFullscreenPresented = _presentingViewController?.presentedViewController != nil
+@@ -1207,12 +1236,7 @@ class RCTVideo: UIView, RCTVideoPlayerViewControllerDelegate, RCTPlayerObserverH
+         viewController.view.frame = self.bounds
+         viewController.player = player
+ 
+-        // Set the initial playback speed in controls to match playback rate
+-        if #available(iOS 16.0, tvOS 16.0, *) {
+-            if let initialSpeed = viewController.speeds.first(where: { $0.rate == _rate }) {
+-                viewController.selectSpeed(initialSpeed)
+-            }
+-        }
++        applyPlaybackSpeeds(to: viewController)
+ 
+         return viewController
+     }
+@@ -1678,6 +1702,14 @@ class RCTVideo: UIView, RCTVideoPlayerViewControllerDelegate, RCTPlayerObserverH
+             return
+         }
+ 
++        // Adopt the speed picked in the native controls so pause/resume and other
++        // modifier re-applications don't reset playback back to the previous rate.
++        if #available(iOS 16.0, tvOS 16.0, *),
++           let selectedRate = _playerViewController?.selectedSpeed?.rate,
++           selectedRate > 0, selectedRate != _rate {
++            _rate = selectedRate
++        }
++
+         onPlaybackRateChange?(["playbackRate": NSNumber(value: _player.rate),
+                                "target": reactTag as Any])
+ 
+diff --git a/ios/Video/RCTVideoManager.m b/ios/Video/RCTVideoManager.m
+index 7ec895545c3686dc47fddb4eef17d988e9e201a1..b01947aefbf7fc191b96d9886e046c70f4666b6f 100644
+--- a/ios/Video/RCTVideoManager.m
++++ b/ios/Video/RCTVideoManager.m
+@@ -27,6 +27,7 @@ @interface RCT_EXTERN_MODULE (RCTVideoManager, RCTViewManager)
+ RCT_EXPORT_VIEW_PROPERTY(ignoreSilentSwitch, NSString);
+ RCT_EXPORT_VIEW_PROPERTY(mixWithOthers, NSString);
+ RCT_EXPORT_VIEW_PROPERTY(rate, float);
++RCT_EXPORT_VIEW_PROPERTY(playbackSpeeds, NSArray);
+ RCT_EXPORT_VIEW_PROPERTY(fullscreen, BOOL);
+ RCT_EXPORT_VIEW_PROPERTY(fullscreenAutorotate, BOOL);
+ RCT_EXPORT_VIEW_PROPERTY(fullscreenOrientation, NSString);
+diff --git a/lib/specs/VideoNativeComponent.d.ts b/lib/specs/VideoNativeComponent.d.ts
+index 1ea4edf19a8450856948d9a7f56a114c0fc2956a..8c4b3bff14bf5b83c75f7c0aa836e42b0c692fe9 100644
+--- a/lib/specs/VideoNativeComponent.d.ts
++++ b/lib/specs/VideoNativeComponent.d.ts
+@@ -307,6 +307,7 @@ export interface VideoNativeProps extends ViewProps {
+     ignoreSilentSwitch?: WithDefault<string, 'inherit'>;
+     mixWithOthers?: WithDefault<string, 'inherit'>;
+     rate?: Float;
++    playbackSpeeds?: ReadonlyArray<Float>;
+     fullscreen?: boolean;
+     fullscreenAutorotate?: boolean;
+     fullscreenOrientation?: WithDefault<string, 'all'>;
+diff --git a/lib/types/video.d.ts b/lib/types/video.d.ts
+index 9796b236bb4465687aea18a6abf31e4a77f249da..cc98a1357e295946503bfbc30ebb3c8625b35dfc 100644
+--- a/lib/types/video.d.ts
++++ b/lib/types/video.d.ts
+@@ -285,6 +285,7 @@ export interface ReactVideoProps extends ReactVideoEvents, ViewProps {
+     preventsDisplaySleepDuringVideoPlayback?: boolean;
+     progressUpdateInterval?: number;
+     rate?: number;
++    playbackSpeeds?: number[];
+     renderLoader?: ReactNode | ((arg0: ReactVideoRenderLoaderProps) => ReactNode);
+     repeat?: boolean;
+     reportBandwidth?: boolean;
+diff --git a/src/specs/VideoNativeComponent.ts b/src/specs/VideoNativeComponent.ts
+index 705d86dbcdf7f7100bbf6d0499b9dab0d77a19c2..2921f715bc6b69b1b6a83af9fd2aa01ef0ced347 100644
+--- a/src/specs/VideoNativeComponent.ts
++++ b/src/specs/VideoNativeComponent.ts
+@@ -363,6 +363,7 @@ export interface VideoNativeProps extends ViewProps {
+   ignoreSilentSwitch?: WithDefault<string, 'inherit'>; // ios, 'inherit'
+   mixWithOthers?: WithDefault<string, 'inherit'>; // ios, 'inherit'
+   rate?: Float;
++  playbackSpeeds?: ReadonlyArray<Float>; // ios, tvOS 16+
+   fullscreen?: boolean; // ios, false
+   fullscreenAutorotate?: boolean;
+   fullscreenOrientation?: WithDefault<string, 'all'>;
+diff --git a/src/types/video.ts b/src/types/video.ts
+index 7605bbca6777a5ac0116182dda5c9831b61f7760..e078947a9fd44163ec4ec4cee77736733c984fa8 100644
+--- a/src/types/video.ts
++++ b/src/types/video.ts
+@@ -361,6 +361,7 @@ export interface ReactVideoProps extends ReactVideoEvents, ViewProps {
+   preventsDisplaySleepDuringVideoPlayback?: boolean;
+   progressUpdateInterval?: number;
+   rate?: number;
++  playbackSpeeds?: number[]; // iOS, tvOS 16+
+   renderLoader?: ReactNode | ((arg0: ReactVideoRenderLoaderProps) => ReactNode);
+   repeat?: boolean;
+   reportBandwidth?: boolean; //Android
