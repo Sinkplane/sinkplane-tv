@@ -19,6 +19,9 @@ minimumReleaseAgeExclude:
   - '@tanstack/query-core@5.104.2'
   - '@tanstack/react-query@5.104.2'
   - jest-expo@57.0.6
+  - expo-dev-client@57.0.20
+  - expo-dev-launcher@57.0.21
+  - expo-dev-menu@57.0.20
 patchedDependencies:
   '@preeternal/react-native-cookie-manager@7.0.0': patches/@preeternal__react-native-cookie-manager@7.0.0.patch
   react-native-video@6.19.3: patches/react-native-video@6.19.3.patch

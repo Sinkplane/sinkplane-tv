@@ -30,7 +30,7 @@
       "splash": {
         "image": "./assets/images/splash.png"
       },
-      "package": "com.cpawl89.sinkplane",
+      "package": "com.sinkplane.sinkplanetv",
       "permissions": [
         "android.permission.ACCESS_WIFI_STATE",
         "android.permission.ACCESS_NETWORK_STATE",
@@ -45,7 +45,9 @@
       "bundleIdentifier": "com.cpawl89.sinkplane",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSBonjourServices": ["sinkplane-tv._tcp"],
+        "NSBonjourServices": [
+          "sinkplane-tv._tcp"
+        ],
         "NSLocalNetworkUsageDescription": "Allow sinkplane companion app to discover tv apps on the local network."
       }
     },
@@ -58,13 +60,14 @@
       "typedRoutes": true
     },
     "newArchEnabled": true,
-    "name": "sinkplane",
-    "slug": "sinkplane",
+    "name": "sinkplane-tv",
+    "slug": "sinkplane-tv",
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "6233ebc0-94dc-488d-81df-0b82ee578bb8"
+        "projectId": "19a557e6-6d1d-4e7a-a642-cd45ee39124d"
       }
-    }
+    },
+    "owner": "sinkplane"
   }
 }
