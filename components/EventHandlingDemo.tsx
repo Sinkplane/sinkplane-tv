@@ -14,7 +14,7 @@ import {
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useScale } from '@/hooks/useScale';
-import { useThemeColor } from '@/hooks/useThemeColor';
+import { useThemeColor } from '@sinkplane/shared';
 
 const useTVEventHandler = Platform.isTV
   ? tvEventHandler

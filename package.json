@@ -23,6 +23,7 @@
     "@expo/vector-icons": "^15.0.2",
     "@mux/mux-data-react-native-video": "^0.19.21",
     "@preeternal/react-native-cookie-manager": "^7.0.0",
+    "@sinkplane/shared": "link:../sinkplane-shared",
     "@tanstack/react-query": "^5.104.2",
     "expo": "~57.0.27",
     "expo-build-properties": "~57.0.22",

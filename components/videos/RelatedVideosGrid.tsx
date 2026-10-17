@@ -5,7 +5,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { VideoCard } from '@/components/videos/VideoCard';
 import { useScale } from '@/hooks/useScale';
-import { useGetRelatedVideos } from '@/hooks/videos/useGetRelatedVideos';
+import { useGetRelatedVideos } from '@sinkplane/shared';
 
 interface RelatedVideosGridProps {
   videoId: string;

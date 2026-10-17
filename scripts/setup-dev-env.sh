@@ -98,11 +98,48 @@ else
     fi
 fi
 
+print_header "Setting Up Shared Package"
+
+SHARED_DIR="$PARENT_DIR/sinkplane-shared"
+if [ -d "$SHARED_DIR" ]; then
+    print_info "Shared package already exists at $SHARED_DIR"
+    read -p "Do you want to update it? (y/N): " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        cd "$SHARED_DIR"
+        print_info "Pulling latest changes..."
+        git pull
+        print_success "Shared package updated"
+    fi
+else
+    print_info "Cloning shared package repository..."
+    cd "$PARENT_DIR"
+    if git clone https://github.com/Sinkplane/sinkplane-shared.git 2>/dev/null; then
+        print_success "Shared package cloned successfully"
+    else
+        print_warning "Could not clone the shared package automatically."
+        print_info "Please manually clone it to: $SHARED_DIR"
+    fi
+fi
+
 print_header "Installing Sinkplane TV Dependencies"
 
 cd "$PROJECT_DIR"
 print_info "Running pnpm install..."
 pnpm install
+
+# The shared package is consumed as a "link:" dependency and deliberately has
+# no node_modules of its own — everything resolves from this repo's single
+# hoisted node_modules. Point it there via a symlink (see the shared repo's
+# README; do NOT run pnpm install inside sinkplane-shared).
+if [ -d "$SHARED_DIR" ] && [ -d "$PROJECT_DIR/node_modules" ]; then
+    if [ -L "$SHARED_DIR/node_modules" ]; then
+        print_info "Shared package node_modules symlink already exists"
+    else
+        ln -s "$PROJECT_DIR/node_modules" "$SHARED_DIR/node_modules"
+        print_success "Linked sinkplane-shared/node_modules -> sinkplane-tv/node_modules"
+    fi
+fi
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
     print_info "Installing iOS/tvOS pods..."
@@ -147,6 +184,7 @@ echo -e "${GREEN}[ok]${NC} Development environment is ready!\n"
 echo "Project Structure:"
 echo "  $PARENT_DIR/"
 echo "  |- sinkplane-tv/"
+echo "  |- sinkplane-shared/   (shared code: API client, auth, TV connection server, types)"
 echo "  |- sinkplane-companion/"
 echo ""
 echo "Next Steps:"

@@ -6,8 +6,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { VideoGrid } from '@/components/videos/VideoGrid';
 import { useScale } from '@/hooks/useScale';
-import { useSession } from '@/hooks/authentication/auth.context';
-import { useGetWatchHistoryInfinite } from '@/hooks/videos/useGetWatchHistory';
+import { useGetWatchHistoryInfinite, useSession } from '@sinkplane/shared';
 
 import bg from '@/assets/images/bg.jpg';
 

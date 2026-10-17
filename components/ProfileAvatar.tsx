@@ -2,12 +2,9 @@ import { useState } from 'react';
 import { View, Pressable, Image, StyleSheet, Modal, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import { useSession } from '@/hooks/authentication/auth.context';
-import { useTheme } from '@/hooks/theme.context';
-import { useColorScheme } from '@/hooks/useColorScheme';
-import { useThemeColor } from '@/hooks/useThemeColor';
+import { useColorScheme, useSession, useTheme, useThemeColor } from '@sinkplane/shared';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Creator } from '@/types/creator-list.interface';
+import { Creator } from '@sinkplane/shared/types/creator-list.interface';
 import { useScale } from '@/hooks/useScale';
 
 export function ProfileAvatar() {

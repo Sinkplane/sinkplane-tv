@@ -3,8 +3,7 @@ import { Platform } from 'react-native';
 
 import WebTabLayout from './TabLayout.web';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
-import { useGetVideoDelivery } from '@/hooks/videos/useGetVideoDelivery';
-import { useSession } from '@/hooks/authentication/auth.context';
+import { useGetVideoDelivery, useSession } from '@sinkplane/shared';
 
 const LIVESTREAM_ID = '5c13f3c006f1be15e08e05c0';
 

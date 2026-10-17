@@ -8,13 +8,8 @@
  *  - a live stream that is offline by default
  */
 
-import { Channel, Creator } from '@/types/creator-list.interface';
-import { Subscription } from '@/types/subscriptions.interface';
-import { VideoPost } from '@/types/video-post.interface';
-import { VideoDelivery } from '@/types/video-delivery.interface';
-import { User } from '@/types/user.interface';
-import { Video } from '@/types/video.interface';
-import { ContentHistoryEntry } from '@/types/history.interface';
+import { Channel, Creator } from '@sinkplane/shared/types/creator-list.interface';
+import { ContentHistoryEntry, Subscription, User, Video, VideoDelivery, VideoPost } from '@sinkplane/shared';
 
 export const LIVESTREAM_ID = '5c13f3c006f1be15e08e05c0';
 

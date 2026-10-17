@@ -1,5 +1,5 @@
 import { useScale } from './useScale';
-import { useThemeColor } from './useThemeColor';
+import { useThemeColor } from '@sinkplane/shared';
 
 import { textStyles } from '@/constants/text-styles';
 

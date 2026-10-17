@@ -1,11 +1,8 @@
 import { Pressable, View, Text, StyleSheet, ImageBackground } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 
-import { useSession } from '@/hooks/authentication/auth.context';
+import { useSession, Colors, useGetProfile, useOIDCDeviceFlow } from '@sinkplane/shared';
 import { useEffect, useState } from 'react';
-import { Colors } from '@/constants/colors';
-import { useGetProfile } from '@/hooks/authentication/useGetProfile';
-import { useOIDCDeviceFlow } from '@/hooks/authentication/useOIDCDeviceFlow';
 
 import bg from '@/assets/images/bg.jpg';
 

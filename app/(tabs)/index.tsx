@@ -1,18 +1,17 @@
 import { Image, StyleSheet, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 
 import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { AssDass, Videos, VideoView } from '@/components/videos/Videos';
+import { Videos, VideoView } from '@/components/videos/Videos';
 import { useScale } from '@/hooks/useScale';
-import { useThemeColor } from '@/hooks/useThemeColor';
+import { AssDass, useSession, useThemeColor } from '@sinkplane/shared';
 
 import bg from '@/assets/images/bg.jpg';
-import { useSession } from '@/hooks/authentication/auth.context';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedButton } from '@/components/ThemedButton';
 import { ThemedModal } from '@/components/ThemedModal';
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { Channel } from '@/types/creator-list.interface';
+import { Channel } from '@sinkplane/shared/types/creator-list.interface';
 
 export default function HomeScreen() {
   const styles = useHomeScreenStyles();

@@ -17,7 +17,16 @@ module.exports = {
   setupFilesAfterEnv: ['<rootDir>/__tests__/e2e/jest.setup.ts'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
+    // Shared package lives in the sibling repo (pnpm link: dep). Map it into
+    // the source tree so it is transformed by babel-jest like project files.
+    '^@sinkplane/shared$': '<rootDir>/../sinkplane-shared/index.ts',
+    '^@sinkplane/shared/(.*)$': '<rootDir>/../sinkplane-shared/$1',
   },
   clearMocks: true,
+  // Shared package files live in the sibling repo (outside this project's
+  // node_modules walk-up), so their bare imports (react, @babel/runtime, …)
+  // must fall back to this project's node_modules to keep a single instance
+  // of each module in the registry — see moduleNameMapper above.
+  modulePaths: ['<rootDir>/node_modules'],
   testTimeout: 30000,
 };

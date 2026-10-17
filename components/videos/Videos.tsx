@@ -5,10 +5,9 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { VideoGrid } from '@/components/videos/VideoGrid';
 import { useScale } from '@/hooks/useScale';
-import { useGetVideosInfinite } from '@/hooks/videos/useGetVideos';
-import { Channel } from '@/types/creator-list.interface';
+import { AssDass, useGetVideosInfinite, useGetVideoProgress } from '@sinkplane/shared';
+import { Channel } from '@sinkplane/shared/types/creator-list.interface';
 import { VideoListItem } from './VideoList';
-import { useGetVideoProgress } from '@/hooks/videos/useGetVideoProgress';
 
 interface VideosProps {
   channel: Channel;
@@ -18,11 +17,6 @@ interface VideosProps {
   view: VideoView;
   sort: AssDass;
   onFetchMoreRef?: RefObject<(() => void) | null>;
-}
-
-export enum AssDass {
-  ASC = 'ASC',
-  DESC = 'DESC',
 }
 
 export enum VideoView {

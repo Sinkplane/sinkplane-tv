@@ -12472,6 +12472,9 @@ importers:
       '@preeternal/react-native-cookie-manager':
         specifier: ^7.0.0
         version: 7.0.0(patch_hash=b2e1cd6f44dfa9dac63d6326a9fae39bb09fd9d16de1cd553c546079f1453ca1)(react-native-tvos@0.86.3-0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/jest-preset@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react-native-tvos@0.86.3-0)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)
+      '@sinkplane/shared':
+        specifier: link:../sinkplane-shared
+        version: link:../sinkplane-shared
       '@tanstack/react-query':
         specifier: ^5.104.2
         version: 5.104.2(react@19.2.3)

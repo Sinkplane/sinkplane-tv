@@ -3,7 +3,7 @@ import { StyleSheet } from 'react-native';
 import { ThemedView } from '@/components/ThemedView';
 import { VideoCard } from '@/components/videos/VideoCard';
 import { useScale } from '@/hooks/useScale';
-import { Video } from '@/types/video.interface';
+import { Video } from '@sinkplane/shared';
 
 interface VideoGridProps {
   videos: Video[];

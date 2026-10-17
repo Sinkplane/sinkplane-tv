@@ -2,8 +2,7 @@ import { Pressable, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { useState } from 'react';
 import { ThemedText } from './ThemedText';
 import { useScale } from '@/hooks/useScale';
-import { Colors } from '@/constants/colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { Colors, useColorScheme } from '@sinkplane/shared';
 
 interface ThemedButtonProps {
   onPress: () => void;

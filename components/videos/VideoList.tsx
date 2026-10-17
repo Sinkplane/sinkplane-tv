@@ -6,8 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useScale } from '@/hooks/useScale';
-import { Video } from '@/types/video.interface';
-import { useThemeColor } from '@/hooks/useThemeColor';
+import { Video, useThemeColor } from '@sinkplane/shared';
 
 interface VideoListItemProps {
   video: Video;

@@ -2,8 +2,7 @@ import { Modal, StyleSheet, Pressable, View } from 'react-native';
 import { ThemedView } from './ThemedView';
 import { ThemedText } from './ThemedText';
 import { useScale } from '@/hooks/useScale';
-import { Colors } from '@/constants/colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { Colors, useColorScheme } from '@sinkplane/shared';
 
 interface ThemedModalProps<T> {
   visible: boolean;

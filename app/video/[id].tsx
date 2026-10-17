@@ -1,14 +1,10 @@
 import { ActivityIndicator, Alert, StyleSheet, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 
-import { useGetVideoPost } from '@/hooks/videos/useGetVideoPost';
-import { useGetVideoDelivery } from '@/hooks/videos/useGetVideoDelivery';
-import { useSession } from '@/hooks/authentication/auth.context';
+import { useGetVideoDelivery, useGetVideoPost, useGetVideoProgress, useSession, VideoDelivery } from '@sinkplane/shared';
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import { VideoDelivery } from '@/types/video-delivery.interface';
 import { VideoPlayer } from '@/components/videos/VideoPlayer';
 import { RelatedVideosGrid } from '@/components/videos/RelatedVideosGrid';
-import { useGetVideoProgress } from '@/hooks/videos/useGetVideoProgress';
 
 // eslint-disable-next-line complexity
 export default function VideoDetailScreen() {

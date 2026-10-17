@@ -7,7 +7,7 @@ import VideoComponent, {
   ReactVideoSource,
   VideoRef
 } from 'react-native-video';
-import { useUpdateVideoProgress, updateVideoProgress } from '@/hooks/videos/useUpdateVideoProgress';
+import { updateVideoProgress, useUpdateVideoProgress } from '@sinkplane/shared';
 import { PLAYBACK_SPEEDS } from '@/constants/video';
 
 interface VideoPlayerProps {

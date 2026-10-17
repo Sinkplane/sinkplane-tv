@@ -8,7 +8,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { ThemedView } from '@/components/ThemedView';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useColorScheme } from '@sinkplane/shared';
 import { useScale } from '@/hooks/useScale';
 
 type Props = PropsWithChildren<{

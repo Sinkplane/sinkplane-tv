@@ -1,5 +1,5 @@
 import { SplashScreen } from 'expo-router';
-import { useSession } from '@/hooks/authentication/auth.context';
+import { useSession } from '@sinkplane/shared';
 
 SplashScreen.preventAutoHideAsync();
 

@@ -2,8 +2,7 @@ import { Tabs, type BottomTabBarButtonProps, type BottomTabBarProps } from 'expo
 import React from 'react';
 import { Pressable, View, StyleSheet, Text } from 'react-native';
 
-import { Colors } from '@/constants/colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { Colors, useColorScheme } from '@sinkplane/shared';
 import { useTextStyles } from '@/hooks/useTextStyles';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
 

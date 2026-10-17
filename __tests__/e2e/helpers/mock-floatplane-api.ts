@@ -33,9 +33,8 @@ import {
   techCreator,
 } from './fixtures';
 
-import { Channel, Creator } from '@/types/creator-list.interface';
-import { Subscription } from '@/types/subscriptions.interface';
-import { Video } from '@/types/video.interface';
+import { Channel, Creator } from '@sinkplane/shared/types/creator-list.interface';
+import { Subscription, Video } from '@sinkplane/shared';
 
 const DEVICE_AUTH_PATH = '/realms/floatplane/protocol/openid-connect/auth/device';
 const TOKEN_PATH = '/realms/floatplane/protocol/openid-connect/token';

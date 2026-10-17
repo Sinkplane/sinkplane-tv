@@ -64,18 +64,31 @@ eas build --profile production       # Mobile production
   - `authentication/` — Auth UI (QR codes, status).
   - `videos/` — Video listing and player components.
   - `EventHandlingDemo.tsx` — Reference for TV focus-handling patterns.
-- **`hooks/`** — Business logic and platform integration.
-  - `authentication/` — OIDC device flow, profile management.
-  - `videos/` — Fetching video lists and delivery data (TanStack Query).
-  - `useScale.ts` — Scaling factor (`width / 1000`) for responsive TV layouts. **Always use this** for dimensions/margins/font sizes on TV.
-- **`constants/`** — API endpoints (`api.ts`), colors, text styles.
+- **`hooks/`** — TV-specific hooks only. **`useScale.ts`** (`width / 1000`) powers responsive TV layouts — **always use it** for dimensions/margins/font sizes on TV — together with `useTextStyles`. Reusable hooks/auth/connection code lives in `@sinkplane/shared` (see Shared Package below).
+- **`constants/`** — TV app text styles (`text-styles.ts`) and playback config (`video.ts`). API endpoints and colors live in `@sinkplane/shared`.
 - **`layouts/`** — Layout components (`DualLayoutGridScreen`, `FocusLayoutFlexbox`, `TabLayout`).
-- **`types/`** — TypeScript interfaces (API responses, video, user, etc.).
+- **`types/`** — TV app asset typings (`images.d.ts`). All Floatplane API / TV protocol interfaces live in `@sinkplane/shared`.
 - **`assets/`** — Images, fonts, TV-specific app icons.
 - **`scripts/`** — `setup-dev-env.sh` (env setup), `reset-project.js`.
 - **`docs/`** — tvOS setup and known-issue docs.
 - **`patches/`** — pnpm patches (`patchedDependencies` in `pnpm-workspace.yaml`); notably the cookie-manager tvOS patch. **Do not delete.**
 - **`plugins/`** — Expo config plugins (`with-tv-scene-lifecycle.js` — UIKit scene lifecycle adoption required by iOS/tvOS 27).
+
+### Shared Package (`@sinkplane/shared`)
+
+`@sinkplane/shared` lives in the sibling repo `../sinkplane-shared` (cloned by `scripts/setup-dev-env.sh`, like the companion app) and is consumed as a `"link:"` dependency — Metro, tsc, and Jest all compile its TypeScript sources directly (no build step). It holds everything reusable across Sinkplane apps:
+
+- Floatplane API client (`authenticatedFetch`), OIDC device flow, token refresh
+- Auth context (`SessionProvider` / `useSession`)
+- TV connection server (`useTVServer` — TCP port 9999 + Bonjour/Zeroconf)
+- Content query hooks (videos, delivery, progress, history), `useStorageState`, theme context/hooks, shared colors
+- All Floatplane API / TV companion protocol types
+
+Import from the barrel: `import { useSession } from '@sinkplane/shared'`. The few names that collide with content-side types (`Channel`, `Creator`) are imported via subpath `@sinkplane/shared/types/creator-list.interface`.
+
+`sinkplane-shared` intentionally has **no `node_modules` of its own**: its `node_modules` is a symlink to `../sinkplane-tv/node_modules` (created by `setup-dev-env.sh`) so every tool resolves the exact same module instances. **Never run `pnpm install` inside `sinkplane-shared`** — its `pnpm-workspace.yaml` disables pnpm's install-before-run behavior for exactly this reason.
+
+> ⚠️ EAS builds archive only this repo, so `link:../sinkplane-shared` cannot resolve on EAS. Once `sinkplane-shared` is hosted, pin it to a git dependency (e.g. `"@sinkplane/shared": "github:Sinkplane/sinkplane-shared#v0.1.0"`) for EAS profiles (`*_tv`); keep the `link:` for local development.
 
 ### Key Technologies
 

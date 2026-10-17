@@ -6,10 +6,8 @@ import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useScale } from '@/hooks/useScale';
-import { useSession } from '@/hooks/authentication/auth.context';
-import { useGetVideoDelivery } from '@/hooks/videos/useGetVideoDelivery';
+import { useGetVideoDelivery, useSession, VideoDelivery } from '@sinkplane/shared';
 import { VideoPlayer } from '@/components/videos/VideoPlayer';
-import { VideoDelivery } from '@/types/video-delivery.interface';
 import { OnVideoErrorData } from 'react-native-video';
 
 import bg from '@/assets/images/bg.jpg';
