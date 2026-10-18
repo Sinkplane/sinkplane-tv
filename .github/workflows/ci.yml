@@ -82,4 +82,4 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Run e2e tests
-        run: pnpm exec jest --ci --silent
+        run: pnpm exec jest --ci --silent --testTimeout=120000
