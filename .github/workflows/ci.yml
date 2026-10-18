@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  unit-tests:
+    name: unit-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: sinkplane-tv
+    steps:
+      - name: Checkout TV app
+        uses: actions/checkout@v4
+        with:
+          path: sinkplane-tv
+      - name: Checkout shared package sibling clone
+        uses: actions/checkout@v4
+        with:
+          repository: Sinkplane/sinkplane-shared
+          path: sinkplane-shared
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: sinkplane-tv/pnpm-lock.yaml
+      - name: Configure GitHub Packages auth
+        run: echo "//npm.pkg.github.com/:_authToken=${GITHUB_PACKAGES_TOKEN}" >> ~/.npmrc
+        env:
+          GITHUB_PACKAGES_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Run unit tests
+        run: pnpm exec jest --config jest.config.unit.js --ci --passWithNoTests
+
+  e2e-tests:
+    name: e2e-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: sinkplane-tv
+    steps:
+      - name: Checkout TV app
+        uses: actions/checkout@v4
+        with:
+          path: sinkplane-tv
+      - name: Checkout shared package sibling clone
+        uses: actions/checkout@v4
+        with:
+          repository: Sinkplane/sinkplane-shared
+          path: sinkplane-shared
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: sinkplane-tv/pnpm-lock.yaml
+      - name: Configure GitHub Packages auth
+        run: echo "//npm.pkg.github.com/:_authToken=${GITHUB_PACKAGES_TOKEN}" >> ~/.npmrc
+        env:
+          GITHUB_PACKAGES_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Run e2e tests
+        run: pnpm exec jest --ci --silent
