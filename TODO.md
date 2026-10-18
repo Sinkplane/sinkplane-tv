@@ -4,7 +4,7 @@
 
 - [x] Basic Auth with copied cookie from web
 - [x] Login routes with guards
-- [ ] Auth from companion app
+- [x] Auth from companion app
 - [x] Homepage
 - [x] Homepage List View
 - [x] Homepage Card View
@@ -17,7 +17,7 @@
 
 ## Bread
 
-- [ ] Video playback speed
+- [x] Video playback speed
 - [ ] Push notifications? I think thats what firebase is for
 - [ ] Livestream chat rendered in page
 - [ ] nutflix (yeah I said it) type video detail page
@@ -28,9 +28,9 @@
 
 ## Dinosaurs eating bread
 
-- [ ] Unit tests
+- [x] Unit tests
 - [x] Linting
 - [x] Prettier
-- [ ] E2E Tests
-- [ ] E2E tests / unit tests running in pipeline
+- [x] E2E Tests
+- [x] E2E tests / unit tests running in pipeline
 - [ ] Expo pipeline to publish to app stores
