@@ -6,7 +6,6 @@ on:
 
 permissions:
   contents: read
-  packages: read
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.event.pull_request.number }}
@@ -41,9 +40,9 @@ jobs:
           cache: pnpm
           cache-dependency-path: sinkplane-tv/pnpm-lock.yaml
       - name: Configure GitHub Packages auth
-        run: echo "//npm.pkg.github.com/:_authToken=${GITHUB_PACKAGES_TOKEN}" >> ~/.npmrc
+        run: echo "//npm.pkg.github.com/:_authToken=${PACKAGES_AUTH_TOKEN}" >> ~/.npmrc
         env:
-          GITHUB_PACKAGES_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PACKAGES_AUTH_TOKEN: ${{ secrets.PACKAGES_AUTH_TOKEN }}
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Run unit tests
@@ -77,9 +76,9 @@ jobs:
           cache: pnpm
           cache-dependency-path: sinkplane-tv/pnpm-lock.yaml
       - name: Configure GitHub Packages auth
-        run: echo "//npm.pkg.github.com/:_authToken=${GITHUB_PACKAGES_TOKEN}" >> ~/.npmrc
+        run: echo "//npm.pkg.github.com/:_authToken=${PACKAGES_AUTH_TOKEN}" >> ~/.npmrc
         env:
-          GITHUB_PACKAGES_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PACKAGES_AUTH_TOKEN: ${{ secrets.PACKAGES_AUTH_TOKEN }}
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Run e2e tests
