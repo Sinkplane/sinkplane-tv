@@ -23,6 +23,7 @@ type NativeMocks = typeof import('./native-mocks');
 export type Runtime = TestUtils & {
   api: ApiModule['api'];
   secureStore: NativeMocks['mockSecureStore'];
+  asyncStorage: NativeMocks['mockAsyncStorage'];
   tcp: NativeMocks['mockTcpState'];
   cookies: NativeMocks['mockCookieState'];
   videoState: NativeMocks['mockVideoState'];
@@ -48,6 +49,7 @@ export function loadRuntime(): Runtime {
   // Fresh instances → reset their state so each test starts clean.
   apiModule.api.reset();
   nativeMocks.mockSecureStore.items.clear();
+  nativeMocks.mockAsyncStorage.items.clear();
   nativeMocks.mockVideoState.props = null;
   nativeMocks.mockVideoState.seeks = [];
   nativeMocks.mockVideoState.mountCount = 0;
@@ -61,6 +63,7 @@ export function loadRuntime(): Runtime {
     ...utils,
     api: apiModule.api,
     secureStore: nativeMocks.mockSecureStore,
+    asyncStorage: nativeMocks.mockAsyncStorage,
     tcp: nativeMocks.mockTcpState,
     cookies: nativeMocks.mockCookieState,
     videoState: nativeMocks.mockVideoState,

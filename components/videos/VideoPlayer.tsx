@@ -1,8 +1,11 @@
 import React, { FC, useRef, useState, useEffect, useCallback } from 'react';
 import { StyleSheet, View, ActivityIndicator } from 'react-native';
 import VideoComponent, {
+  CaptionTrack,
   OnBufferData,
+  OnCaptionTrackChangeData,
   OnLoadData,
+  OnPlaybackRateChangeData,
   OnVideoErrorData,
   ReactVideoSource,
   VideoRef
@@ -23,6 +26,11 @@ interface VideoPlayerProps {
   title?: string;
   initialSeek?: number;
   replayToken?: number;
+  captionTracks?: CaptionTrack[];
+  selectedCaptionTrackId?: string;
+  onCaptionTrackChange?: (e: OnCaptionTrackChangeData) => void;
+  rate?: number;
+  onPlaybackRateChange?: (e: OnPlaybackRateChangeData) => void;
 }
 
 export const VideoPlayer: FC<VideoPlayerProps> = ({
@@ -38,6 +46,11 @@ export const VideoPlayer: FC<VideoPlayerProps> = ({
   title,
   initialSeek,
   replayToken,
+  captionTracks,
+  selectedCaptionTrackId,
+  onCaptionTrackChange,
+  rate,
+  onPlaybackRateChange,
 }: VideoPlayerProps) => {
   const videoRef = useRef<VideoRef>(null);
   const hasSeekedRef = useRef(false);
@@ -164,6 +177,11 @@ export const VideoPlayer: FC<VideoPlayerProps> = ({
         onEnd={handleEnd}
         controls
         playbackSpeeds={PLAYBACK_SPEEDS}
+        captionTracks={captionTracks}
+        selectedCaptionTrackId={selectedCaptionTrackId}
+        onCaptionTrackChange={onCaptionTrackChange}
+        rate={rate}
+        onPlaybackRateChange={onPlaybackRateChange}
         poster={{ source: { uri: thumbnailUrl } }}
         playInBackground={false}
         playWhenInactive={false}

@@ -26,6 +26,17 @@ export interface MockVideoProps {
   paused?: boolean;
   controls?: boolean;
   playbackSpeeds?: number[];
+  captionTracks?: {
+    id: string;
+    uri: string;
+    language?: string;
+    subtitle?: string;
+    headers?: Record<string, string>;
+  }[];
+  selectedCaptionTrackId?: string;
+  onCaptionTrackChange?: (e: { trackId?: string }) => void;
+  rate?: number;
+  onPlaybackRateChange?: (e: { playbackRate: number; selectedPlaybackRate?: number }) => void;
   resizeMode?: string;
   poster?: unknown;
   playInBackground?: boolean;
@@ -50,6 +61,8 @@ export interface MockVideoState {
 export const mockVideoState: MockVideoState = { props: null, seeks: [], mountCount: 0 };
 
 export const mockSecureStore = { items: new Map<string, string>() };
+
+export const mockAsyncStorage = { items: new Map<string, string>() };
 
 export interface MockTcpSocketState {
   servers: MockTcpServer[];
@@ -94,6 +107,23 @@ jest.mock('react-native-video', () => {
 
   return { __esModule: true, default: MockVideo };
 });
+
+// ---------------------------------------------------------------------------
+// AsyncStorage (in-memory, seedable)
+// ---------------------------------------------------------------------------
+
+jest.mock('@react-native-async-storage/async-storage', () => ({
+  __esModule: true,
+  default: {
+    getItem: jest.fn(async (key: string): Promise<string | null> => mockAsyncStorage.items.get(key) ?? null),
+    setItem: jest.fn(async (key: string, value: string): Promise<void> => {
+      mockAsyncStorage.items.set(key, value);
+    }),
+    removeItem: jest.fn(async (key: string): Promise<void> => {
+      mockAsyncStorage.items.delete(key);
+    }),
+  },
+}));
 
 // ---------------------------------------------------------------------------
 // expo-secure-store (in-memory, seedable)

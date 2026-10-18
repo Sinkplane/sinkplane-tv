@@ -12457,7 +12457,7 @@ overrides:
 
 patchedDependencies:
   '@preeternal/react-native-cookie-manager@7.0.0': b2e1cd6f44dfa9dac63d6326a9fae39bb09fd9d16de1cd553c546079f1453ca1
-  react-native-video@6.19.3: feb8eee3f0adc6652c20719259d87de42909535cf716c0ab15c7cc13dd7d9837
+  react-native-video@6.19.3: 1d79bc1a2122fff97739fc161a77cdf0ad8674a9e97b70f9dc9735337f94adae
 
 importers:
 
@@ -12468,10 +12468,13 @@ importers:
         version: 15.1.1(expo-font@57.0.4)(react-native-tvos@0.86.3-0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/jest-preset@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react-native-tvos@0.86.3-0)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)
       '@mux/mux-data-react-native-video':
         specifier: ^0.19.21
-        version: 0.19.21(react-native-video@6.19.3(patch_hash=feb8eee3f0adc6652c20719259d87de42909535cf716c0ab15c7cc13dd7d9837)(react-native-tvos@0.86.3-0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/jest-preset@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react-native-tvos@0.86.3-0)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3))(react@19.2.3)
+        version: 0.19.21(react-native-video@6.19.3(patch_hash=1d79bc1a2122fff97739fc161a77cdf0ad8674a9e97b70f9dc9735337f94adae)(react-native-tvos@0.86.3-0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/jest-preset@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react-native-tvos@0.86.3-0)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3))(react@19.2.3)
       '@preeternal/react-native-cookie-manager':
         specifier: ^7.0.0
         version: 7.0.0(patch_hash=b2e1cd6f44dfa9dac63d6326a9fae39bb09fd9d16de1cd553c546079f1453ca1)(react-native-tvos@0.86.3-0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/jest-preset@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react-native-tvos@0.86.3-0)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)
+      '@react-native-async-storage/async-storage':
+        specifier: 2.2.0
+        version: 2.2.0(react-native-tvos@0.86.3-0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/jest-preset@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react-native-tvos@0.86.3-0)(react@19.2.3)(supports-color@8.1.1))
       '@sinkplane/shared':
         specifier: ^0.1.1
         version: 0.1.1(5f6b7deed55b4ff569d2cd3320c10a81)
@@ -12555,7 +12558,7 @@ importers:
         version: 6.4.3(react-native-tvos@0.86.3-0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/jest-preset@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react-native-tvos@0.86.3-0)(react@19.2.3)(supports-color@8.1.1))
       react-native-video:
         specifier: ^6.19.3
-        version: 6.19.3(patch_hash=feb8eee3f0adc6652c20719259d87de42909535cf716c0ab15c7cc13dd7d9837)(react-native-tvos@0.86.3-0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/jest-preset@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react-native-tvos@0.86.3-0)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)
+        version: 6.19.3(patch_hash=1d79bc1a2122fff97739fc161a77cdf0ad8674a9e97b70f9dc9735337f94adae)(react-native-tvos@0.86.3-0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/jest-preset@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react-native-tvos@0.86.3-0)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)
       react-native-web:
         specifier: ~0.21.0
         version: 0.21.4(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -13843,6 +13846,11 @@ packages:
     peerDependenciesMeta:
       '@types/react':
         optional: true
+
+  '@react-native-async-storage/async-storage@2.2.0':
+    resolution: {integrity: sha512-gvRvjR5JAaUZF8tv2Kcq/Gbt3JHwbKFYfmb445rhOj6NUMx3qPLixmDx5pZAyb9at1bYvJ4/eTUipU5aki45xw==}
+    peerDependencies:
+      react-native: ^0.0.0-0 || >=0.65 <1.0
 
   '@react-native-masked-view/masked-view@0.3.2':
     resolution: {integrity: sha512-XwuQoW7/GEgWRMovOQtX3A4PrXhyaZm0lVUiY8qJDvdngjLms9Cpdck6SmGAUNqQwcj2EadHC1HwL0bEyoa/SQ==}
@@ -15909,6 +15917,10 @@ packages:
     resolution: {integrity: sha512-Fd4gABb+ycGAmKou8eMftCupSir5lRxqf4aD/vd0cD2qc4HL07OjCeuHMr8Ro4CoMaeCKDB0/ECBOVWjTwUvPQ==}
     engines: {node: '>=8'}
 
+  is-plain-obj@2.1.0:
+    resolution: {integrity: sha512-YWnfyRwxL/+SsrWYfOpUtz5b3YD+nyfkHvjbcanzk8zgyO4ASD67uVMRt8k5bM4lLMDnXfriRhOpemw+NfT1eA==}
+    engines: {node: '>=8'}
+
   is-potential-custom-element-name@1.0.1:
     resolution: {integrity: sha512-bCYeRA2rVibKZd+s2625gGnGF/t7DSqDs4dP7CrLA1m7jKWz6pps0LpYLJN8Q64HtmPKJ1hrN3nzPNKFEKOUiQ==}
 
@@ -16448,6 +16460,10 @@ packages:
 
   memoize-one@6.0.0:
     resolution: {integrity: sha512-rkpe71W0N0c0Xz6QD0eJETuWAJGnJ9afsl1srmwPrI+yBCkge5EycXXbYRyvL29zZVUWQCY7InPRCv3GDXuZNw==}
+
+  merge-options@3.0.4:
+    resolution: {integrity: sha512-2Sug1+knBjkaMsMgf1ctR1Ujx+Ayku4EdJN4Z+C2+JzoeF7A3OZ9KM2GY0CpQS51NR61LTurMJrRKPhSs3ZRTQ==}
+    engines: {node: '>=10'}
 
   merge-stream@2.0.0:
     resolution: {integrity: sha512-abv/qOcuPfk3URPfDzmZU1LKmuw8kT+0nIHvKrKgFrwifol/doWcdA4ZqsWQ8ENrFKkd67Mfpo/LovbIUsbt3w==}
@@ -19336,10 +19352,10 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.6.0
 
-  '@mux/mux-data-react-native-video@0.19.21(react-native-video@6.19.3(patch_hash=feb8eee3f0adc6652c20719259d87de42909535cf716c0ab15c7cc13dd7d9837)(react-native-tvos@0.86.3-0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/jest-preset@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react-native-tvos@0.86.3-0)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3))(react@19.2.3)':
+  '@mux/mux-data-react-native-video@0.19.21(react-native-video@6.19.3(patch_hash=1d79bc1a2122fff97739fc161a77cdf0ad8674a9e97b70f9dc9735337f94adae)(react-native-tvos@0.86.3-0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/jest-preset@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react-native-tvos@0.86.3-0)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3))(react@19.2.3)':
     dependencies:
       react: 19.2.3
-      react-native-video: 6.19.3(patch_hash=feb8eee3f0adc6652c20719259d87de42909535cf716c0ab15c7cc13dd7d9837)(react-native-tvos@0.86.3-0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/jest-preset@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react-native-tvos@0.86.3-0)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)
+      react-native-video: 6.19.3(patch_hash=1d79bc1a2122fff97739fc161a77cdf0ad8674a9e97b70f9dc9735337f94adae)(react-native-tvos@0.86.3-0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/jest-preset@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react-native-tvos@0.86.3-0)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)
 
   '@napi-rs/wasm-runtime@1.2.5(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)':
     dependencies:
@@ -19614,6 +19630,11 @@ snapshots:
       react: 19.2.3
     optionalDependencies:
       '@types/react': 19.2.18
+
+  '@react-native-async-storage/async-storage@2.2.0(react-native-tvos@0.86.3-0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/jest-preset@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react-native-tvos@0.86.3-0)(react@19.2.3)(supports-color@8.1.1))':
+    dependencies:
+      merge-options: 3.0.4
+      react-native: react-native-tvos@0.86.3-0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/jest-preset@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react-native-tvos@0.86.3-0)(react@19.2.3)(supports-color@8.1.1)
 
   '@react-native-masked-view/masked-view@0.3.2(react-native-tvos@0.86.3-0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/jest-preset@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react-native-tvos@0.86.3-0)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)':
     dependencies:
@@ -22049,6 +22070,8 @@ snapshots:
 
   is-path-inside@3.0.3: {}
 
+  is-plain-obj@2.1.0: {}
+
   is-potential-custom-element-name@1.0.1: {}
 
   is-regex@1.2.1:
@@ -22894,6 +22917,10 @@ snapshots:
   memoize-one@5.2.1: {}
 
   memoize-one@6.0.0: {}
+
+  merge-options@3.0.4:
+    dependencies:
+      is-plain-obj: 2.1.0
 
   merge-stream@2.0.0: {}
 
@@ -23765,7 +23792,7 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  react-native-video@6.19.3(patch_hash=feb8eee3f0adc6652c20719259d87de42909535cf716c0ab15c7cc13dd7d9837)(react-native-tvos@0.86.3-0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/jest-preset@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react-native-tvos@0.86.3-0)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3):
+  react-native-video@6.19.3(patch_hash=1d79bc1a2122fff97739fc161a77cdf0ad8674a9e97b70f9dc9735337f94adae)(react-native-tvos@0.86.3-0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/jest-preset@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react-native-tvos@0.86.3-0)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3):
     dependencies:
       react: 19.2.3
       react-native: react-native-tvos@0.86.3-0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/jest-preset@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react-native-tvos@0.86.3-0)(react@19.2.3)(supports-color@8.1.1)

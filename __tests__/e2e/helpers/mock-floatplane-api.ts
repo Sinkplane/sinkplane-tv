@@ -34,7 +34,7 @@ import {
 } from './fixtures';
 
 import { Channel, Creator } from '@sinkplane/shared/types/creator-list.interface';
-import { Subscription, Video } from '@sinkplane/shared';
+import { Subscription, TextTrack, Video } from '@sinkplane/shared';
 
 const DEVICE_AUTH_PATH = '/realms/floatplane/protocol/openid-connect/auth/device';
 const TOKEN_PATH = '/realms/floatplane/protocol/openid-connect/token';
@@ -125,6 +125,8 @@ export class FloatplaneApiMock {
   videosById = new Map<string, Video>();
   /** GUIDs (video attachments) that resolve to an all-denied delivery payload. */
   deniedDeliveryGuids = new Set<string>();
+  /** videoId → text tracks served on the post's video attachment. */
+  textTracks = new Map<string, TextTrack[]>();
   liveNow = false;
   historyPageSize = 20;
 
@@ -203,6 +205,7 @@ export class FloatplaneApiMock {
     this.videosByChannel.clear();
     this.videosById.clear();
     this.deniedDeliveryGuids.clear();
+    this.textTracks.clear();
     this.liveNow = false;
     this.historyPageSize = 20;
     this.progress.clear();
@@ -442,7 +445,7 @@ export class FloatplaneApiMock {
   }
 
   private buildPost(video: Video) {
-    return makeVideoPost(video, this.progress.get(video.id) ?? 0);
+    return makeVideoPost(video, this.progress.get(video.id) ?? 0, this.textTracks.get(video.id));
   }
 
   private handleDeliveryInfo(params: URLSearchParams): Response {

@@ -7,7 +7,7 @@ import { act, renderRouter } from 'expo-router/testing-library';
 // Re-exported so tests always use the exact instance renderRouter binds to
 // (Jest can load the same file under two module ids; going through one import
 // chain avoids querying a screen that was never bound).
-export { screen, fireEvent, testRouter } from 'expo-router/testing-library';
+export { act, screen, fireEvent, testRouter } from 'expo-router/testing-library';
 
 import { api } from './mock-floatplane-api';
 import { mockSecureStore, mockVideoState, MockVideoProps } from './native-mocks';

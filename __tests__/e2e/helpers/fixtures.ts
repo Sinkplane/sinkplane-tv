@@ -9,7 +9,7 @@
  */
 
 import { Channel, Creator } from '@sinkplane/shared/types/creator-list.interface';
-import { ContentHistoryEntry, Subscription, User, Video, VideoDelivery, VideoPost } from '@sinkplane/shared';
+import { ContentHistoryEntry, Subscription, TextTrack, User, Video, VideoDelivery, VideoPost } from '@sinkplane/shared';
 
 export const LIVESTREAM_ID = '5c13f3c006f1be15e08e05c0';
 
@@ -203,7 +203,7 @@ export const makeVideosForChannel = (creator: Creator, channelId: string, count 
     makeVideo({ id: `video-${creator.id}-${channelId}-${i + 1}`, channelId, creator, index: i }),
   );
 
-export const makeVideoPost = (video: Video, progress = 0): VideoPost =>
+export const makeVideoPost = (video: Video, progress = 0, textTracks: TextTrack[] = []): VideoPost =>
   ({
     ...video,
     duration: video.metadata.videoDuration,
@@ -223,7 +223,7 @@ export const makeVideoPost = (video: Video, progress = 0): VideoPost =>
         isProcessing: false,
         primaryBlogPost: video.id,
         levels: [],
-        textTracks: [],
+        textTracks,
         selfUserInteraction: null,
         thumbnail: video.thumbnail,
         isAccessible: true,

@@ -1,16 +1,496 @@
+diff --git a/ios/Video/Features/RCTPlayerObserver.swift b/ios/Video/Features/RCTPlayerObserver.swift
+index 339932f4aa715db66875bbbf1179f5aaadbddf83..5eea335fd0c51b1c79710dbc7ef03e7a725903ff 100644
+--- a/ios/Video/Features/RCTPlayerObserver.swift
++++ b/ios/Video/Features/RCTPlayerObserver.swift
+@@ -326,6 +326,18 @@ class RCTPlayerObserver: NSObject, AVPlayerItemMetadataOutputPushDelegate, AVPla
+         _restoreUserInterfaceForPIPStopCompletionHandler = completionHandler
+     }
+ 
++    #if os(tvOS)
++        var onTransportBarVisibilityChange: ((Bool, AVPlayerViewControllerAnimationCoordinator) -> Void)?
++
++        func playerViewController(
++            _: AVPlayerViewController,
++            willTransitionToVisibilityOfTransportBar visible: Bool,
++            with coordinator: AVPlayerViewControllerAnimationCoordinator
++        ) {
++            onTransportBarVisibilityChange?(visible, coordinator)
++        }
++    #endif
++
+     #if !os(tvOS)
+         func playerViewController(
+             _: AVPlayerViewController,
+diff --git a/ios/Video/Features/RCTVideoCaptions.swift b/ios/Video/Features/RCTVideoCaptions.swift
+new file mode 100644
+index 0000000000000000000000000000000000000000..04879d0c3aa21cceae19a75d5552559bea66c41e
+--- /dev/null
++++ b/ios/Video/Features/RCTVideoCaptions.swift
+@@ -0,0 +1,404 @@
++import AVFoundation
++import AVKit
++import UIKit
++
++// MARK: - CaptionTrack
++
++/// A WebVTT caption file loaded outside of the stream, for HLS sources where `textTracks` can't be side-loaded.
++struct CaptionTrack: Equatable {
++    let id: String
++    let uri: String
++    let title: String?
++    let language: String?
++    let subtitle: String?
++    let headers: [String: String]
++
++    init?(_ dict: NSDictionary) {
++        guard let id = dict["id"] as? String,
++              let uri = dict["uri"] as? String, !uri.isEmpty else { return nil }
++
++        self.id = id
++        self.uri = uri
++        self.title = dict["title"] as? String
++        self.language = dict["language"] as? String
++        self.subtitle = dict["subtitle"] as? String
++
++        var headers: [String: String] = [:]
++        for header in dict["headers"] as? [NSDictionary] ?? [] {
++            if let key = header["key"] as? String, let value = header["value"] as? String {
++                headers[key] = value
++            }
++        }
++        self.headers = headers
++    }
++
++    var displayName: String {
++        if let title, !title.isEmpty { return title }
++        if let language, !language.isEmpty {
++            return Locale.current.localizedString(forIdentifier: language)?.capitalized(with: Locale.current) ?? language
++        }
++        return "Subtitles"
++    }
++
++    var menuIdentity: [String?] {
++        [id, displayName, subtitle]
++    }
++}
++
++// MARK: - WebVTT
++
++struct CaptionCue {
++    let start: Double
++    let end: Double
++    let text: String
++}
++
++enum WebVTTParser {
++    static func parse(_ contents: String) -> [CaptionCue] {
++        let normalized = contents
++            .replacingOccurrences(of: "\r\n", with: "\n")
++            .replacingOccurrences(of: "\r", with: "\n")
++
++        var cues: [CaptionCue] = []
++        var block: [String] = []
++        for line in normalized.components(separatedBy: "\n") + [""] {
++            if line.trimmingCharacters(in: .whitespaces).isEmpty {
++                if let cue = parseBlock(block) {
++                    cues.append(cue)
++                }
++                block.removeAll()
++            } else {
++                block.append(line)
++            }
++        }
++        return cues.sorted { $0.start < $1.start }
++    }
++
++    private static func parseBlock(_ lines: [String]) -> CaptionCue? {
++        guard let timingIndex = lines.firstIndex(where: { $0.contains("-->") }) else { return nil }
++
++        let timing = lines[timingIndex].components(separatedBy: "-->")
++        guard timing.count == 2,
++              let start = parseTimestamp(timing[0]),
++              let endToken = timing[1].split(whereSeparator: { $0 == " " || $0 == "\t" }).first,
++              let end = parseTimestamp(String(endToken)),
++              end > start else { return nil }
++
++        let text = lines[(timingIndex + 1)...]
++            .map(cleanText)
++            .joined(separator: "\n")
++            .trimmingCharacters(in: .whitespacesAndNewlines)
++        return text.isEmpty ? nil : CaptionCue(start: start, end: end, text: text)
++    }
++
++    /// Accepts `hh:mm:ss.ttt` and `mm:ss.ttt`.
++    private static func parseTimestamp(_ raw: String) -> Double? {
++        let parts = raw
++            .trimmingCharacters(in: .whitespaces)
++            .replacingOccurrences(of: ",", with: ".")
++            .split(separator: ":")
++        guard (2 ... 3).contains(parts.count), let seconds = Double(parts[parts.count - 1]) else { return nil }
++
++        var total = seconds
++        var multiplier = 60.0
++        for part in parts.dropLast().reversed() {
++            guard let value = Double(part) else { return nil }
++            total += value * multiplier
++            multiplier *= 60
++        }
++        return total
++    }
++
++    private static func cleanText(_ line: String) -> String {
++        line
++            .replacingOccurrences(of: "<[^>]*>", with: "", options: .regularExpression)
++            .replacingOccurrences(of: "&lt;", with: "<")
++            .replacingOccurrences(of: "&gt;", with: ">")
++            .replacingOccurrences(of: "&nbsp;", with: " ")
++            .replacingOccurrences(of: "&lrm;", with: "")
++            .replacingOccurrences(of: "&rlm;", with: "")
++            .replacingOccurrences(of: "&amp;", with: "&")
++    }
++}
++
++// MARK: - CaptionOverlayView
++
++final class CaptionOverlayView: UIView {
++    private let backdrop = UIView()
++    private let label = UILabel()
++    private var bottomConstraint: NSLayoutConstraint!
++    private var labelInsetConstraints: [NSLayoutConstraint] = []
++    private var raised = false
++
++    override init(frame: CGRect) {
++        super.init(frame: frame)
++        isUserInteractionEnabled = false
++        autoresizingMask = [.flexibleWidth, .flexibleHeight]
++
++        backdrop.translatesAutoresizingMaskIntoConstraints = false
++        backdrop.backgroundColor = UIColor.black.withAlphaComponent(0.6)
++        backdrop.layer.cornerRadius = 8
++        backdrop.isHidden = true
++
++        label.translatesAutoresizingMaskIntoConstraints = false
++        label.numberOfLines = 0
++        label.textAlignment = .center
++        label.textColor = .white
++
++        addSubview(backdrop)
++        backdrop.addSubview(label)
++
++        bottomConstraint = backdrop.bottomAnchor.constraint(equalTo: bottomAnchor)
++        labelInsetConstraints = [
++            label.leadingAnchor.constraint(equalTo: backdrop.leadingAnchor),
++            backdrop.trailingAnchor.constraint(equalTo: label.trailingAnchor),
++            label.topAnchor.constraint(equalTo: backdrop.topAnchor),
++            backdrop.bottomAnchor.constraint(equalTo: label.bottomAnchor),
++        ]
++        NSLayoutConstraint.activate(labelInsetConstraints + [
++            bottomConstraint,
++            backdrop.centerXAnchor.constraint(equalTo: centerXAnchor),
++            backdrop.widthAnchor.constraint(lessThanOrEqualTo: widthAnchor, multiplier: 0.8),
++        ])
++    }
++
++    @available(*, unavailable)
++    required init?(coder _: NSCoder) {
++        fatalError("init(coder:) has not been implemented")
++    }
++
++    func setText(_ text: String?) {
++        guard label.text != text else { return }
++        label.text = text
++        backdrop.isHidden = text == nil
++    }
++
++    /// Lifts captions above the transport bar while it's on screen.
++    func setRaised(_ raised: Bool) {
++        self.raised = raised
++        updateMetrics()
++        layoutIfNeeded()
++    }
++
++    override func layoutSubviews() {
++        updateMetrics()
++        super.layoutSubviews()
++    }
++
++    private func updateMetrics() {
++        let height = bounds.height
++        guard height > 0 else { return }
++
++        let fontSize = (height * 0.04).rounded()
++        if label.font.pointSize != fontSize {
++            label.font = .systemFont(ofSize: fontSize, weight: .medium)
++        }
++
++        let horizontalPadding = (fontSize * 0.5).rounded()
++        let verticalPadding = (fontSize * 0.2).rounded()
++        for constraint in labelInsetConstraints {
++            let isHorizontal = constraint.firstAttribute == .leading || constraint.firstAttribute == .trailing
++            constraint.constant = isHorizontal ? horizontalPadding : verticalPadding
++        }
++
++        bottomConstraint.constant = -(height * (raised ? 0.3 : 0.08)).rounded()
++    }
++}
++
++// MARK: - RCTVideoCaptions
++
++/// Renders side-loaded WebVTT captions over `AVPlayerViewController` content and, on tvOS,
++/// exposes a "Subtitles" menu in the transport bar beside the playback speed control.
++///
++/// Tracks are fetched as soon as they're set: caption URLs may be short-lived signed URLs.
++final class RCTVideoCaptions {
++    private var tracks: [CaptionTrack] = []
++    private var selectedTrackId: String?
++    private var cuesByTrackId: [String: [CaptionCue]] = [:]
++    private var loadTasks: [String: URLSessionDataTask] = [:]
++    private let overlay = CaptionOverlayView()
++
++    private weak var playerViewController: AVPlayerViewController?
++    private weak var player: AVPlayer?
++    private var timeObserver: Any?
++
++    /// Called only for selections made in the transport bar menu.
++    var onUserSelection: ((String?) -> Void)?
++
++    private var selectedCues: [CaptionCue] {
++        selectedTrackId.flatMap { cuesByTrackId[$0] } ?? []
++    }
++
++    deinit {
++        loadTasks.values.forEach { $0.cancel() }
++        removeTimeObserver()
++        overlay.removeFromSuperview()
++    }
++
++    func setTracks(_ newTracks: [CaptionTrack]) {
++        guard newTracks != tracks else { return }
++
++        let menuChanged = newTracks.map(\.menuIdentity) != tracks.map(\.menuIdentity)
++        tracks = newTracks
++
++        let trackIds = Set(tracks.map(\.id))
++        for (id, task) in loadTasks where !trackIds.contains(id) {
++            task.cancel()
++            loadTasks[id] = nil
++        }
++        cuesByTrackId = cuesByTrackId.filter { trackIds.contains($0.key) }
++        tracks.forEach(load)
++
++        if menuChanged {
++            updateMenu()
++        }
++    }
++
++    func attach(to viewController: AVPlayerViewController, player: AVPlayer) {
++        removeTimeObserver()
++        playerViewController = viewController
++        self.player = player
++
++        if let contentOverlayView = viewController.contentOverlayView {
++            overlay.frame = contentOverlayView.bounds
++            contentOverlayView.addSubview(overlay)
++        }
++
++        updateMenu()
++        if !selectedCues.isEmpty {
++            addTimeObserver()
++        }
++    }
++
++    func setTransportBarVisible(_ visible: Bool) {
++        overlay.setRaised(visible)
++    }
++
++    /// The selected track may arrive before `setTracks`; it's applied once that track loads.
++    func setSelectedTrackId(_ trackId: String?) {
++        guard trackId != selectedTrackId else { return }
++        select(trackId)
++        updateMenu()
++    }
++
++    private func userSelect(_ trackId: String?) {
++        guard trackId != selectedTrackId else { return }
++        select(trackId)
++        onUserSelection?(trackId)
++    }
++
++    private func select(_ trackId: String?) {
++        guard trackId != selectedTrackId else { return }
++
++        removeTimeObserver()
++        overlay.setText(nil)
++        selectedTrackId = trackId
++
++        guard let trackId else { return }
++        if cuesByTrackId[trackId] != nil {
++            addTimeObserver()
++        } else if let track = tracks.first(where: { $0.id == trackId }) {
++            load(track)
++        }
++    }
++
++    private func load(_ track: CaptionTrack) {
++        guard cuesByTrackId[track.id] == nil, loadTasks[track.id] == nil else { return }
++        guard let url = URL(string: track.uri) else {
++            DebugLog("Invalid caption track URL: \(track.uri)")
++            return
++        }
++
++        var request = URLRequest(url: url)
++        for (key, value) in track.headers {
++            request.setValue(value, forHTTPHeaderField: key)
++        }
++
++        let task = URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
++            DispatchQueue.main.async {
++                self?.handleLoad(trackId: track.id, data: data, response: response, error: error)
++            }
++        }
++        loadTasks[track.id] = task
++        task.resume()
++    }
++
++    private func handleLoad(trackId: String, data: Data?, response: URLResponse?, error: Error?) {
++        if (error as? URLError)?.code == .cancelled { return }
++        loadTasks[trackId] = nil
++        guard tracks.contains(where: { $0.id == trackId }) else { return }
++
++        let status = (response as? HTTPURLResponse)?.statusCode ?? 200
++        guard error == nil, (200 ..< 300).contains(status), let data,
++              let contents = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .isoLatin1) else {
++            DebugLog("Failed to load caption track \(trackId): \(error?.localizedDescription ?? "HTTP \(status)")")
++            if selectedTrackId == trackId {
++                selectedTrackId = nil
++                updateMenu()
++            }
++            return
++        }
++
++        cuesByTrackId[trackId] = WebVTTParser.parse(contents)
++        if selectedTrackId == trackId {
++            addTimeObserver()
++        }
++    }
++
++    private func addTimeObserver() {
++        guard timeObserver == nil, let player else { return }
++
++        timeObserver = player.addPeriodicTimeObserver(forInterval: CMTime(value: 1, timescale: 10), queue: .main) { [weak self] time in
++            self?.render(at: time.seconds)
++        }
++        render(at: player.currentTime().seconds)
++    }
++
++    private func removeTimeObserver() {
++        if let timeObserver {
++            player?.removeTimeObserver(timeObserver)
++        }
++        timeObserver = nil
++    }
++
++    private func render(at seconds: Double) {
++        guard seconds.isFinite else { return }
++
++        let text = selectedCues
++            .filter { $0.start <= seconds && seconds < $0.end }
++            .map(\.text)
++            .joined(separator: "\n")
++        overlay.setText(text.isEmpty ? nil : text)
++    }
++
++    private func updateMenu() {
++        #if os(tvOS)
++            guard #available(tvOS 16.0, *), let playerViewController else { return }
++            guard !tracks.isEmpty else {
++                playerViewController.transportBarCustomMenuItems = []
++                return
++            }
++
++            let isOff = !tracks.contains { $0.id == selectedTrackId }
++            let off = UIAction(title: "Off", state: isOff ? .on : .off) { [weak self] _ in
++                self?.userSelect(nil)
++            }
++            let trackActions = tracks.map { track in
++                let action = UIAction(title: track.displayName, state: track.id == selectedTrackId ? .on : .off) { [weak self] _ in
++                    self?.userSelect(track.id)
++                }
++                action.subtitle = track.subtitle
++                return action
++            }
++
++            playerViewController.transportBarCustomMenuItems = [
++                UIMenu(
++                    title: "Subtitles",
++                    image: UIImage(systemName: "captions.bubble"),
++                    options: .singleSelection,
++                    children: [off] + trackActions
++                ),
++            ]
++        #endif
++    }
++}
 diff --git a/ios/Video/RCTVideo.swift b/ios/Video/RCTVideo.swift
-index 5f2f5f668bf3d01718db0b7d5c737f959157a290..f6e608ec1c75eccf78ad2076f3aa1a69d39a9031 100644
+index 5f2f5f668bf3d01718db0b7d5c737f959157a290..5f3f0dc88647f51f54125d341a3f56f6e37d1b6c 100644
 --- a/ios/Video/RCTVideo.swift
 +++ b/ios/Video/RCTVideo.swift
-@@ -33,6 +33,7 @@ class RCTVideo: UIView, RCTVideoPlayerViewControllerDelegate, RCTPlayerObserverH
+@@ -33,6 +33,8 @@ class RCTVideo: UIView, RCTVideoPlayerViewControllerDelegate, RCTPlayerObserverH
      var _audioOutput: String = "speaker"
      private var _volume: Float = 1.0
      private var _rate: Float = 1.0
 +    private var _playbackSpeeds: [Float]?
++    private let _captions = RCTVideoCaptions()
      private var _maxBitRate: Float?
  
      private var _automaticallyWaitsToMinimizeStalling = true
-@@ -1082,6 +1083,34 @@ class RCTVideo: UIView, RCTVideoPlayerViewControllerDelegate, RCTPlayerObserverH
+@@ -132,6 +134,7 @@ class RCTVideo: UIView, RCTVideoPlayerViewControllerDelegate, RCTPlayerObserverH
+     @objc var onTextTracks: RCTDirectEventBlock?
+     @objc var onAudioTracks: RCTDirectEventBlock?
+     @objc var onTextTrackDataChanged: RCTDirectEventBlock?
++    @objc var onCaptionTrackChange: RCTDirectEventBlock?
+ 
+     @objc
+     func _onPictureInPictureEnter() {
+@@ -270,6 +273,14 @@ class RCTVideo: UIView, RCTVideoPlayerViewControllerDelegate, RCTPlayerObserverH
+         #endif
+ 
+         _playerObserver._handlers = self
++        _captions.onUserSelection = { [weak self] trackId in
++            self?.onCaptionTrackChange?(trackId.map { ["trackId": $0] } ?? [:])
++        }
++        #if os(tvOS)
++            _playerObserver.onTransportBarVisibilityChange = { [weak self] visible, coordinator in
++                coordinator.addCoordinatedAnimations({ self?._captions.setTransportBarVisible(visible) }, completion: nil)
++            }
++        #endif
+         #if USE_VIDEO_CACHING
+             _videoCache.playerItemPrepareText = playerItemPrepareText
+         #endif
+@@ -914,6 +925,8 @@ class RCTVideo: UIView, RCTVideoPlayerViewControllerDelegate, RCTPlayerObserverH
+ 
+     @objc
+     func setRate(_ rate: Float) {
++        guard rate != _rate else { return }
++
+         if _rate != 1 {
+             // This is a workaround
+             // when player change from rate != 1 to another rate != 1 we see some video blocking
+@@ -921,11 +934,13 @@ class RCTVideo: UIView, RCTVideoPlayerViewControllerDelegate, RCTPlayerObserverH
+             _player?.rate = 1
+             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                 self._rate = rate
++                self.selectPlaybackSpeed()
+                 self.applyModifiers()
+             }
+         } else {
+             // apply it directly
+             self._rate = rate
++            self.selectPlaybackSpeed()
+             self.applyModifiers()
+         }
+     }
+@@ -1082,6 +1097,50 @@ class RCTVideo: UIView, RCTVideoPlayerViewControllerDelegate, RCTPlayerObserverH
          _chapters = chapters
      }
  
@@ -37,15 +517,31 @@ index 5f2f5f668bf3d01718db0b7d5c737f959157a290..f6e608ec1c75eccf78ad2076f3aa1a69
 +            viewController.speeds = AVPlaybackSpeed.systemDefaultSpeeds
 +        }
 +
-+        if let initialSpeed = viewController.speeds.first(where: { $0.rate == _rate }) {
-+            viewController.selectSpeed(initialSpeed)
-+        }
++        selectPlaybackSpeed(in: viewController)
++    }
++
++    /// Keeps the native speed menu in sync with `_rate`; rate changes adopt the menu's selection.
++    func selectPlaybackSpeed(in viewController: AVPlayerViewController? = nil) {
++        guard #available(iOS 16.0, tvOS 16.0, *),
++              let viewController = viewController ?? _playerViewController,
++              let speed = viewController.speeds.first(where: { $0.rate == _rate }) else { return }
++        viewController.selectSpeed(speed)
++    }
++
++    @objc
++    func setCaptionTracks(_ tracks: [NSDictionary]?) {
++        _captions.setTracks(tracks?.compactMap(CaptionTrack.init) ?? [])
++    }
++
++    @objc
++    func setSelectedCaptionTrackId(_ trackId: String?) {
++        _captions.setSelectedTrackId(trackId?.isEmpty == false ? trackId : nil)
 +    }
 +
      @objc
      func setFullscreen(_ fullscreen: Bool) {
          let alreadyFullscreenPresented = _presentingViewController?.presentedViewController != nil
-@@ -1207,12 +1236,7 @@ class RCTVideo: UIView, RCTVideoPlayerViewControllerDelegate, RCTPlayerObserverH
+@@ -1207,12 +1266,8 @@ class RCTVideo: UIView, RCTVideoPlayerViewControllerDelegate, RCTPlayerObserverH
          viewController.view.frame = self.bounds
          viewController.player = player
  
@@ -56,10 +552,11 @@ index 5f2f5f668bf3d01718db0b7d5c737f959157a290..f6e608ec1c75eccf78ad2076f3aa1a69
 -            }
 -        }
 +        applyPlaybackSpeeds(to: viewController)
++        _captions.attach(to: viewController, player: player)
  
          return viewController
      }
-@@ -1678,6 +1702,14 @@ class RCTVideo: UIView, RCTVideoPlayerViewControllerDelegate, RCTPlayerObserverH
+@@ -1678,7 +1733,16 @@ class RCTVideo: UIView, RCTVideoPlayerViewControllerDelegate, RCTPlayerObserverH
              return
          }
  
@@ -72,65 +569,285 @@ index 5f2f5f668bf3d01718db0b7d5c737f959157a290..f6e608ec1c75eccf78ad2076f3aa1a69
 +        }
 +
          onPlaybackRateChange?(["playbackRate": NSNumber(value: _player.rate),
++                               "selectedPlaybackRate": NSNumber(value: _rate),
                                 "target": reactTag as Any])
  
+         if _playbackStalled && _player.rate > 0 {
 diff --git a/ios/Video/RCTVideoManager.m b/ios/Video/RCTVideoManager.m
-index 7ec895545c3686dc47fddb4eef17d988e9e201a1..b01947aefbf7fc191b96d9886e046c70f4666b6f 100644
+index 7ec895545c3686dc47fddb4eef17d988e9e201a1..798d8de921b57ed68dfffe33c5d86c76e798b85d 100644
 --- a/ios/Video/RCTVideoManager.m
 +++ b/ios/Video/RCTVideoManager.m
-@@ -27,6 +27,7 @@ @interface RCT_EXTERN_MODULE (RCTVideoManager, RCTViewManager)
+@@ -27,6 +27,10 @@ @interface RCT_EXTERN_MODULE (RCTVideoManager, RCTViewManager)
  RCT_EXPORT_VIEW_PROPERTY(ignoreSilentSwitch, NSString);
  RCT_EXPORT_VIEW_PROPERTY(mixWithOthers, NSString);
  RCT_EXPORT_VIEW_PROPERTY(rate, float);
 +RCT_EXPORT_VIEW_PROPERTY(playbackSpeeds, NSArray);
++RCT_EXPORT_VIEW_PROPERTY(captionTracks, NSArray);
++RCT_EXPORT_VIEW_PROPERTY(selectedCaptionTrackId, NSString);
++RCT_EXPORT_VIEW_PROPERTY(onCaptionTrackChange, RCTDirectEventBlock);
  RCT_EXPORT_VIEW_PROPERTY(fullscreen, BOOL);
  RCT_EXPORT_VIEW_PROPERTY(fullscreenAutorotate, BOOL);
  RCT_EXPORT_VIEW_PROPERTY(fullscreenOrientation, NSString);
 diff --git a/lib/specs/VideoNativeComponent.d.ts b/lib/specs/VideoNativeComponent.d.ts
-index 1ea4edf19a8450856948d9a7f56a114c0fc2956a..8c4b3bff14bf5b83c75f7c0aa836e42b0c692fe9 100644
+index 1ea4edf19a8450856948d9a7f56a114c0fc2956a..69aa06b83b92bf5c06bdbaf7eebc4c0fa1c17181 100644
 --- a/lib/specs/VideoNativeComponent.d.ts
 +++ b/lib/specs/VideoNativeComponent.d.ts
-@@ -307,6 +307,7 @@ export interface VideoNativeProps extends ViewProps {
+@@ -221,6 +221,10 @@ export type OnVideoTracksData = Readonly<{
+ }>;
+ export type OnPlaybackRateChangeData = Readonly<{
+     playbackRate: Float;
++    selectedPlaybackRate?: Float;
++}>;
++export type OnCaptionTrackChangeData = Readonly<{
++    trackId?: string;
+ }>;
+ export type OnVolumeChangeData = Readonly<{
+     volume: Float;
+@@ -307,6 +311,16 @@ export interface VideoNativeProps extends ViewProps {
      ignoreSilentSwitch?: WithDefault<string, 'inherit'>;
      mixWithOthers?: WithDefault<string, 'inherit'>;
      rate?: Float;
 +    playbackSpeeds?: ReadonlyArray<Float>;
++    captionTracks?: ReadonlyArray<Readonly<{
++        id: string;
++        uri: string;
++        title?: string;
++        language?: string;
++        subtitle?: string;
++        headers?: Headers;
++    }>>;
++    selectedCaptionTrackId?: string;
      fullscreen?: boolean;
      fullscreenAutorotate?: boolean;
      fullscreenOrientation?: WithDefault<string, 'all'>;
+@@ -354,6 +368,7 @@ export interface VideoNativeProps extends ViewProps {
+     onAudioTracks?: DirectEventHandler<OnAudioTracksData>;
+     onTextTracks?: DirectEventHandler<OnTextTracksData>;
+     onTextTrackDataChanged?: DirectEventHandler<OnTextTrackDataChangedData>;
++    onCaptionTrackChange?: DirectEventHandler<OnCaptionTrackChangeData>;
+     onVideoTracks?: DirectEventHandler<OnVideoTracksData>;
+ }
+ type NativeVideoComponentType = HostComponent<VideoNativeProps>;
+diff --git a/lib/types/events.d.ts b/lib/types/events.d.ts
+index c24fa1113e4695fb0e9bcfd65885f54ad1a29040..f16f6f8502fa62ef74788439b47c6f05c80e4f95 100644
+--- a/lib/types/events.d.ts
++++ b/lib/types/events.d.ts
+@@ -1,5 +1,5 @@
+ import type { WithDefault } from 'react-native/Libraries/Types/CodegenTypes';
+-import type { OnAudioFocusChangedData, OnAudioTracksData, OnBandwidthUpdateData, OnBufferData, OnControlsVisibilityChange, OnExternalPlaybackChangeData, OnLoadStartData, OnPictureInPictureStatusChangedData, OnPlaybackRateChangeData, OnPlaybackStateChangedData, OnProgressData, OnSeekData, OnTextTrackDataChangedData, OnTimedMetadataData, OnVideoAspectRatioData, OnVideoErrorData, OnVideoTracksData, OnVolumeChangeData } from '../specs/VideoNativeComponent';
++import type { OnAudioFocusChangedData, OnAudioTracksData, OnBandwidthUpdateData, OnBufferData, OnCaptionTrackChangeData, OnControlsVisibilityChange, OnExternalPlaybackChangeData, OnLoadStartData, OnPictureInPictureStatusChangedData, OnPlaybackRateChangeData, OnPlaybackStateChangedData, OnProgressData, OnSeekData, OnTextTrackDataChangedData, OnTimedMetadataData, OnVideoAspectRatioData, OnVideoErrorData, OnVideoTracksData, OnVolumeChangeData } from '../specs/VideoNativeComponent';
+ export type * from '../specs/VideoNativeComponent';
+ export type AudioTrack = OnAudioTracksData['audioTracks'][number];
+ export type TextTrack = OnTextTracksData['textTracks'][number];
+@@ -236,6 +236,7 @@ export interface ReactVideoEvents {
+     onAudioTracks?: (e: OnAudioTracksData) => void;
+     onTextTracks?: (e: OnTextTracksData) => void;
+     onTextTrackDataChanged?: (e: OnTextTrackDataChangedData) => void;
++    onCaptionTrackChange?: (e: OnCaptionTrackChangeData) => void;
+     onVideoTracks?: (e: OnVideoTracksData) => void;
+     onAspectRatio?: (e: OnVideoAspectRatioData) => void;
+ }
 diff --git a/lib/types/video.d.ts b/lib/types/video.d.ts
-index 9796b236bb4465687aea18a6abf31e4a77f249da..cc98a1357e295946503bfbc30ebb3c8625b35dfc 100644
+index 9796b236bb4465687aea18a6abf31e4a77f249da..f5400ce32c9688fa5e7852571e5239df40960866 100644
 --- a/lib/types/video.d.ts
 +++ b/lib/types/video.d.ts
-@@ -285,6 +285,7 @@ export interface ReactVideoProps extends ReactVideoEvents, ViewProps {
+@@ -178,6 +178,14 @@ export type TextTracks = {
+     type: TextTrackType;
+     uri: string;
+ }[];
++export type CaptionTrack = {
++    id: string;
++    uri: string;
++    title?: string;
++    language?: string;
++    subtitle?: string;
++    headers?: Headers;
++};
+ export type TextTrackSelectionType = 'system' | 'disabled' | 'title' | 'language' | 'index';
+ export type SelectedTextTrack = Readonly<{
+     type: TextTrackSelectionType;
+@@ -285,6 +293,9 @@ export interface ReactVideoProps extends ReactVideoEvents, ViewProps {
      preventsDisplaySleepDuringVideoPlayback?: boolean;
      progressUpdateInterval?: number;
      rate?: number;
 +    playbackSpeeds?: number[];
++    captionTracks?: CaptionTrack[];
++    selectedCaptionTrackId?: string;
      renderLoader?: ReactNode | ((arg0: ReactVideoRenderLoaderProps) => ReactNode);
      repeat?: boolean;
      reportBandwidth?: boolean;
+diff --git a/src/Video.tsx b/src/Video.tsx
+index 789d9155ceba2d9fcf48728ec49baa8ff9705ca1..278fe044c681085de63cd4b9e2d35198a87f89ab 100644
+--- a/src/Video.tsx
++++ b/src/Video.tsx
+@@ -33,6 +33,7 @@ import type {
+   OnProgressData,
+   OnSeekData,
+   OnTextTrackDataChangedData,
++  OnCaptionTrackChangeData,
+   OnTimedMetadataData,
+   OnVideoAspectRatioData,
+   OnVideoErrorData,
+@@ -154,17 +155,28 @@ const Video = forwardRef<VideoRef, ReactVideoProps>(
+       onAudioTracks,
+       onTextTracks,
+       onTextTrackDataChanged,
++      onCaptionTrackChange,
+       onVideoTracks,
+       onAspectRatio,
+       localSourceEncryptionKeyScheme,
+       minLoadRetryCount,
+       bufferConfig,
++      captionTracks,
+       ...rest
+     },
+     ref,
+   ) => {
+     const nativeRef = useRef<ElementRef<typeof NativeVideoComponent>>(null);
+ 
++    const _captionTracks = useMemo(
++      () =>
++        captionTracks?.map(({headers, ...track}) => ({
++          ...track,
++          headers: generateHeaderForNative(headers),
++        })),
++      [captionTracks],
++    );
++
+     const isPosterDeprecated = typeof poster === 'string';
+ 
+     const _renderLoader = useMemo(
+@@ -599,6 +611,13 @@ const Video = forwardRef<VideoRef, ReactVideoProps>(
+       [onTextTrackDataChanged],
+     );
+ 
++    const _onCaptionTrackChange = useCallback(
++      (e: NativeSyntheticEvent<OnCaptionTrackChangeData>) => {
++        onCaptionTrackChange?.({trackId: e.nativeEvent.trackId});
++      },
++      [onCaptionTrackChange],
++    );
++
+     const _onVideoTracks = useCallback(
+       (e: NativeSyntheticEvent<OnVideoTracksData>) => {
+         onVideoTracks?.(e.nativeEvent);
+@@ -876,6 +895,7 @@ const Video = forwardRef<VideoRef, ReactVideoProps>(
+           ref={nativeRef}
+           {...rest}
+           src={src}
++          captionTracks={_captionTracks}
+           style={_style}
+           resizeMode={resizeMode}
+           restoreUserInterfaceForPIPStopCompletionHandler={
+@@ -911,6 +931,9 @@ const Video = forwardRef<VideoRef, ReactVideoProps>(
+           onTextTrackDataChanged={
+             onTextTrackDataChanged ? _onTextTrackDataChanged : undefined
+           }
++          onCaptionTrackChange={
++            onCaptionTrackChange ? _onCaptionTrackChange : undefined
++          }
+           onVideoTracks={onVideoTracks ? _onVideoTracks : undefined}
+           onVideoFullscreenPlayerDidDismiss={onFullscreenPlayerDidDismiss}
+           onVideoFullscreenPlayerDidPresent={onFullscreenPlayerDidPresent}
 diff --git a/src/specs/VideoNativeComponent.ts b/src/specs/VideoNativeComponent.ts
-index 705d86dbcdf7f7100bbf6d0499b9dab0d77a19c2..2921f715bc6b69b1b6a83af9fd2aa01ef0ced347 100644
+index 705d86dbcdf7f7100bbf6d0499b9dab0d77a19c2..7abfc7d1ee06495a5e647935eb56f59d1c170bb7 100644
 --- a/src/specs/VideoNativeComponent.ts
 +++ b/src/specs/VideoNativeComponent.ts
-@@ -363,6 +363,7 @@ export interface VideoNativeProps extends ViewProps {
+@@ -19,6 +19,17 @@ type Headers = ReadonlyArray<
+   }>
+ >;
+ 
++type CaptionTracks = ReadonlyArray<
++  Readonly<{
++    id: string;
++    uri: string;
++    title?: string;
++    language?: string;
++    subtitle?: string;
++    headers?: Headers;
++  }>
++>;
++
+ type VideoMetadata = Readonly<{
+   title?: string;
+   subtitle?: string;
+@@ -267,6 +278,11 @@ export type OnVideoTracksData = Readonly<{
+ 
+ export type OnPlaybackRateChangeData = Readonly<{
+   playbackRate: Float;
++  selectedPlaybackRate?: Float; // iOS, rate chosen in the native speed menu
++}>;
++
++export type OnCaptionTrackChangeData = Readonly<{
++  trackId?: string;
+ }>;
+ 
+ export type OnVolumeChangeData = Readonly<{
+@@ -363,6 +379,9 @@ export interface VideoNativeProps extends ViewProps {
    ignoreSilentSwitch?: WithDefault<string, 'inherit'>; // ios, 'inherit'
    mixWithOthers?: WithDefault<string, 'inherit'>; // ios, 'inherit'
    rate?: Float;
 +  playbackSpeeds?: ReadonlyArray<Float>; // ios, tvOS 16+
++  captionTracks?: CaptionTracks; // ios, menu on tvOS 16+
++  selectedCaptionTrackId?: string; // ios
    fullscreen?: boolean; // ios, false
    fullscreenAutorotate?: boolean;
    fullscreenOrientation?: WithDefault<string, 'all'>;
+@@ -410,6 +429,7 @@ export interface VideoNativeProps extends ViewProps {
+   onAudioTracks?: DirectEventHandler<OnAudioTracksData>; // android
+   onTextTracks?: DirectEventHandler<OnTextTracksData>; // android
+   onTextTrackDataChanged?: DirectEventHandler<OnTextTrackDataChangedData>; // iOS
++  onCaptionTrackChange?: DirectEventHandler<OnCaptionTrackChangeData>; // iOS
+   onVideoTracks?: DirectEventHandler<OnVideoTracksData>; // android
+ }
+ 
+diff --git a/src/types/events.ts b/src/types/events.ts
+index 027fd5b0e0c38c636fe57639b6de4820520f0ebb..627399840a15cd879db1f148342e97d92423f588 100644
+--- a/src/types/events.ts
++++ b/src/types/events.ts
+@@ -4,6 +4,7 @@ import type {
+   OnAudioTracksData,
+   OnBandwidthUpdateData,
+   OnBufferData,
++  OnCaptionTrackChangeData,
+   OnControlsVisibilityChange,
+   OnExternalPlaybackChangeData,
+   OnLoadStartData,
+@@ -265,6 +266,7 @@ export interface ReactVideoEvents {
+   onAudioTracks?: (e: OnAudioTracksData) => void; // Android
+   onTextTracks?: (e: OnTextTracksData) => void; //Android
+   onTextTrackDataChanged?: (e: OnTextTrackDataChangedData) => void; // iOS
++  onCaptionTrackChange?: (e: OnCaptionTrackChangeData) => void; // iOS, user picked a caption track in the native menu
+   onVideoTracks?: (e: OnVideoTracksData) => void; //Android
+   onAspectRatio?: (e: OnVideoAspectRatioData) => void;
+ }
 diff --git a/src/types/video.ts b/src/types/video.ts
-index 7605bbca6777a5ac0116182dda5c9831b61f7760..e078947a9fd44163ec4ec4cee77736733c984fa8 100644
+index 7605bbca6777a5ac0116182dda5c9831b61f7760..f76f363168a5b81027525953ae88a0420543c169 100644
 --- a/src/types/video.ts
 +++ b/src/types/video.ts
-@@ -361,6 +361,7 @@ export interface ReactVideoProps extends ReactVideoEvents, ViewProps {
+@@ -232,6 +232,15 @@ export type TextTracks = {
+   uri: string;
+ }[];
+ 
++export type CaptionTrack = {
++  id: string;
++  uri: string; // WebVTT
++  title?: string; // defaults to the localized language name
++  language?: string;
++  subtitle?: string;
++  headers?: Headers;
++};
++
+ export type TextTrackSelectionType =
+   | 'system'
+   | 'disabled'
+@@ -361,6 +370,9 @@ export interface ReactVideoProps extends ReactVideoEvents, ViewProps {
    preventsDisplaySleepDuringVideoPlayback?: boolean;
    progressUpdateInterval?: number;
    rate?: number;
 +  playbackSpeeds?: number[]; // iOS, tvOS 16+
++  captionTracks?: CaptionTrack[]; // iOS, transport bar menu on tvOS 16+
++  selectedCaptionTrackId?: string; // iOS
    renderLoader?: ReactNode | ((arg0: ReactVideoRenderLoaderProps) => ReactNode);
    repeat?: boolean;
    reportBandwidth?: boolean; //Android

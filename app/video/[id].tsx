@@ -5,6 +5,8 @@ import { useGetVideoDelivery, useGetVideoPost, useGetVideoProgress, useSession, 
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { VideoPlayer } from '@/components/videos/VideoPlayer';
 import { RelatedVideosGrid } from '@/components/videos/RelatedVideosGrid';
+import { toCaptionTracks } from '@/components/videos/caption-tracks';
+import { usePlaybackPreferences } from '@/hooks/usePlaybackPreferences';
 
 // eslint-disable-next-line complexity
 export default function VideoDetailScreen() {
@@ -58,6 +60,26 @@ export default function VideoDetailScreen() {
     [streamUrl, title, subtitle, description, imageUri],
   );
 
+  const authHeaders = useMemo(() => {
+    const headers: Record<string, string> = {
+      'User-Agent': 'SinkplaneTV/1.0 (AppleTV; iOS)',
+    };
+
+    if (token) {
+      if (token.startsWith('ey')) {
+        headers.Authorization = `Bearer ${token}`;
+      } else {
+        headers.Cookie = `sails.sid=${token}`;
+      }
+    }
+
+    return headers;
+  }, [token]);
+
+  const textTracks = videoPost?.videoAttachments?.[0]?.textTracks;
+  const captionTracks = useMemo(() => toCaptionTracks(textTracks, authHeaders), [textTracks, authHeaders]);
+  const { ready: preferencesReady, ...playbackPreferences } = usePlaybackPreferences(captionTracks);
+
   const handleStreamUrl = useCallback((data: VideoDelivery) => {
     if (!data) return;
     const group = (data.groups ?? [undefined])[0];
@@ -79,20 +101,8 @@ export default function VideoDetailScreen() {
     const variantUrl = variant.url.startsWith('/') ? variant.url : '/' + variant.url;
     const url = `${originUrl}${variantUrl}`;
 
-    const headers: Record<string, string> = {
-      'User-Agent': 'SinkplaneTV/1.0 (AppleTV; iOS)',
-    };
-
-    if (token) {
-      if (token.startsWith('ey')) {
-        headers.Authorization = `Bearer ${token}`;
-      } else {
-        headers.Cookie = `sails.sid=${token}`;
-      }
-    }
-
-    setStreamUrl({ uri: url, headers });
-  }, [token]);
+    setStreamUrl({ uri: url, headers: authHeaders });
+  }, [authHeaders]);
 
   useEffect(() => {
     if (error) handleError(error);
@@ -114,7 +124,7 @@ export default function VideoDetailScreen() {
 
   const styles = useVideoDetailStyles();
 
-  const isReady = videoPost && videoDelivery && streamUrl.uri !== '';
+  const isReady = videoPost && videoDelivery && streamUrl.uri !== '' && preferencesReady;
 
   const handleEnd = useCallback(() => {
     setHasEnded(true);
@@ -143,6 +153,8 @@ export default function VideoDetailScreen() {
             title={videoPost.title}
             initialSeek={initialProgress}
             replayToken={replayToken}
+            captionTracks={captionTracks}
+            {...playbackPreferences}
           />
         )}
         {hasEnded && id && (
