@@ -10,12 +10,11 @@ This directory contains utility scripts for development and deployment.
 
 **What it does**:
 
-1. ✅ Checks prerequisites (Node.js, npm, git, CocoaPods)
-2. ✅ Clones the companion app repository (if not exists)
-3. ✅ Installs npm dependencies for sinkplane-tv
-4. ✅ Applies the repo `patch-package` tvOS fix for the cookie manager
-5. ✅ Installs npm dependencies for companion app
-6. ✅ Runs pod install for both iOS projects
+1. ✅ Checks prerequisites (Node.js, pnpm, git, CocoaPods)
+2. ✅ Clones the companion app and shared package repositories (if not present)
+3. ✅ Installs dependencies for sinkplane-tv
+4. ✅ Installs dependencies for the companion app
+5. ✅ Runs pod install for both iOS projects
 
 **Usage**:
 
@@ -42,7 +41,7 @@ parent-directory/
 **Re-running the script**:
 
 - Safe to run multiple times
-- Will prompt before re-cloning or re-patching existing repos
+- Will prompt before re-cloning existing repos
 - Can be used to update repositories
 
 **Troubleshooting**:

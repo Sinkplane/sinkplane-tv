@@ -171,14 +171,9 @@ xcodebuild -workspace ios/sinkplane.xcworkspace \
 
 3. **Test App Functionality**
 
-```bash
-EXPO_TV=1 npx expo run:ios
-```
-
-4. **Verify Cookies Module Works**
-   - Test cookie get/set operations
-   - Verify no crashes on tvOS
-   - Check that fallback (non-WebKit) code path works
+   ```bash
+   EXPO_TV=1 npx expo run:ios
+   ```
 
 ### Phase 5: Document Solution (Estimated: 15 minutes)
 

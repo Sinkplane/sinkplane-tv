@@ -29,7 +29,6 @@ Not yet available in the app store / play store (will take some weeks for apple 
 This project requires special configuration for tvOS support:
 
 - Uses the [`react-native-tvos`](https://github.com/react-native-tvos/react-native-tvos) fork (aliased as `react-native`) with the [`@react-native-tvos/config-tv`](https://github.com/react-native-tvos/config-tv) config plugin
-- The `@preeternal/react-native-cookie-manager` pod declares iOS-only and uses WebKit (unavailable on tvOS). A pnpm patch in `patches/` — applied via `patchedDependencies` in `pnpm-workspace.yaml` — adds the `:tvos` platform and guards the WebKit code with `#if canImport(WebKit)`. **Do not delete the `patches/` directory.** Without it, tvOS builds crash with `'CookieManager' could not be found`.
 - iOS/tvOS 27 require scene-based lifecycle; the `plugins/with-tv-scene-lifecycle.js` Expo config plugin registers `ExpoAppSceneDelegate` for this.
 
 **📋 See**: [`docs/react-native-core-tvos-issue.md`](docs/react-native-core-tvos-issue.md) for the historical React Native Core tvOS build issue — **resolved** in `react-native-tvos` 0.86; no Podfile hook needed anymore.
@@ -84,7 +83,6 @@ This will:
 
 - Clone the companion app and shared package (if not already siblings)
 - Install all dependencies with `pnpm install`
-- Apply the tvOS cookie-manager patch (via pnpm `patchedDependencies`)
 - Set up CocoaPods
 
 **See**: [`docs/QUICK_START_TVOS.md`](docs/QUICK_START_TVOS.md) for detailed setup instructions.

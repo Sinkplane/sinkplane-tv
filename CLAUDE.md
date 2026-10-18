@@ -71,7 +71,7 @@ eas build --profile production       # Mobile production
 - **`assets/`** — Images, fonts, TV-specific app icons.
 - **`scripts/`** — `setup-dev-env.sh` (env setup), `reset-project.js`.
 - **`docs/`** — tvOS setup and known-issue docs.
-- **`patches/`** — pnpm patches (`patchedDependencies` in `pnpm-workspace.yaml`); notably the cookie-manager tvOS patch. **Do not delete.**
+- **`patches/`** — pnpm patches (`patchedDependencies` in `pnpm-workspace.yaml`); notably the `react-native-video` patch. **Do not delete.**
 - **`plugins/`** — Expo config plugins (`with-tv-scene-lifecycle.js` — UIKit scene lifecycle adoption required by iOS/tvOS 27).
 
 ### Shared Package (`@sinkplane/shared`)
@@ -101,7 +101,7 @@ Import from the barrel: `import { useSession } from '@sinkplane/shared'`. The fe
 | Video | `react-native-video` + `@mux/mux-data-react-native-video` |
 | Auth/token storage | `expo-secure-store` |
 | Companion comms | `react-native-tcp-socket` (port 9999), `react-native-zeroconf` (discovery) |
-| Cookies | `@preeternal/react-native-cookie-manager` (tvOS-patched via `patches/`) |
+| Auth cookies | Sent manually on request headers (`sails.sid`) |
 | TV config plugin | `@react-native-tvos/config-tv` |
 
 ## TV-Specific Development
@@ -165,24 +165,23 @@ TV builds need `pnpm run prebuild:tv` (clean prebuild with TV modifications) to 
 
 ## Known Issues & Gotchas
 
-1. **Cookie-manager tvOS patch** — `@preeternal/react-native-cookie-manager` declares iOS-only in its podspec and its Swift uses WebKit (unavailable on tvOS). The pnpm patch in `patches/` adds the `:tvos` platform and guards WebKit code with `#if canImport(WebKit)`. Without it, Expo autolinking (SDK 57+) silently drops the pod on tvOS and the app crashes with `TurboModuleRegistry.getEnforcing(...): 'CookieManager' could not be found`. The `postinstall` `patch-package` script is a no-op leftover; patches now apply via pnpm's `patchedDependencies`.
+1. **iOS/tvOS 27 require scene lifecycle** — UIKit asserts at launch unless the app adopts scene-based lifecycle. `plugins/with-tv-scene-lifecycle.js` registers `ExpoAppSceneDelegate` (shipped with Expo) via a config plugin. Drop the plugin when the Expo template adopts scenes natively.
 
-2. **iOS/tvOS 27 require scene lifecycle** — UIKit asserts at launch unless the app adopts scene-based lifecycle. `plugins/with-tv-scene-lifecycle.js` registers `ExpoAppSceneDelegate` (shipped with Expo) via a config plugin. Drop the plugin when the Expo template adopts scenes natively.
+2. **React Native Core tvOS build error (historical)** — the old Xcode 16 `dispatch_queue_t strong` issue in `RCTBridgeModule.h` is fixed upstream in RN 0.86; no Podfile hook is needed anymore. See `docs/react-native-core-tvos-issue.md`.
 
-3. **React Native Core tvOS build error (historical)** — the old Xcode 16 `dispatch_queue_t strong` issue in `RCTBridgeModule.h` is fixed upstream in RN 0.86; no Podfile hook is needed anymore. See `docs/react-native-core-tvos-issue.md`.
+3. **pnpm settings live in `pnpm-workspace.yaml`** — pnpm v12 no longer reads the `pnpm` field in `package.json` or settings from `.npmrc`. `nodeLinker: hoisted` (required for RN/Metro/CocoaPods), `allowBuilds`, `patchedDependencies`, the `@react-native/metro-config` override, and `minimumReleaseAgeExclude` live there. EAS detects pnpm from `pnpm-lock.yaml` / the `packageManager` field. `react-native` is aliased to `npm:react-native-tvos@...` in dependencies and excluded via `expo.install.exclude`.
 
-4. **pnpm settings live in `pnpm-workspace.yaml`** — pnpm v12 no longer reads the `pnpm` field in `package.json` or settings from `.npmrc`. `nodeLinker: hoisted` (required for RN/Metro/CocoaPods), `allowBuilds`, `patchedDependencies`, the `@react-native/metro-config` override, and `minimumReleaseAgeExclude` live there. EAS detects pnpm from `pnpm-lock.yaml` / the `packageManager` field. `react-native` is aliased to `npm:react-native-tvos@...` in dependencies and excluded via `expo.install.exclude`.
+4. **CocoaPods on Homebrew Ruby** — `pod` installs to `/opt/homebrew/lib/ruby/gems/<ver>/bin`, which is NOT on PATH by default. It is exported in `~/.zshrc`; `expo run:ios` from non-interactive shells may fail with `spawn pod ENOENT`.
 
-5. **CocoaPods on Homebrew Ruby** — `pod` installs to `/opt/homebrew/lib/ruby/gems/<ver>/bin`, which is NOT on PATH by default. It is exported in `~/.zshrc`; `expo run:ios` from non-interactive shells may fail with `spawn pod ENOENT`.
-
-6. **Companion app is a sibling repo** — Expected at `../sinkplane-companion` (cloned by `setup-dev-env.sh`). The TV app publishes a Bonjour service `sinkplane-tv._tcp`.
+5. **Companion app is a sibling repo** — Expected at `../sinkplane-companion` (cloned by `setup-dev-env.sh`). The TV app publishes a Bonjour service `sinkplane-tv._tcp`.
 
 ## Testing
 
-No automated test framework is currently configured. Current gates are **lint + typecheck**. When adding tests in the future:
-- Unit tests alongside source files.
-- Integration / E2E tests in `apps/api-provisioning-api-e2e` (per project convention).
-- Planned: Jest, React Testing Library, Detox.
+Jest is configured with two suites (both run in CI on PRs to `main`):
+- **Unit tests** — `pnpm exec jest --config jest.config.unit.js` (colocated `*.test.ts(x)` files).
+- **E2E integration tests** — `pnpm exec jest` (config in `jest.config.js`); boots the real Expo Router app in Jest against a mocked Floatplane API (see `__tests__/e2e/`), with a 90% coverage floor.
+
+Gates are **lint + typecheck + tests**.
 
 ## Commit Conventions
 
