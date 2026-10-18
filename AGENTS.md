@@ -6,12 +6,12 @@ Guidance for AI coding agents (opencode, Claude Code, Cursor, etc.) working in t
 
 Sinkplane TV is a fan-made React Native app for [floatplane.com](https://www.floatplane.com), targeting **Apple TV (tvOS)** and **Android TV**. Built on Expo (SDK 57) with the [`react-native-tvos`](https://github.com/react-native-tvos/react-native-tvos) fork and Expo Router for file-based navigation. Package manager is **pnpm** (config in `pnpm-workspace.yaml`; settings like `nodeLinker: hoisted` live there, NOT in `.npmrc`).
 
-Authentication is handled via a **companion mobile app** ([sinkplane-companion](https://github.com/Sinkplane/sinkplane-companion)) that discovers the TV on the local network (Bonjour/Zeroconf) and sends credentials over a **TCP server on port 9999**. This exists because TV platforms cannot render WebView for Cloudflare Turnstile. A manual cookie (`sails.sid`) entry fallback also exists on the sign-in screen.
+Authentication is via Floatplane's official **OIDC device flow** against the `auth.floatplane.com` instance (client ID `hydravion`, same as [Hydravion](https://github.com/Inertia-Network/Hydravion)): the sign-in screen shows a QR code / device code, the user approves at `floatplane.com/link`, and the TV stores the tokens in `expo-secure-store` with automatic refresh. This exists because TV platforms cannot render WebView for Cloudflare Turnstile.
 
 ## Essential Commands
 
 ```bash
-# Setup (first time) — clones companion app, installs deps, runs pod install
+# Setup (first time) — clones shared package, installs deps, runs pod install
 ./scripts/setup-dev-env.sh
 
 # Install dependencies (postinstall runs patch-package, currently a no-op)
@@ -76,13 +76,12 @@ eas build --profile production       # Mobile production
 
 ### Shared Package (`@sinkplane/shared`)
 
-`@sinkplane/shared` is published to GitHub Packages and installed as a regular dependency (`@sinkplane/shared@^0.1.1`; registry/auth configured in `.npmrc`) so EAS builds resolve the compiled `dist/` output. The sibling repo `../sinkplane-shared` (cloned by `scripts/setup-dev-env.sh`, like the companion app) is the development source: `pnpm run link:shared` symlinks `node_modules/@sinkplane/shared/dist` to the clone's `dist/` build output (Metro watches the clone — see `metro.config.js`), and Jest maps the package to the clone's TypeScript sources directly (see `jest.config.js`). It holds everything reusable across Sinkplane apps:
+`@sinkplane/shared` is published to GitHub Packages and installed as a regular dependency (`@sinkplane/shared@^0.1.1`; registry/auth configured in `.npmrc`) so EAS builds resolve the compiled `dist/` output. The sibling repo `../sinkplane-shared` (cloned by `scripts/setup-dev-env.sh`) is the development source: `pnpm run link:shared` symlinks `node_modules/@sinkplane/shared/dist` to the clone's `dist/` build output (Metro watches the clone — see `metro.config.js`), and Jest maps the package to the clone's TypeScript sources directly (see `jest.config.js`). It holds everything reusable across Sinkplane apps:
 
 - Floatplane API client (`authenticatedFetch`), OIDC device flow, token refresh
 - Auth context (`SessionProvider` / `useSession`)
-- TV connection server (`useTVServer` — TCP port 9999 + Bonjour/Zeroconf)
 - Content query hooks (videos, delivery, progress, history), `useStorageState`, theme context/hooks, shared colors
-- All Floatplane API / TV companion protocol types
+- All shared Floatplane API types
 
 Import from the barrel: `import { useSession } from '@sinkplane/shared'`. The few names that collide with content-side types (`Channel`, `Creator`) are imported via subpath `@sinkplane/shared/types/creator-list.interface`.
 
@@ -100,7 +99,6 @@ Import from the barrel: `import { useSession } from '@sinkplane/shared'`. The fe
 | Animations | `react-native-reanimated` v4.5 |
 | Video | `react-native-video` + `@mux/mux-data-react-native-video` |
 | Auth/token storage | `expo-secure-store` |
-| Companion comms | `react-native-tcp-socket` (port 9999), `react-native-zeroconf` (discovery) |
 | Auth cookies | Sent manually on request headers (`sails.sid`) |
 | TV config plugin | `@react-native-tvos/config-tv` |
 
@@ -173,8 +171,6 @@ TV builds need `pnpm run prebuild:tv` (clean prebuild with TV modifications) to 
 
 4. **CocoaPods on Homebrew Ruby** — `pod` installs to `/opt/homebrew/lib/ruby/gems/<ver>/bin`, which is NOT on PATH by default. It is exported in `~/.zshrc`; `expo run:ios` from non-interactive shells may fail with `spawn pod ENOENT`.
 
-5. **Companion app is a sibling repo** — Expected at `../sinkplane-companion` (cloned by `setup-dev-env.sh`). The TV app publishes a Bonjour service `sinkplane-tv._tcp`.
-
 ## Testing
 
 Jest is configured with two suites (both run in CI on PRs to `main`):
@@ -211,4 +207,3 @@ Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`, `ci`
 - Use absolute paths when running commands (avoid `cd` chains).
 - If Metro can't resolve modules, run `pnpm exec expo start --clear` and/or `rm -rf node_modules/.cache`.
 - If pod install fails: `cd ios && rm -rf Pods Podfile.lock ~/Library/Developer/Xcode/DerivedData/sinkplane-* && pod install`.
-- Verifying the TV server is running — logs should show `TV Server listening on port 9999` and `TV Service published`.

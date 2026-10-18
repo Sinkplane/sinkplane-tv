@@ -12,7 +12,7 @@ cd sinkplane-tv
 This script will:
 
 - ✅ Check prerequisites (Node, pnpm, git, CocoaPods)
-- ✅ Clone the companion app and shared package as sibling repos (if not present)
+- ✅ Clone the shared package as a sibling repo (if not present)
 - ✅ Install all dependencies with `pnpm install`
 - ✅ Run pod install for both projects
 
@@ -66,9 +66,8 @@ EXPO_TV=1 pnpm exec expo run:ios --device
 
 ✅ **Working**:
 
-- Authentication flow (companion app + manual `sails.sid` fallback) with token refresh
+- Authentication flow (OIDC device flow via `auth.floatplane.com`, QR code sign-in) with token refresh
 - Video playback (progress tracking, scrubbing, playback speeds, closed captions)
-- Companion app pairing
 - Unit + E2E Jest suites and CI on PRs to `main`
 
 ✅ **Resolved issues**:
