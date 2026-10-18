@@ -1,24 +1,38 @@
-# Sinplane TV 👋
+# Sinkplane TV 👋
 
 <img width="1920" height="1080" alt="Simulator Screenshot - Apple TV 4K (3rd generation) - 2025-10-24 at 15 48 37" src="https://i.imgur.com/QNuIqCv.jpeg" />
 
 This is a fan-made AppleTV and AndroidTV app for floatplane.com.
 
+## 📺 Project Status
+
+The core app is up and running on both platforms. What works today:
+
+- **Authentication** — via the [Sinkplane Companion app](https://github.com/Sinkplane/sinkplane-companion) (automatic discovery on your network), with a manual `sails.sid` cookie fallback on the sign-in screen. OIDC device flow with automatic token refresh is included.
+- **Browsing** — home page with list & card views, sorting, and a channel switcher
+- **Video playback** — with progress tracking (resume where you left off, progress pushed back to the API), native tvOS scrubbing, custom playback speeds (remembered between videos), now-playing metadata, and closed captions
+- **Livestreams** — live tab with the active stream
+- **Watch history** — history tab and suggested videos at the end of playback
+- **Dark mode**
+
+Not yet available in the app store / play store (will take some weeks for apple developer entitlements and app store approvals).
+
+### Engineering status
+
+- Unit + E2E (Jest) test suites in `__tests__/`, with CI running them on PRs to `main` (`.github/workflows/ci.yml`)
+- Android TV EAS build workflow with GitHub release publishing (`.github/workflows/android-tv-release.yml`)
+- Shared Floatplane API/auth/TV-protocol code lives in [`@sinkplane/shared`](https://github.com/Sinkplane/sinkplane-shared), consumed from GitHub Packages
+- Lint (ESLint) + typecheck (tsc) enforced on commits and PRs
+
 ## ⚠️ tvOS Development Setup
 
 This project requires special configuration for tvOS support:
 
-### Cookies Module Workaround
+- Uses the [`react-native-tvos`](https://github.com/react-native-tvos/react-native-tvos) fork (aliased as `react-native`) with the [`@react-native-tvos/config-tv`](https://github.com/react-native-tvos/config-tv) config plugin
+- The `@preeternal/react-native-cookie-manager` pod declares iOS-only and uses WebKit (unavailable on tvOS). A pnpm patch in `patches/` — applied via `patchedDependencies` in `pnpm-workspace.yaml` — adds the `:tvos` platform and guards the WebKit code with `#if canImport(WebKit)`. **Do not delete the `patches/` directory.** Without it, tvOS builds crash with `'CookieManager' could not be found`.
+- iOS/tvOS 27 require scene-based lifecycle; the `plugins/with-tv-scene-lifecycle.js` Expo config plugin registers `ExpoAppSceneDelegate` for this.
 
-The app now uses `@preeternal/react-native-cookie-manager` and keeps a small `patch-package` patch in-repo so tvOS builds do not depend on a separate local `cookies` clone.
-
-**📖 See**: [`docs/tvos-cookies-workaround.md`](docs/tvos-cookies-workaround.md) for the current tvOS patch details.
-
-### Known Build Issues
-
-There is currently a build issue with React Native Core on tvOS related to `dispatch_queue_t` properties.
-
-**📋 See**: [`docs/react-native-core-tvos-issue.md`](docs/react-native-core-tvos-issue.md) for the investigation and fix plan.
+**📋 See**: [`docs/react-native-core-tvos-issue.md`](docs/react-native-core-tvos-issue.md) for the historical React Native Core tvOS build issue — **resolved** in `react-native-tvos` 0.86; no Podfile hook needed anymore.
 
 ---
 
@@ -40,12 +54,20 @@ There is currently a build issue with React Native Core on tvOS related to `disp
 
 ## Developer Information
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+This is an [Expo](https://expo.dev) project (SDK 57) created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app), using **pnpm**.
 
 This project uses
 
-- the [React Native TV fork](https://github.com/react-native-tvos/react-native-tvos), which supports both phone (Android and iOS) and TV (Android TV and Apple TV) targets
+- the [React Native TV fork](https://github.com/react-native-tvos/react-native-tvos) — `react-native-tvos@0.86.3-0` aliased to `react-native` — which supports both phone (Android and iOS) and TV (Android TV and Apple TV) targets
 - the [React Native TV config plugin](https://github.com/react-native-tvos/config-tv/tree/main/packages/config-tv) to allow Expo prebuild to modify the project's native files for TV builds
+- [Expo Router](https://docs.expo.dev/router/introduction) for file-based routing, [@tanstack/react-query](https://tanstack.com/query) for data fetching, `react-native-video` for playback
+- [`@sinkplane/shared`](https://github.com/Sinkplane/sinkplane-shared) for the Floatplane API client, auth/session, TV connection protocol, and shared types — published to GitHub Packages
+
+### Shared package development
+
+`@sinkplane/shared` is installed as a regular dependency from GitHub Packages. For local development, `./scripts/setup-dev-env.sh` clones it (and the companion app) as siblings, and `pnpm run link:shared` symlinks `node_modules/@sinkplane/shared/dist` to the clone's build output so Metro picks up changes immediately. Re-run `pnpm run link:shared` after every `pnpm install`.
+
+> ⚠️ EAS builds resolve `@sinkplane/shared` from GitHub Packages — a PAT with `read:packages` on the Sinkplane org must be set as the `GITHUB_PACKAGES_TOKEN` EAS environment variable.
 
 ## 🚀 How to use
 
@@ -59,9 +81,10 @@ cd sinkplane-tv
 ```
 
 This will:
-- Clone the companion app if needed
-- Install all dependencies
-- Install dependencies with `pnpm install`
+
+- Clone the companion app and shared package (if not already siblings)
+- Install all dependencies with `pnpm install`
+- Apply the tvOS cookie-manager patch (via pnpm `patchedDependencies`)
 - Set up CocoaPods
 
 **See**: [`docs/QUICK_START_TVOS.md`](docs/QUICK_START_TVOS.md) for detailed setup instructions.
@@ -70,17 +93,45 @@ This will:
 
 - `cd` into the project
 
-- For TV development:
+- For TV development (these scripts set `EXPO_TV=1` automatically):
 
 ```sh
-yarn
-yarn prebuild:tv # Executes clean Expo prebuild with TV modifications
-yarn ios # Build and run for Apple TV
-yarn android # Build for Android TV
-yarn web # Run the project on web from localhost
+pnpm install
+pnpm run prebuild:tv # Clean Expo prebuild WITH TV modifications (required before first TV run)
+pnpm run ios   # Build and run for Apple TV
+pnpm run android # Build and run for Android TV
+pnpm start     # Metro bundler for TV
+pnpm run web   # Run the project on web from localhost
 ```
 
-### Development
+- For mobile development:
+
+```sh
+pnpm run prebuild # Clean prebuild WITHOUT TV modifications
+pnpm exec expo run:ios
+pnpm exec expo run:android
+```
+
+### Quality gates
+
+Run these before considering work done:
+
+```sh
+pnpm run lint        # ESLint (expo lint)
+pnpm exec tsc --noEmit # Typecheck
+```
+
+### Testing
+
+The project has Jest-based unit and E2E integration suites (no simulator needed — the E2E suite boots the real Expo Router app in Jest against a mocked Floatplane API):
+
+```sh
+pnpm exec jest --config jest.config.unit.js # Unit tests
+pnpm exec jest                              # E2E integration tests
+pnpm run test:coverage                      # Coverage (90% floor enforced)
+```
+
+CI (`.github/workflows/ci.yml`) runs both suites on PRs to `main`.
 
 You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
 
@@ -92,7 +143,7 @@ To test authentication and companion features during development:
 
 1. **Start the TV app** (this starts a TCP server on port 9999):
    ```bash
-   EXPO_TV=1 pnpm exec expo run:android  # or run:ios for Apple TV
+   pnpm run ios # or pnpm run android for Android TV
    ```
 
 2. **Start the companion app** in a separate terminal:
@@ -107,6 +158,7 @@ The companion app will automatically discover and connect to your TV. See the [C
 #### Verifying TV Server
 
 When the TV app starts, you should see in the logs:
+
 ```
 [TV Server] useTVServer useEffect mounting
 TV Server listening on port 9999
@@ -117,7 +169,7 @@ This means the TV is ready to accept connections from the companion app.
 
 ### TV specific file extensions
 
-This project includes an [example Metro configuration](./metro.config.js) that allows Metro to resolve application source files with TV-specific code, indicated by specific file extensions (`*.ios.tv.tsx`, `*.android.tv.tsx`, `*.tv.tsx`).
+This project includes an [example Metro configuration](./metro.config.js) that allows Metro to resolve application source files with TV-specific code, indicated by specific file extensions (`*.ios.tv.tsx`, `*.android.tv.tsx`, `*.tv.tsx`). `EXPO_TV=1` controls TV vs. mobile mode.
 
 ### Get a fresh project
 

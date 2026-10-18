@@ -1,5 +1,11 @@
 # React Native Core tvOS Build Issue
 
+> ## ✅ RESOLVED — historical document
+>
+> This issue is **fixed upstream** in `react-native-tvos` 0.86.3-0 (this project's current RN version). The `dispatch_queue_t methodQueue` property no longer declares `strong`, so the Podfile post-install patch described below is **no longer needed or present**. This page is kept for history and for anyone pinned to an older RN version.
+>
+> **If you are on `react-native-tvos` >= 0.86: no action required.** If you hit this error, upgrade the fork rather than re-adding the hook.
+
 ## Problem Description
 
 When building the sinkplane-tv app for tvOS, the build fails with the following error:
