@@ -14,7 +14,6 @@ This script will:
 - ✅ Check prerequisites (Node, pnpm, git, CocoaPods)
 - ✅ Clone the companion app and shared package as sibling repos (if not present)
 - ✅ Install all dependencies with `pnpm install`
-- ✅ Apply the tvOS cookie-manager patch (via pnpm `patchedDependencies` in `pnpm-workspace.yaml`)
 - ✅ Run pod install for both projects
 
 ## Manual Setup (Alternative)
@@ -24,7 +23,7 @@ If you prefer to set things up manually:
 ### Prerequisites
 
 1. Make sure dependencies are installed from `package.json`
-2. Keep the repo `patches/` directory intact — pnpm applies the tvOS cookie-manager patch via `patchedDependencies` in `pnpm-workspace.yaml` during install
+2. Keep the repo `patches/` directory intact — pnpm applies any in-repo patches (currently `react-native-video`) via `patchedDependencies` in `pnpm-workspace.yaml` during install
 
 ### Manual Installation
 
@@ -67,7 +66,6 @@ EXPO_TV=1 pnpm exec expo run:ios --device
 
 ✅ **Working**:
 
-- Cookies module with tvOS support (via the pnpm patch in `patches/`)
 - Authentication flow (companion app + manual `sails.sid` fallback) with token refresh
 - Video playback (progress tracking, scrubbing, playback speeds, closed captions)
 - Companion app pairing
@@ -79,7 +77,7 @@ EXPO_TV=1 pnpm exec expo run:ios --device
 
 ## When Things Break
 
-### Metro Can't Find Cookie Manager
+### Metro Can't Resolve a Module
 
 ```bash
 pnpm exec expo start --clear
@@ -118,7 +116,5 @@ cd ios && pod install && cd ..
 
 ## Team Notes
 
-- Keep the `patches/` entry for the cookie manager until upstream ships tvOS support
-- If upstream adds tvOS support, remove the patch and verify pods/builds still work
 - Keep the `plugins/with-tv-scene-lifecycle.js` config plugin until the Expo template adopts scene-based lifecycle natively (required by iOS/tvOS 27)
 - Document any additional tvOS-specific issues in this directory
