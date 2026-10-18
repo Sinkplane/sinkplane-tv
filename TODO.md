@@ -4,7 +4,7 @@
 
 - [x] Basic Auth with copied cookie from web
 - [x] Login routes with guards
-- [x] Auth from companion app
+- [x] Auth via OIDC device flow (QR code, `auth.floatplane.com`)
 - [x] Homepage
 - [x] Homepage List View
 - [x] Homepage Card View
@@ -23,8 +23,6 @@
 - [ ] nutflix (yeah I said it) type video detail page
 - [ ] Video comments viewed on nutflix page?
 - [ ] Video quoue and add to video queue buttons
-- [ ] Show list of videos in companion app to be added to queue
-- [ ] Manipulate queue in companion app
 
 ## Dinosaurs eating bread
 

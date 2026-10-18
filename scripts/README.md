@@ -11,10 +11,9 @@ This directory contains utility scripts for development and deployment.
 **What it does**:
 
 1. ✅ Checks prerequisites (Node.js, pnpm, git, CocoaPods)
-2. ✅ Clones the companion app and shared package repositories (if not present)
+2. ✅ Clones the shared package repository (if not present)
 3. ✅ Installs dependencies for sinkplane-tv
-4. ✅ Installs dependencies for the companion app
-5. ✅ Runs pod install for both iOS projects
+4. ✅ Runs pod install
 
 **Usage**:
 
@@ -35,7 +34,7 @@ cd /path/to/sinkplane-tv
 ```
 parent-directory/
 ├── sinkplane-tv/           (current project)
-└── sinkplane-companion/    (companion mobile app)
+└── sinkplane-shared/       (shared Floatplane API/auth package)
 ```
 
 **Re-running the script**:

@@ -8,7 +8,7 @@ This is a fan-made AppleTV and AndroidTV app for floatplane.com.
 
 The core app is up and running on both platforms. What works today:
 
-- **Authentication** — via the [Sinkplane Companion app](https://github.com/Sinkplane/sinkplane-companion) (automatic discovery on your network), with a manual `sails.sid` cookie fallback on the sign-in screen. OIDC device flow with automatic token refresh is included.
+- **Authentication** — via Floatplane's **OIDC device flow** (`auth.floatplane.com`, the same instance [Hydravion](https://github.com/Inertia-Network/Hydravion) uses): scan a QR code on the sign-in screen and approve the login on another device. Tokens are stored securely and refreshed automatically.
 - **Browsing** — home page with list & card views, sorting, and a channel switcher
 - **Video playback** — with progress tracking (resume where you left off, progress pushed back to the API), native tvOS scrubbing, custom playback speeds (remembered between videos), now-playing metadata, and closed captions
 - **Livestreams** — live tab with the active stream
@@ -21,7 +21,7 @@ Not yet available in the app store / play store (will take some weeks for apple 
 
 - Unit + E2E (Jest) test suites in `__tests__/`, with CI running them on PRs to `main` (`.github/workflows/ci.yml`)
 - Android TV EAS build workflow with GitHub release publishing (`.github/workflows/android-tv-release.yml`)
-- Shared Floatplane API/auth/TV-protocol code lives in [`@sinkplane/shared`](https://github.com/Sinkplane/sinkplane-shared), consumed from GitHub Packages
+- Shared Floatplane API/auth code lives in [`@sinkplane/shared`](https://github.com/Sinkplane/sinkplane-shared), consumed from GitHub Packages
 - Lint (ESLint) + typecheck (tsc) enforced on commits and PRs
 
 ## ⚠️ tvOS Development Setup
@@ -39,10 +39,7 @@ This project requires special configuration for tvOS support:
 
 - Works on both Apple TV and Android TV
 - Not yet available in the app store / play store (will take some weeks for apple developer entitlements and app store approvals)
-- **Authentication**: Use the [Sinkplane Companion app](../sinkplane-companion) to sign in to your TV
-  - Sign in on your mobile device
-  - The companion app will discover your TV on the network
-  - Send your credentials to the TV with one tap
+- **Authentication**: sign in with Floatplane's official device flow — scan the QR code on the sign-in screen, or visit `floatplane.com/link` on any device and enter the shown code
 
 ## How can I help
 
@@ -64,7 +61,7 @@ This project uses
 
 ### Shared package development
 
-`@sinkplane/shared` is installed as a regular dependency from GitHub Packages. For local development, `./scripts/setup-dev-env.sh` clones it (and the companion app) as siblings, and `pnpm run link:shared` symlinks `node_modules/@sinkplane/shared/dist` to the clone's build output so Metro picks up changes immediately. Re-run `pnpm run link:shared` after every `pnpm install`.
+`@sinkplane/shared` is installed as a regular dependency from GitHub Packages. For local development, `./scripts/setup-dev-env.sh` clones it as a sibling repo, and `pnpm run link:shared` symlinks `node_modules/@sinkplane/shared/dist` to the clone's build output so Metro picks up changes immediately. Re-run `pnpm run link:shared` after every `pnpm install`.
 
 > ⚠️ EAS builds resolve `@sinkplane/shared` from GitHub Packages — a PAT with `read:packages` on the Sinkplane org must be set as the `GITHUB_PACKAGES_TOKEN` EAS environment variable.
 
@@ -81,7 +78,7 @@ cd sinkplane-tv
 
 This will:
 
-- Clone the companion app and shared package (if not already siblings)
+- Clone the shared package as a sibling repo (if not already present)
 - Install all dependencies with `pnpm install`
 - Set up CocoaPods
 
@@ -135,35 +132,18 @@ You can start developing by editing the files inside the **app** directory. This
 
 This project includes a [demo](./components/EventHandlingDemo.tsx) showing how to use React Native TV APIs to highlight controls as the user navigates the screen with the remote control.
 
-### Development with Companion App
+### Testing authentication
 
-To test authentication and companion features during development:
+The sign-in screen automatically starts Floatplane's OIDC **device authorization flow** (against `auth.floatplane.com`):
 
-1. **Start the TV app** (this starts a TCP server on port 9999):
+1. **Start the TV app** (sign-in screen appears when no session is stored):
    ```bash
    pnpm run ios # or pnpm run android for Android TV
    ```
 
-2. **Start the companion app** in a separate terminal:
-   ```bash
-   cd ../sinkplane-companion
-   ./scripts/setup-dev-env.sh android  # or appletv
-   pnpm exec expo start
-   ```
+2. **Scan the QR code** with your phone, or visit `floatplane.com/link` on any device and enter the code shown on screen.
 
-The companion app will automatically discover and connect to your TV. See the [Companion App README](../sinkplane-companion/README.md) for detailed setup instructions.
-
-#### Verifying TV Server
-
-When the TV app starts, you should see in the logs:
-
-```
-[TV Server] useTVServer useEffect mounting
-TV Server listening on port 9999
-TV Service published
-```
-
-This means the TV is ready to accept connections from the companion app.
+3. **Approve the login** on the other device — the TV signs in automatically. Tokens are stored in `expo-secure-store` and refreshed automatically via the refresh token.
 
 ### TV specific file extensions
 
