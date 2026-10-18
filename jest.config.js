@@ -30,4 +30,27 @@ module.exports = {
   // of each module in the registry — see moduleNameMapper above.
   modulePaths: ['<rootDir>/node_modules'],
   testTimeout: 30000,
+  // Coverage: enforce a 90% floor over TV app sources. Jest exits non-zero
+  // when any metric falls below the threshold.
+  collectCoverageFrom: [
+    'app/**/*.{ts,tsx}',
+    'components/**/*.{ts,tsx}',
+    'hooks/**/*.{ts,tsx}',
+    'layouts/**/*.{ts,tsx}',
+    'constants/**/*.{ts,tsx}',
+    '!**/*.d.ts',
+  ],
+  coverageDirectory: '<rootDir>/coverage',
+  coverageReporters: ['html', 'lcov', 'text', 'text-summary'],
+  coverageThreshold: {
+    global: {
+      statements: 90,
+      branches: 90,
+      functions: 90,
+      lines: 90,
+    },
+  },
+  // In CI, also emit GitHub Actions annotations for failing tests
+  // (built-in reporter since Jest 30; no-op elsewhere).
+  reporters: process.env.CI ? ['default', 'github-actions'] : ['default'],
 };
