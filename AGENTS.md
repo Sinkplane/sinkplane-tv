@@ -76,7 +76,7 @@ eas build --profile production       # Mobile production
 
 ### Shared Package (`@sinkplane/shared`)
 
-`@sinkplane/shared` lives in the sibling repo `../sinkplane-shared` (cloned by `scripts/setup-dev-env.sh`, like the companion app) and is consumed as a `"link:"` dependency — Metro, tsc, and Jest all compile its TypeScript sources directly (no build step). It holds everything reusable across Sinkplane apps:
+`@sinkplane/shared` is published to GitHub Packages and installed as a regular dependency (`@sinkplane/shared@^0.1.1`; registry/auth configured in `.npmrc`) so EAS builds resolve the compiled `dist/` output. The sibling repo `../sinkplane-shared` (cloned by `scripts/setup-dev-env.sh`, like the companion app) is the development source: `pnpm run link:shared` symlinks `node_modules/@sinkplane/shared/dist` to the clone's `dist/` build output (Metro watches the clone — see `metro.config.js`), and Jest maps the package to the clone's TypeScript sources directly (see `jest.config.js`). It holds everything reusable across Sinkplane apps:
 
 - Floatplane API client (`authenticatedFetch`), OIDC device flow, token refresh
 - Auth context (`SessionProvider` / `useSession`)
@@ -88,7 +88,7 @@ Import from the barrel: `import { useSession } from '@sinkplane/shared'`. The fe
 
 `sinkplane-shared` intentionally has **no `node_modules` of its own**: its `node_modules` is a symlink to `../sinkplane-tv/node_modules` (created by `setup-dev-env.sh`) so every tool resolves the exact same module instances. **Never run `pnpm install` inside `sinkplane-shared`** — its `pnpm-workspace.yaml` disables pnpm's install-before-run behavior for exactly this reason.
 
-> ⚠️ EAS builds archive only this repo, so `link:../sinkplane-shared` cannot resolve on EAS. Once `sinkplane-shared` is hosted, pin it to a git dependency (e.g. `"@sinkplane/shared": "github:Sinkplane/sinkplane-shared#v0.1.0"`) for EAS profiles (`*_tv`); keep the `link:` for local development.
+> ⚠️ EAS builds resolve `@sinkplane/shared` from GitHub Packages — set `GITHUB_PACKAGES_TOKEN` as an EAS build environment variable (EAS substitutes it in `.npmrc`; a PAT with `read:packages` on the Sinkplane org). pnpm never expands `${...}` in repo-controlled credentials, so locally the token is read from `~/.npmrc` instead. Re-run `pnpm run link:shared` after `pnpm install` — a reinstall recreates `dist/` as a real directory.
 
 ### Key Technologies
 

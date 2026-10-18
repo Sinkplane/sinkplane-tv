@@ -126,12 +126,14 @@ print_header "Installing Sinkplane TV Dependencies"
 
 cd "$PROJECT_DIR"
 print_info "Running pnpm install..."
+# @sinkplane/shared installs from GitHub Packages (see .npmrc); the registry
+# token comes from ~/.npmrc locally and from EAS build env on EAS.
 pnpm install
 
-# The shared package is consumed as a "link:" dependency and deliberately has
-# no node_modules of its own — everything resolves from this repo's single
-# hoisted node_modules. Point it there via a symlink (see the shared repo's
-# README; do NOT run pnpm install inside sinkplane-shared).
+# The shared-package repo deliberately has no node_modules of its own — its
+# typecheck and build resolve deps from this repo's single hoisted
+# node_modules via a symlink (see the shared repo's README; do NOT run
+# pnpm install inside sinkplane-shared).
 if [ -d "$SHARED_DIR" ] && [ -d "$PROJECT_DIR/node_modules" ]; then
     if [ -L "$SHARED_DIR/node_modules" ]; then
         print_info "Shared package node_modules symlink already exists"
@@ -139,6 +141,12 @@ if [ -d "$SHARED_DIR" ] && [ -d "$PROJECT_DIR/node_modules" ]; then
         ln -s "$PROJECT_DIR/node_modules" "$SHARED_DIR/node_modules"
         print_success "Linked sinkplane-shared/node_modules -> sinkplane-tv/node_modules"
     fi
+fi
+
+# Point the installed package's dist/ at the local clone's build output so
+# local development sees shared-package changes without a publish+reinstall.
+if [ -d "$SHARED_DIR" ]; then
+    "$SCRIPT_DIR/link-shared-dist.sh"
 fi
 
 if [[ "$OSTYPE" == "darwin"* ]]; then

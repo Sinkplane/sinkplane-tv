@@ -17,8 +17,9 @@ module.exports = {
   setupFilesAfterEnv: ['<rootDir>/__tests__/e2e/jest.setup.ts'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
-    // Shared package lives in the sibling repo (pnpm link: dep). Map it into
-    // the source tree so it is transformed by babel-jest like project files.
+    // Shared package installs from GitHub Packages; Jest maps it to the
+    // sibling clone's TS sources (present in a full dev setup) so it is
+    // transformed by babel-jest like project files.
     '^@sinkplane/shared$': '<rootDir>/../sinkplane-shared/index.ts',
     '^@sinkplane/shared/(.*)$': '<rootDir>/../sinkplane-shared/$1',
   },

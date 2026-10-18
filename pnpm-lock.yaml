@@ -12473,8 +12473,8 @@ importers:
         specifier: ^7.0.0
         version: 7.0.0(patch_hash=b2e1cd6f44dfa9dac63d6326a9fae39bb09fd9d16de1cd553c546079f1453ca1)(react-native-tvos@0.86.3-0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/jest-preset@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react-native-tvos@0.86.3-0)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)
       '@sinkplane/shared':
-        specifier: link:../sinkplane-shared
-        version: link:../sinkplane-shared
+        specifier: ^0.1.1
+        version: 0.1.1(5f6b7deed55b4ff569d2cd3320c10a81)
       '@tanstack/react-query':
         specifier: ^5.104.2
         version: 5.104.2(react@19.2.3)
@@ -13948,6 +13948,20 @@ packages:
 
   '@sinclair/typebox@0.34.52':
     resolution: {integrity: sha512-XiMQh7qqVlxZzcVD+kkGMNGMzcTrDMLWI7S4x7z1MkCkbDPrekpZXEUK0eZqZFMuHQg2a2DZOcDIh9o5v3Gonw==}
+
+  '@sinkplane/shared@0.1.1':
+    resolution: {integrity: sha512-C5HHiWJQjMtG/kFM47eT6oNs5tXOBXB64z67JHf/4hpcVetHY7umQ6nkIn2aXFGH949D7WPv2A+u1Gu0lBQ5+A==, tarball: https://npm.pkg.github.com/download/@sinkplane/shared/0.1.1/6149afbb550d8db0fd7c4fcf38e964e5ede93ab0}
+    peerDependencies:
+      '@preeternal/react-native-cookie-manager': ^7.0.0
+      '@tanstack/react-query': ^5.104.2
+      expo-crypto: ~57.0.3
+      expo-device: ~57.0.2
+      expo-network: ~57.0.2
+      expo-secure-store: ~57.0.4
+      react: '*'
+      react-native: '*'
+      react-native-tcp-socket: ^6.4.3
+      react-native-zeroconf: ^0.17.4
 
   '@sinonjs/commons@3.0.1':
     resolution: {integrity: sha512-K3mCHKQ9sVh8o1C9cxkwxaOmXoAMlDxC1mYyHrjqOWEcBjYr76t96zL2zlj5dUGZ3HSw240X1qgH3Mjf1yJWpQ==}
@@ -19770,6 +19784,19 @@ snapshots:
   '@sinclair/typebox@0.27.12': {}
 
   '@sinclair/typebox@0.34.52': {}
+
+  '@sinkplane/shared@0.1.1(5f6b7deed55b4ff569d2cd3320c10a81)':
+    dependencies:
+      '@preeternal/react-native-cookie-manager': 7.0.0(patch_hash=b2e1cd6f44dfa9dac63d6326a9fae39bb09fd9d16de1cd553c546079f1453ca1)(react-native-tvos@0.86.3-0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/jest-preset@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react-native-tvos@0.86.3-0)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)
+      '@tanstack/react-query': 5.104.2(react@19.2.3)
+      expo-crypto: 57.0.3(expo@57.0.27)
+      expo-device: 57.0.2(expo@57.0.27)
+      expo-network: 57.0.2(expo@57.0.27)(react@19.2.3)
+      expo-secure-store: 57.0.4(expo@57.0.27)
+      react: 19.2.3
+      react-native: react-native-tvos@0.86.3-0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/jest-preset@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react-native-tvos@0.86.3-0)(react@19.2.3)(supports-color@8.1.1)
+      react-native-tcp-socket: 6.4.3(react-native-tvos@0.86.3-0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/jest-preset@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react-native-tvos@0.86.3-0)(react@19.2.3)(supports-color@8.1.1))
+      react-native-zeroconf: 0.17.4(react-native-tvos@0.86.3-0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/jest-preset@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react-native-tvos@0.86.3-0)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)
 
   '@sinonjs/commons@3.0.1':
     dependencies:
