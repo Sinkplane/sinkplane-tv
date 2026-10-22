@@ -165,11 +165,9 @@ TV builds need `pnpm run prebuild:tv` (clean prebuild with TV modifications) to 
 
 1. **iOS/tvOS 27 require scene lifecycle** — UIKit asserts at launch unless the app adopts scene-based lifecycle. `plugins/with-tv-scene-lifecycle.js` registers `ExpoAppSceneDelegate` (shipped with Expo) via a config plugin. Drop the plugin when the Expo template adopts scenes natively.
 
-2. **React Native Core tvOS build error (historical)** — the old Xcode 16 `dispatch_queue_t strong` issue in `RCTBridgeModule.h` is fixed upstream in RN 0.86; no Podfile hook is needed anymore. See `docs/react-native-core-tvos-issue.md`.
+2. **pnpm settings live in `pnpm-workspace.yaml`** — pnpm v12 no longer reads the `pnpm` field in `package.json` or settings from `.npmrc`. `nodeLinker: hoisted` (required for RN/Metro/CocoaPods), `allowBuilds`, `patchedDependencies`, the `@react-native/metro-config` override, and `minimumReleaseAgeExclude` live there. EAS detects pnpm from `pnpm-lock.yaml` / the `packageManager` field. `react-native` is aliased to `npm:react-native-tvos@...` in dependencies and excluded via `expo.install.exclude`.
 
-3. **pnpm settings live in `pnpm-workspace.yaml`** — pnpm v12 no longer reads the `pnpm` field in `package.json` or settings from `.npmrc`. `nodeLinker: hoisted` (required for RN/Metro/CocoaPods), `allowBuilds`, `patchedDependencies`, the `@react-native/metro-config` override, and `minimumReleaseAgeExclude` live there. EAS detects pnpm from `pnpm-lock.yaml` / the `packageManager` field. `react-native` is aliased to `npm:react-native-tvos@...` in dependencies and excluded via `expo.install.exclude`.
-
-4. **CocoaPods on Homebrew Ruby** — `pod` installs to `/opt/homebrew/lib/ruby/gems/<ver>/bin`, which is NOT on PATH by default. It is exported in `~/.zshrc`; `expo run:ios` from non-interactive shells may fail with `spawn pod ENOENT`.
+3. **CocoaPods on Homebrew Ruby** — `pod` installs to `/opt/homebrew/lib/ruby/gems/<ver>/bin`, which is NOT on PATH by default. It is exported in `~/.zshrc`; `expo run:ios` from non-interactive shells may fail with `spawn pod ENOENT`.
 
 ## Testing
 

@@ -206,9 +206,5 @@ echo "   npx expo start"
 echo ""
 echo "3. Read the documentation:"
 echo "   - Quick Start: docs/QUICK_START_TVOS.md"
-echo "   - Known Issues: docs/react-native-core-tvos-issue.md"
 echo ""
-
-print_warning "There is still a known React Native Core issue on tvOS."
-print_info "See docs/react-native-core-tvos-issue.md for details and solutions."
 
