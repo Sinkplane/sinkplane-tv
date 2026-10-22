@@ -31,8 +31,6 @@ This project requires special configuration for tvOS support:
 - Uses the [`react-native-tvos`](https://github.com/react-native-tvos/react-native-tvos) fork (aliased as `react-native`) with the [`@react-native-tvos/config-tv`](https://github.com/react-native-tvos/config-tv) config plugin
 - iOS/tvOS 27 require scene-based lifecycle; the `plugins/with-tv-scene-lifecycle.js` Expo config plugin registers `ExpoAppSceneDelegate` for this.
 
-**📋 See**: [`docs/react-native-core-tvos-issue.md`](docs/react-native-core-tvos-issue.md) for the historical React Native Core tvOS build issue — **resolved** in `react-native-tvos` 0.86; no Podfile hook needed anymore.
-
 ---
 
 ## Usage Information

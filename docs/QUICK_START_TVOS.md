@@ -72,7 +72,7 @@ EXPO_TV=1 pnpm exec expo run:ios --device
 
 ✅ **Resolved issues**:
 
-- The React Native Core tvOS build error (`dispatch_queue_t` / `strong` attribute in `RCTBridgeModule.h`) is fixed upstream in `react-native-tvos` 0.86 — no Podfile hook is needed anymore. See [`react-native-core-tvos-issue.md`](./react-native-core-tvos-issue.md) for the history.
+- The historical React Native Core tvOS build error (`dispatch_queue_t` / `strong` attribute in `RCTBridgeModule.h`) is fixed upstream in `react-native-tvos` 0.86 — no Podfile hook is needed.
 
 ## When Things Break
 
@@ -108,7 +108,6 @@ cd ios && pod install && cd ..
 
 ## Documentation Index
 
-- **[React Native Core Issue (resolved)](./react-native-core-tvos-issue.md)** — Historical investigation of the tvOS build error, fixed in RN 0.86
 - **[Main README](../README.md)** — General project documentation
 - **[TODO](../TODO.md)** — Feature roadmap and project status
 - **[CLAUDE.md / AGENTS.md](../CLAUDE.md)** — Full developer documentation (architecture, commands, gotchas)
