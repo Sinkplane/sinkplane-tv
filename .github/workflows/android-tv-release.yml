@@ -25,6 +25,7 @@ concurrency:
 
 permissions:
   contents: write
+  packages: read
 
 jobs:
   android-tv-release:
@@ -36,13 +37,30 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # pnpm/action-setup reads the version from package.json "packageManager"
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
+          cache: pnpm
 
       - name: Install EAS CLI
         run: npm install --global eas-cli@latest
+
+      # EAS CLI evaluates app.json (including config plugins) on the runner
+      # before scheduling a remote build, so node_modules must exist locally.
+      # pnpm ignores ${...} in the repo .npmrc; write the token to the
+      # user-level .npmrc instead (same as local dev — see AGENTS.md).
+      - name: Configure GitHub Packages auth
+        env:
+          PACKAGES_AUTH_TOKEN: ${{ secrets.PACKAGES_AUTH_TOKEN }}
+        run: echo "//npm.pkg.github.com/:_authToken=${PACKAGES_AUTH_TOKEN}" >> ~/.npmrc
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Resolve release tag
         id: tag
