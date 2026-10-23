@@ -72,18 +72,11 @@ jobs:
             echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Normalize pnpm lockfile for EAS
-        run: |
-          node -e "
-            const fs = require('fs');
-            const parts = fs.readFileSync('pnpm-lock.yaml', 'utf8').split(/^---\$/m);
-            if (parts.length > 2) {
-              fs.writeFileSync('pnpm-lock.yaml', '---' + parts[parts.length - 1]);
-              console.log('Stripped pnpm self-management stub; lockfile is now a single YAML document');
-            } else {
-              console.log('Lockfile already single-document');
-            }
-          "
+      # NOTE: do NOT "normalize" the multi-document pnpm-lock.yaml before
+      # `eas build`. pnpm 12 natively writes a two-document lockfile
+      # (self-management stub + lockfile) and the EAS worker's pnpm accepts
+      # it as-is. Stripping the stub doc makes pnpm reject the file
+      # (ERR_PNPM_NO_LOCKFILE / outdated packageManagerDependencies).
 
       - name: Run EAS build for Android TV
         id: build

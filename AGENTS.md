@@ -87,7 +87,7 @@ Import from the barrel: `import { useSession } from '@sinkplane/shared'`. The fe
 
 `sinkplane-shared` intentionally has **no `node_modules` of its own**: its `node_modules` is a symlink to `../sinkplane-tv/node_modules` (created by `setup-dev-env.sh`) so every tool resolves the exact same module instances. **Never run `pnpm install` inside `sinkplane-shared`** — its `pnpm-workspace.yaml` disables pnpm's install-before-run behavior for exactly this reason.
 
-> ⚠️ EAS builds resolve `@sinkplane/shared` from GitHub Packages — set `GITHUB_PACKAGES_TOKEN` as an EAS build environment variable (EAS substitutes it in `.npmrc`; a PAT with `read:packages` on the Sinkplane org). pnpm never expands `${...}` in repo-controlled credentials, so locally the token is read from `~/.npmrc` instead. Re-run `pnpm run link:shared` after `pnpm install` — a reinstall recreates `dist/` as a real directory.
+> ⚠️ EAS builds resolve `@sinkplane/shared` from GitHub Packages — set `GITHUB_PACKAGES_TOKEN` as an EAS environment variable (a PAT with `read:packages` on the Sinkplane org; `eas env:create --scope project --name GITHUB_PACKAGES_TOKEN --value <PAT> --visibility sensitive`). pnpm never expands `${...}` in repo-controlled credentials — not locally and not on EAS workers — so the `eas-build-pre-install` npm script (`scripts/eas-npmrc-auth.mjs`) copies that variable into the worker's `~/.npmrc` before install; locally the token is read from `~/.npmrc` instead. Re-run `pnpm run link:shared` after `pnpm install` — a reinstall recreates `dist/` as a real directory.
 
 ### Key Technologies
 
