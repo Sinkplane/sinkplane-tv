@@ -20,7 +20,8 @@
     "postinstall": "patch-package",
     "prepare": "husky",
     "link:shared": "./scripts/link-shared-dist.sh",
-    "unlink:shared": "./scripts/link-shared-dist.sh --unlink"
+    "unlink:shared": "./scripts/link-shared-dist.sh --unlink",
+    "eas-build-pre-install": "node scripts/eas-npmrc-auth.mjs"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",
