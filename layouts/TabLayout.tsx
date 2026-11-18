@@ -1,21 +1,28 @@
-import { NativeTabs } from 'expo-router/unstable-native-tabs';
+import type { ReactElement } from 'react';
 import { Platform } from 'react-native';
-
-import WebTabLayout from './TabLayout.web';
-import { ProfileAvatar } from '@/components/ProfileAvatar';
+import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { useGetVideoDelivery, useSession } from '@sinkplane/shared';
 
+import { ProfileAvatar } from '@/components/ProfileAvatar';
+import { TabLayout as JsTabLayout } from '@/layouts/TabLayout.web';
+
 const LIVESTREAM_ID = '5c13f3c006f1be15e08e05c0';
+const LIVE_SELECTED_COLOR = '#FF0000';
 
-export default function TabLayout() {
+function useIsLive(): boolean {
   const { token, tokenExpiration } = useSession();
-  const { data: videoDelivery } = useGetVideoDelivery(token ?? undefined, tokenExpiration ?? undefined, LIVESTREAM_ID, true);
+  const { data: videoDelivery } = useGetVideoDelivery(
+    token ?? undefined,
+    tokenExpiration ?? undefined,
+    LIVESTREAM_ID,
+    true,
+  );
+  return videoDelivery !== undefined;
+}
 
-  const isLive = !!videoDelivery;
+function NativeTabLayout(): ReactElement {
+  const isLive = useIsLive();
 
-  if (Platform.OS === 'android' && Platform.isTV) {
-    return <WebTabLayout />;
-  }
   return (
     <>
       <NativeTabs>
@@ -29,12 +36,22 @@ export default function TabLayout() {
         </NativeTabs.Trigger>
         {isLive && (
           <NativeTabs.Trigger name="live">
-            <NativeTabs.Trigger.Label>{isLive ? 'Live Now' : 'Not Live'}</NativeTabs.Trigger.Label>
-            <NativeTabs.Trigger.Icon sf={{ default: 'tv', selected: 'tv.fill' }} selectedColor="#FF0000" />
+            <NativeTabs.Trigger.Label>Live Now</NativeTabs.Trigger.Label>
+            <NativeTabs.Trigger.Icon
+              sf={{ default: 'tv', selected: 'tv.fill' }}
+              selectedColor={LIVE_SELECTED_COLOR}
+            />
           </NativeTabs.Trigger>
         )}
       </NativeTabs>
       <ProfileAvatar />
     </>
   );
+}
+
+export function TabLayout(): ReactElement {
+  if (Platform.OS === 'android' && Platform.isTV) {
+    return <JsTabLayout />;
+  }
+  return <NativeTabLayout />;
 }

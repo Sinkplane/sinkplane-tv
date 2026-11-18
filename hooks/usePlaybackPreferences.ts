@@ -1,95 +1,133 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { CaptionTrack, OnCaptionTrackChangeData, OnPlaybackRateChangeData } from 'react-native-video';
+import { queryOptions, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useId, useState } from 'react';
+import type {
+  CaptionTrack,
+  OnCaptionTrackChangeData,
+  OnPlaybackRateChangeData,
+} from 'react-native-video';
 
-import { findCaptionTrack } from '@/components/videos/caption-tracks';
-import { PLAYBACK_SPEEDS } from '@/constants/video';
+import { findCaptionTrack } from '@/constants/caption-tracks';
+import { NORMAL_PLAYBACK_RATE, PLAYBACK_SPEEDS } from '@/constants/video';
 
 const STORAGE_KEY = 'playback-preferences';
 
 interface PlaybackPreferences {
-  playbackRate: number;
-  /** Language of the last caption track picked; `null` means captions off. */
-  captionLanguage: string | null;
+  readonly playbackRate: number;
+  readonly rememberedCaptionLanguage: string | null;
 }
 
-const DEFAULT_PREFERENCES: PlaybackPreferences = { playbackRate: 1, captionLanguage: null };
+interface StoredPreferences {
+  readonly playbackRate: number;
+  readonly captionLanguage: string | null;
+}
+
+export interface PlaybackPreferenceProps {
+  readonly ready: boolean;
+  readonly rate: number;
+  readonly selectedCaptionTrackId?: string;
+  readonly onPlaybackRateChange: (event: OnPlaybackRateChangeData) => void;
+  readonly onCaptionTrackChange: (event: OnCaptionTrackChangeData) => void;
+}
+
+const DEFAULT_PREFERENCES: PlaybackPreferences = {
+  playbackRate: NORMAL_PLAYBACK_RATE,
+  rememberedCaptionLanguage: null,
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const isPlaybackSpeed = (value: unknown): value is number =>
+  typeof value === 'number' && PLAYBACK_SPEEDS.includes(value);
 
 const parsePreferences = (raw: string | null): PlaybackPreferences => {
-  const stored = raw ? JSON.parse(raw) : {};
+  const stored: unknown = raw === null ? {} : JSON.parse(raw);
+  if (!isRecord(stored)) {
+    return DEFAULT_PREFERENCES;
+  }
+  const { playbackRate, captionLanguage } = stored;
   return {
-    playbackRate: PLAYBACK_SPEEDS.includes(stored.playbackRate) ? stored.playbackRate : DEFAULT_PREFERENCES.playbackRate,
-    captionLanguage: typeof stored.captionLanguage === 'string' ? stored.captionLanguage : null,
+    playbackRate: isPlaybackSpeed(playbackRate) ? playbackRate : DEFAULT_PREFERENCES.playbackRate,
+    rememberedCaptionLanguage: typeof captionLanguage === 'string' ? captionLanguage : null,
   };
 };
 
-/**
- * Remembers the speed and caption language picked in the native player menus across videos.
- * Returns props for `VideoPlayer`; `ready` is false until the stored preferences have loaded.
- */
-export const usePlaybackPreferences = (captionTracks: CaptionTrack[]) => {
-  const [preferences, setPreferences] = useState<PlaybackPreferences | null>(null);
-  const latestRef = useRef(DEFAULT_PREFERENCES);
-  // The exact track picked for this video; `trackId: undefined` means captions were turned off.
-  const [pickedCaptionTrack, setPickedCaptionTrack] = useState<OnCaptionTrackChangeData | null>(null);
+const loadPreferences = async (): Promise<PlaybackPreferences> => {
+  try {
+    return parsePreferences(await AsyncStorage.getItem(STORAGE_KEY));
+  } catch {
+    return DEFAULT_PREFERENCES;
+  }
+};
 
-  useEffect(() => {
-    let cancelled = false;
-    AsyncStorage.getItem(STORAGE_KEY)
-      .then(parsePreferences)
-      .catch(() => DEFAULT_PREFERENCES)
-      .then(loaded => {
-        if (cancelled) return;
-        latestRef.current = loaded;
-        setPreferences(loaded);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+const toStored = (preferences: PlaybackPreferences): StoredPreferences => ({
+  playbackRate: preferences.playbackRate,
+  captionLanguage: preferences.rememberedCaptionLanguage,
+});
 
-  const updatePreferences = useCallback((update: Partial<PlaybackPreferences>) => {
-    const next = { ...latestRef.current, ...update };
-    latestRef.current = next;
-    setPreferences(next);
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next)).catch(err => {
-      console.error('[usePlaybackPreferences] Failed to save playback preferences:', err);
-    });
-  }, []);
+const preferencesQuery = (screenId: string) =>
+  queryOptions({
+    queryKey: [STORAGE_KEY, screenId],
+    queryFn: loadPreferences,
+    staleTime: Infinity,
+    gcTime: 0,
+  });
 
-  const onPlaybackRateChange = useCallback(
-    ({ selectedPlaybackRate }: OnPlaybackRateChangeData) => {
-      if (
-        selectedPlaybackRate !== undefined &&
-        PLAYBACK_SPEEDS.includes(selectedPlaybackRate) &&
-        selectedPlaybackRate !== latestRef.current.playbackRate
-      ) {
-        updatePreferences({ playbackRate: selectedPlaybackRate });
-      }
-    },
-    [updatePreferences],
+const usePreferencesStore = (): {
+  preferences: PlaybackPreferences | undefined;
+  current: () => PlaybackPreferences;
+  update: (change: Partial<PlaybackPreferences>) => void;
+} => {
+  const queryClient = useQueryClient();
+  const screenId = useId();
+  const query = preferencesQuery(screenId);
+  const { data: preferences } = useQuery(query);
+  const current = (): PlaybackPreferences =>
+    queryClient.getQueryData(query.queryKey) ?? DEFAULT_PREFERENCES;
+  const update = (change: Partial<PlaybackPreferences>): void => {
+    const next = { ...current(), ...change };
+    queryClient.setQueryData(query.queryKey, next);
+    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(toStored(next))).catch(() => undefined);
+  };
+  return { preferences, current, update };
+};
+
+const selectedTrack = (
+  picked: OnCaptionTrackChangeData | null,
+  captionTracks: readonly CaptionTrack[],
+  rememberedLanguage: string | null,
+): Pick<PlaybackPreferenceProps, 'selectedCaptionTrackId'> => {
+  const trackId =
+    picked === null ? findCaptionTrack(captionTracks, rememberedLanguage)?.id : picked.trackId;
+  return trackId === undefined ? {} : { selectedCaptionTrackId: trackId };
+};
+
+export const usePlaybackPreferences = (
+  captionTracks: readonly CaptionTrack[],
+): PlaybackPreferenceProps => {
+  const { preferences, current, update } = usePreferencesStore();
+  const [pickedCaptionTrack, setPickedCaptionTrack] = useState<OnCaptionTrackChangeData | null>(
+    null,
   );
-
-  const onCaptionTrackChange = useCallback(
-    (event: OnCaptionTrackChangeData) => {
-      setPickedCaptionTrack(event);
-      const language = captionTracks.find(track => track.id === event.trackId)?.language;
-      updatePreferences({ captionLanguage: language ?? null });
-    },
-    [captionTracks, updatePreferences],
-  );
-
-  const captionLanguage = preferences?.captionLanguage ?? null;
-  const selectedCaptionTrackId = useMemo(
-    () => (pickedCaptionTrack ? pickedCaptionTrack.trackId : findCaptionTrack(captionTracks, captionLanguage)?.id),
-    [pickedCaptionTrack, captionTracks, captionLanguage],
-  );
+  const effective = preferences ?? DEFAULT_PREFERENCES;
 
   return {
-    ready: preferences !== null,
-    rate: preferences?.playbackRate ?? DEFAULT_PREFERENCES.playbackRate,
-    onPlaybackRateChange,
-    selectedCaptionTrackId,
-    onCaptionTrackChange,
+    ready: preferences !== undefined,
+    rate: effective.playbackRate,
+    ...selectedTrack(pickedCaptionTrack, captionTracks, effective.rememberedCaptionLanguage),
+    onPlaybackRateChange: ({ selectedPlaybackRate }) => {
+      if (
+        isPlaybackSpeed(selectedPlaybackRate) &&
+        selectedPlaybackRate !== current().playbackRate
+      ) {
+        update({ playbackRate: selectedPlaybackRate });
+      }
+    },
+    onCaptionTrackChange: (event) => {
+      setPickedCaptionTrack(event);
+      const picked = captionTracks.find((track) => track.id === event.trackId);
+      update({ rememberedCaptionLanguage: picked?.language ?? null });
+    },
   };
 };

@@ -107,34 +107,42 @@ pnpm exec expo run:android
 
 ### Quality gates
 
-Run these before considering work done:
+The gates follow the `react-vite-ts` starter's gate contract: every rule that matters is a `make` target, and agents cannot finish while one is red (see `AGENTS.md`).
 
 ```sh
-pnpm run lint        # ESLint (expo lint)
-pnpm exec tsc --noEmit # Typecheck
+make setup      # frozen install + git hooks (.githooks: pre-commit = fmt-check lint, pre-push = check)
+make check      # fmt-check lint typecheck arch coverage crap build — what CI, pre-push and the agent stop hook run
+make gauntlet   # check + mutation testing + QA procedures
+make help       # every target
 ```
+
+- **Lint**: ESLint `strictTypeChecked` plus `@eslint-react`, `react-hooks` (React Compiler rules), sonarjs, jest and testing-library, at zero warnings. No `useEffect`, no manual memoization, no comments, no `as` casts; complexity ≤ 6 and ≤ 40 lines per function. knip fails on unused files, exports and dependencies.
+- **Types**: the strictest tsconfig (`noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `verbatimModuleSyntax`, …).
+- **Architecture**: dependency-cruiser layers `app` → `layouts` → `components` → `hooks` → `constants`/`types`.
+- **Tests**: ≥ 90% coverage and CRAP ≤ 6 per function; Stryker mutation testing on changed files in PRs.
+
+Gate config is listed in `.gates-protected`; agents must ask before editing it.
 
 ### Testing
 
-The project has Jest-based unit and E2E integration suites (no simulator needed — the E2E suite boots the real Expo Router app in Jest against a mocked Floatplane API):
+The E2E suite boots the real Expo Router app in Jest against a mocked Floatplane API, so no simulator is needed:
 
 ```sh
-pnpm exec jest --config jest.config.unit.js # Unit tests
-pnpm exec jest                              # E2E integration tests
-pnpm run test:coverage                      # Coverage (90% floor enforced)
+make test         # unit tests (colocated *.test.ts(x))
+make acceptance   # E2E suite (__tests__/e2e)
+make coverage     # both, with coverage thresholds
 ```
 
-CI (`.github/workflows/ci.yml`) runs both suites on PRs to `main`.
+CI (`.github/workflows/ci.yml`) runs format/lint/typecheck/arch, tests + coverage + CRAP, the Metro TV bundle, and mutation testing on changed files for every PR to `main`. `.github/rulesets/main.json` is the matching branch ruleset (required status checks).
 
 You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-This project includes a [demo](./components/EventHandlingDemo.tsx) showing how to use React Native TV APIs to highlight controls as the user navigates the screen with the remote control.
 
 ### Testing authentication
 
 The sign-in screen automatically starts Floatplane's OIDC **device authorization flow** (against `auth.floatplane.com`):
 
 1. **Start the TV app** (sign-in screen appears when no session is stored):
+
    ```bash
    pnpm run ios # or pnpm run android for Android TV
    ```

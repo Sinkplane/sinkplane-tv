@@ -1,5 +1,7 @@
-import PlatformTabLayout from '@/layouts/TabLayout';
+import type { ReactElement } from 'react';
 
-export default function TabLayout() {
+import { TabLayout as PlatformTabLayout } from '@/layouts/TabLayout';
+
+export default function TabLayout(): ReactElement {
   return <PlatformTabLayout />;
 }

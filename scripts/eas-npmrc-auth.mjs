@@ -11,8 +11,8 @@ import { join } from 'node:path';
 const token = process.env.GITHUB_PACKAGES_TOKEN;
 
 if (!token) {
-  console.log('GITHUB_PACKAGES_TOKEN is not set; skipping GitHub Packages auth setup.');
+  process.stdout.write('GITHUB_PACKAGES_TOKEN is not set; skipping GitHub Packages auth setup.\n');
 } else {
   appendFileSync(join(homedir(), '.npmrc'), `//npm.pkg.github.com/:_authToken=${token}\n`);
-  console.log('Added GitHub Packages auth token to ~/.npmrc.');
+  process.stdout.write('Added GitHub Packages auth token to ~/.npmrc.\n');
 }

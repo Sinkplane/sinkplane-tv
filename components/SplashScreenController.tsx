@@ -1,9 +1,9 @@
 import { SplashScreen } from 'expo-router';
 import { useSession } from '@sinkplane/shared';
 
-SplashScreen.preventAutoHideAsync();
+void SplashScreen.preventAutoHideAsync();
 
-export function SplashScreenController() {
+export function SplashScreenController(): null {
   const { isLoading } = useSession();
 
   if (!isLoading) {

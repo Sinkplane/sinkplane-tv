@@ -45,9 +45,7 @@
       "bundleIdentifier": "com.cpawl89.sinkplane",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSBonjourServices": [
-          "sinkplane-tv._tcp"
-        ],
+        "NSBonjourServices": ["sinkplane-tv._tcp"],
         "NSLocalNetworkUsageDescription": "Allow sinkplane companion app to discover tv apps on the local network."
       }
     },
@@ -57,7 +55,8 @@
       "output": "static"
     },
     "experiments": {
-      "typedRoutes": true
+      "typedRoutes": true,
+      "reactCompiler": true
     },
     "newArchEnabled": true,
     "name": "sinkplane-tv",

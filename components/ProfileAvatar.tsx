@@ -1,251 +1,84 @@
-import { useState } from 'react';
-import { View, Pressable, Image, StyleSheet, Modal, Text } from 'react-native';
-import { useRouter } from 'expo-router';
-
-import { useColorScheme, useSession, useTheme, useThemeColor } from '@sinkplane/shared';
+import { useState, type ReactElement } from 'react';
+import { Image, Modal, Pressable, StyleSheet, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Creator } from '@sinkplane/shared/types/creator-list.interface';
+import { useSession, useThemeColor } from '@sinkplane/shared';
+
+import { ProfileMenu } from '@/components/profile-menu/ProfileMenu';
+import {
+  staticMenuStyles,
+  useProfileMenuStyles,
+} from '@/components/profile-menu/profile-menu-styles';
+import { BORDER_WIDTH, ICON_SIZE, RADIUS, SPACE } from '@/constants/layout';
 import { useScale } from '@/hooks/useScale';
 
-export function ProfileAvatar() {
-  const [menuVisible, setMenuVisible] = useState(false);
-  const { user, signOut, creators, creator: currentCreator, subscriptions, setCreator, setSubscription } = useSession();
-  const { toggleColorScheme } = useTheme();
-  const resolvedColorScheme = useColorScheme();
-  const router = useRouter();
-  const tintColor = useThemeColor({}, 'tint');
-  const backgroundColor = useThemeColor({}, 'background');
-  const styles = useProfileAvatarStyles();
+const AVATAR_TOP = 40;
+const AVATAR_SIZE = 50;
+
+const staticStyles = StyleSheet.create({
+  container: { position: 'absolute', zIndex: 1000 },
+  avatarButton: { overflow: 'hidden' },
+  avatarPressed: { opacity: 0.7 },
+  avatarContainer: { justifyContent: 'center', alignItems: 'center' },
+  avatar: { width: '100%', height: '100%' },
+});
+
+function useProfileAvatarStyles() {
+  const scale = useScale();
+  const tint = useThemeColor({}, 'tint');
+  return StyleSheet.create({
+    container: { top: AVATAR_TOP * scale, left: SPACE.xl * scale },
+    avatarButton: {
+      borderRadius: RADIUS.pill * scale,
+      borderWidth: BORDER_WIDTH.thin * scale,
+      borderColor: tint,
+    },
+    avatarFocused: { borderColor: tint, borderWidth: BORDER_WIDTH.thick * scale },
+    avatarContainer: { width: AVATAR_SIZE * scale, height: AVATAR_SIZE * scale },
+  });
+}
+
+function AvatarImage(): ReactElement {
+  const { user } = useSession();
   const scale = useScale();
 
-  const isDarkMode = resolvedColorScheme === 'dark';
+  if (user === undefined) {
+    return <Ionicons size={ICON_SIZE.xl * scale} name="person-outline" />;
+  }
+  return <Image source={{ uri: user.profileImage.path }} style={staticStyles.avatar} />;
+}
 
-  const handleToggleTheme = () => {
-    toggleColorScheme();
-    setMenuVisible(false);
-  };
-
-  const handleLogout = () => {
-    setMenuVisible(false);
-    signOut();
-    router.replace('/sign-in');
-  };
-
-  const handleSwitchCreator = (creator: Creator) => {
-    const sub = subscriptions?.find((s) => s.creator === creator.id);
-    if (sub) {
-      setSubscription(sub);
-      setCreator(creator);
-    }
+export function ProfileAvatar(): ReactElement {
+  const [menuVisible, setMenuVisible] = useState(false);
+  const styles = useProfileAvatarStyles();
+  const menuStyles = useProfileMenuStyles();
+  const closeMenu = (): void => {
     setMenuVisible(false);
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[staticStyles.container, styles.container]}>
       <Pressable
         testID="profile-avatar-button"
-        onPress={() => setMenuVisible(true)}
+        onPress={() => {
+          setMenuVisible(true);
+        }}
         style={({ pressed, focused }) => [
+          staticStyles.avatarButton,
           styles.avatarButton,
-          pressed && styles.avatarPressed,
-          focused && styles.avatarFocused
+          pressed && staticStyles.avatarPressed,
+          focused && styles.avatarFocused,
         ]}
       >
-        <View style={styles.avatarContainer}>
-          {!!user && !!user.profileImage ? (
-            <Image source={{ uri: user.profileImage.path }} style={styles.avatar} />
-          ) : (
-            <Ionicons size={30 * scale} name="person-outline" />
-          )}
+        <View style={[staticStyles.avatarContainer, styles.avatarContainer]}>
+          <AvatarImage />
         </View>
       </Pressable>
-
-      <Modal visible={menuVisible} transparent animationType="fade" onRequestClose={() => setMenuVisible(false)}>
-        <View style={styles.modalOverlay}>
-          <Pressable
-            style={StyleSheet.absoluteFill}
-            onPress={() => setMenuVisible(false)}
-            focusable={false}
-          />
-          <View style={styles.menu}>
-            <Text style={styles.menuTitle}>Switch Subscription</Text>
-            {creators?.map((creator, index) => {
-              const isActive = currentCreator?.id === creator.id;
-              return (
-                <Pressable
-                  key={creator.id}
-                  hasTVPreferredFocus={index === 0}
-                  onPress={() => handleSwitchCreator(creator)}
-                  style={({ pressed, focused }) => [
-                    styles.menuItem,
-                    (pressed || focused) && { backgroundColor: tintColor },
-                    isActive && styles.activeMenuItem,
-                  ]}
-                >
-                  {({ focused }) => (
-                    <View style={styles.creatorItem}>
-                      <Image source={{ uri: creator.icon.path }} style={styles.creatorIcon} />
-                      <Text
-                        style={[
-                          styles.menuItemTextNormal,
-                          focused && { color: backgroundColor },
-                          isActive && styles.activeMenuItemText,
-                        ]}
-                      >
-                        {creator.title}
-                      </Text>
-                    </View>
-                  )}
-                </Pressable>
-              );
-            })}
-            <View style={styles.divider} />
-            <Pressable
-              onPress={handleToggleTheme}
-              style={({ pressed, focused }) => [
-                styles.menuItem,
-                (pressed || focused) && { backgroundColor: tintColor }
-              ]}
-            >
-              {({ focused }) => (
-                <View style={styles.creatorItem}>
-                  <Ionicons
-                    size={20 * scale}
-                    name={isDarkMode ? 'sunny' : 'moon'}
-                    color={focused ? backgroundColor : tintColor}
-                  />
-                  <Text style={[
-                    styles.menuItemTextNormal,
-                    focused && { color: backgroundColor }
-                  ]}>
-                    {isDarkMode ? 'Light Mode' : 'Dark Mode'}
-                  </Text>
-                </View>
-              )}
-            </Pressable>
-            <View style={styles.divider} />
-            <Pressable
-              onPress={handleLogout}
-              style={({ pressed, focused }) => [
-                styles.menuItem,
-                (pressed || focused) && { backgroundColor: tintColor }
-              ]}
-            >
-              {({ focused }) => (
-                <Text style={[
-                  styles.menuItemLogoutText,
-                  focused && { color: backgroundColor }
-                ]}>
-                  Logout
-                </Text>
-              )}
-            </Pressable>
-          </View>
+      <Modal visible={menuVisible} transparent animationType="fade" onRequestClose={closeMenu}>
+        <View style={[staticMenuStyles.modalOverlay, menuStyles.modalOverlay]}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={closeMenu} focusable={false} />
+          <ProfileMenu onClose={closeMenu} />
         </View>
       </Modal>
     </View>
   );
 }
-
-const useProfileAvatarStyles = function () {
-  const scale = useScale();
-  const tint = useThemeColor({}, 'tint');
-  const background = useThemeColor({}, 'background');
-  const text = useThemeColor({}, 'text');
-  const icon = useThemeColor({}, 'icon');
-
-  return StyleSheet.create({
-    container: {
-      position: 'absolute',
-      top: 40 * scale,
-      left: 20 * scale,
-      zIndex: 1000,
-    },
-    avatarButton: {
-      borderRadius: 25 * scale,
-      borderWidth: 2 * scale,
-      borderColor: tint,
-      overflow: 'hidden',
-    },
-    avatarFocused: {
-      borderColor: tint,
-      borderWidth: 3 * scale,
-    },
-    avatarPressed: {
-      opacity: 0.7,
-    },
-    avatarContainer: {
-      width: 50 * scale,
-      height: 50 * scale,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    avatar: {
-      width: '100%',
-      height: '100%',
-    },
-    modalOverlay: {
-      flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      justifyContent: 'flex-start',
-      alignItems: 'flex-start',
-      paddingTop: 80 * scale,
-      paddingLeft: 20 * scale,
-    },
-    menu: {
-      backgroundColor: background,
-      borderRadius: 12 * scale,
-      padding: 16 * scale,
-      minWidth: 300 * scale,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.25,
-      shadowRadius: 8,
-      elevation: 5,
-    },
-    menuTitle: {
-      fontSize: 18 * scale,
-      fontWeight: 'bold',
-      marginBottom: 12 * scale,
-      color: text,
-      paddingHorizontal: 8 * scale,
-    },
-    creatorItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12 * scale,
-    },
-    creatorIcon: {
-      width: 30 * scale,
-      height: 30 * scale,
-      borderRadius: 15 * scale,
-    },
-    activeMenuItem: {
-      borderLeftWidth: 4 * scale,
-      borderLeftColor: tint,
-    },
-    activeMenuItemText: {
-      fontWeight: 'bold',
-    },
-    divider: {
-      height: 1 * scale,
-      backgroundColor: icon + '40',
-      marginVertical: 8 * scale,
-    },
-    menuItem: {
-      paddingVertical: 12 * scale,
-      paddingHorizontal: 8 * scale,
-      borderRadius: 8 * scale,
-    },
-    menuItemTextNormal: {
-      fontSize: 16 * scale,
-      color: text,
-      fontWeight: '400',
-    },
-    menuItemLogoutText: {
-      fontSize: 16 * scale,
-      color: '#d32f2f',
-      fontWeight: '600',
-    },
-  });
-};

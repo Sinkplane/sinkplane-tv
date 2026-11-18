@@ -1,207 +1,71 @@
-# AGENTS.md
+# Agents
 
-Guidance for AI coding agents (opencode, Claude Code, Cursor, etc.) working in this repository.
+Sinkplane TV: a fan-made [floatplane.com](https://www.floatplane.com) client for **Apple TV (tvOS)** and **Android TV**, on Expo SDK 57 with the [`react-native-tvos`](https://github.com/react-native-tvos/react-native-tvos) fork, Expo Router, React 19 and React Compiler. Package manager is **pnpm** (Node from `.nvmrc`). Every rule that matters is a gate; run it instead of reading about it.
 
-## Project Overview
+## Commands
 
-Sinkplane TV is a fan-made React Native app for [floatplane.com](https://www.floatplane.com), targeting **Apple TV (tvOS)** and **Android TV**. Built on Expo (SDK 57) with the [`react-native-tvos`](https://github.com/react-native-tvos/react-native-tvos) fork and Expo Router for file-based navigation. Package manager is **pnpm** (config in `pnpm-workspace.yaml`; settings like `nodeLinker: hoisted` live there, NOT in `.npmrc`).
+- `make setup` once (frozen install, points git at `.githooks`). `make check` before you stop: the stop hook, the pre-push hook and CI run it too.
+- Fast feedback: `make test` (unit), `make acceptance` (E2E), `make lint` (eslint `--max-warnings=0`, then knip), `make typecheck`, `make arch`, `make build` (Metro TV export).
+- `make crap` after `make coverage`. `make mutate SCOPE=changed` while hardening (CI runs it on PRs).
+- `make gauntlet` = `check mutate qa`. `make help` lists every target.
+- App: `pnpm start`, `pnpm run ios`, `pnpm run android` (all set `EXPO_TV=1`). Native code needs `pnpm run prebuild:tv` first. EAS profiles: `development_tv`, `preview_tv`, `production_tv`.
 
-Authentication is via Floatplane's official **OIDC device flow** against the `auth.floatplane.com` instance (client ID `hydravion`, same as [Hydravion](https://github.com/Inertia-Network/Hydravion)): the sign-in screen shows a QR code / device code, the user approves at `floatplane.com/link`, and the TV stores the tokens in `expo-secure-store` with automatic refresh. This exists because TV platforms cannot render WebView for Cloudflare Turnstile.
+## Gates
 
-## Essential Commands
+| Gate                                     | Threshold                                                              |
+| ---------------------------------------- | ---------------------------------------------------------------------- |
+| ESLint `strictTypeChecked` + React rules | zero warnings; complexity ≤ 6, ≤ 40 lines/function, ≤ 300 lines/file   |
+| tsc strictest                            | `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, and the rest |
+| Coverage (E2E suite)                     | ≥ 90% statements, branches, functions, lines                           |
+| CRAP (`scripts/crap.mts`)                | ≤ 6 per function, from the unit + E2E coverage reports                 |
+| dependency-cruiser                       | zero violations                                                        |
+| Stryker                                  | `break` in `stryker.config.json`, ratcheted up as tests kill mutants   |
 
-```bash
-# Setup (first time) — clones shared package, installs deps, runs pod install
-./scripts/setup-dev-env.sh
+## Rules
 
-# Install dependencies (postinstall runs patch-package, currently a no-op)
-pnpm install
+- Files in `.gates-protected` need human approval to change. Never loosen a gate to get green.
+- No `useEffect`, no manual memoization, no comments, no `as` (`as const` is fine). Lint errors say what to do instead.
+- Suppressions need `-- reason`; size, complexity, comment and cast rules cannot be disabled inline; coverage and mutation ignore comments are banned.
+- Skills live in `.cursor/skills` (also `.claude/skills`). The `gauntlet` skill runs a story through specifier → coder → cleaner → hardener → qa.
+- Do not commit unless asked. Conventional Commits (`feat(tv): …`, `fix(player): …`).
 
-# TV development (EXPO_TV=1 is set by these scripts)
-pnpm start           # Expo bundler for TV
-pnpm run ios         # Build & run on Apple TV
-pnpm run android     # Build & run on Android TV
-pnpm run prebuild:tv # Clean Expo prebuild WITH TV modifications (required before first TV run)
+### No effects
 
-# Mobile development
-pnpm run prebuild     # Clean prebuild WITHOUT TV modifications
-pnpm exec expo run:ios     # iOS mobile
-pnpm exec expo run:android # Android mobile
+- Derive values during render instead of syncing them into state.
+- Run side effects in the event handler that causes them (`onPress`, `onLoad`, `onEnd`, `onEndReached`).
+- Read server data with react-query (the `@sinkplane/shared` hooks); poll with `refetchInterval`.
+- Subscribe to anything external (timers, native emitters) with `useSyncExternalStore`, or a React 19 ref callback that returns its cleanup.
+- Refresh on screen focus with expo-router's `useFocusEffect`; handle the remote with `useTVEventHandler`.
+- Reset state with a `key`.
 
-# Quality gates — run these before considering work done
-pnpm run lint        # ESLint (expo lint)
-pnpm exec tsc --noEmit     # Typecheck (no dedicated script; use tsc directly)
+## Layout
 
-# Other
-pnpm run web         # Web dev server
-pnpm run deploy      # Export web + EAS deploy
-pnpm run reset-project
-```
+Layers, top to bottom (`make arch` enforces it): `app` → `layouts` → `components` → `hooks` → `constants`, `types`.
 
-### EAS Build Profiles
+- `app/`: Expo Router routes (typed routes). Only routes default-export. `(tabs)/` = Home, History, Live; `video/[id].tsx` = player; `sign-in.tsx` = OIDC device flow.
+- `layouts/`: `TabLayout.tsx` (native tabs on tvOS; `TabLayout.web.tsx` is the JS tab bar used on Android TV and web).
+- `components/`: `ThemedText`/`ThemedView`/`ThemedButton`/`ThemedModal` for light/dark, `videos/` for lists, cards and the player.
+- `hooks/`: `useScale` (`width / 1000` on TV) and `useTextStyles`. Size everything with them, using the tokens in `constants/layout.ts` (`SPACE.md * scale`).
+- `constants/`, `types/`: pure values, helpers and typings.
+- Unit tests sit next to the code as `*.test.ts(x)`. E2E: `__tests__/e2e/*.e2e.test.tsx` boot the real router against an in-memory Floatplane API (`__tests__/e2e/helpers`). QA procedures: `qa/procedures/`.
 
-```bash
-eas build --profile development_tv   # TV dev (internal, simulator/apk)
-eas build --profile preview_tv       # TV preview (internal)
-eas build --profile production_tv    # TV production
-eas build --profile development      # Mobile dev
-eas build --profile preview          # Mobile preview
-eas build --profile production       # Mobile production
-```
+## TV specifics
 
-## Architecture
+- `EXPO_TV=1` switches Metro to TV mode and resolves `.ios.tv.tsx`, `.android.tv.tsx`, `.tv.tsx` before the standard extensions (`metro.config.js`).
+- Navigation is focus-driven: every interactive element is a focusable `Pressable` with a visible focus state; trap focus in modals.
+- Auth is Floatplane's OIDC device flow on `auth.floatplane.com` (client `hydravion`): QR code / device code on the TV, approval at `floatplane.com/link`, tokens in `expo-secure-store` with automatic refresh. TV platforms cannot render the Turnstile WebView.
 
-### Directory Structure
+## `@sinkplane/shared`
 
-- **`app/`** — Expo Router screens (file-based routing, typed routes enabled).
-  - `_layout.tsx` — Root layout (theme provider, font loading).
-  - `(tabs)/` — Tab navigation (Home, Live, About).
-  - `video/[id].tsx` — Video player screen.
-  - `sign-in.tsx` — Authentication screen.
-  - `+not-found.tsx`, `+html.tsx` — 404 and web HTML wrapper.
-- **`components/`** — Reusable UI.
-  - `ThemedText`, `ThemedView` — Theme-aware base components (use these for light/dark support).
-  - `authentication/` — Auth UI (QR codes, status).
-  - `videos/` — Video listing and player components.
-  - `EventHandlingDemo.tsx` — Reference for TV focus-handling patterns.
-- **`hooks/`** — TV-specific hooks only. **`useScale.ts`** (`width / 1000`) powers responsive TV layouts — **always use it** for dimensions/margins/font sizes on TV — together with `useTextStyles`. Reusable hooks/auth/connection code lives in `@sinkplane/shared` (see Shared Package below).
-- **`constants/`** — TV app text styles (`text-styles.ts`) and playback config (`video.ts`). API endpoints and colors live in `@sinkplane/shared`.
-- **`layouts/`** — Layout components (`DualLayoutGridScreen`, `FocusLayoutFlexbox`, `TabLayout`).
-- **`types/`** — TV app asset typings (`images.d.ts`). All Floatplane API / TV protocol interfaces live in `@sinkplane/shared`.
-- **`assets/`** — Images, fonts, TV-specific app icons.
-- **`scripts/`** — `setup-dev-env.sh` (env setup), `reset-project.js`.
-- **`docs/`** — tvOS setup and known-issue docs.
-- **`patches/`** — pnpm patches (`patchedDependencies` in `pnpm-workspace.yaml`); notably the `react-native-video` patch. **Do not delete.**
-- **`plugins/`** — Expo config plugins (`with-tv-scene-lifecycle.js` — UIKit scene lifecycle adoption required by iOS/tvOS 27).
+API client, OIDC device flow, token refresh, `SessionProvider`/`useSession`, content query hooks, theme and colors, and all Floatplane types. Import from the barrel (`import { useSession } from '@sinkplane/shared'`); `Channel`/`Creator` come from `@sinkplane/shared/types/creator-list.interface`.
 
-### Shared Package (`@sinkplane/shared`)
+- Installed from GitHub Packages (`.npmrc`); locally the token comes from `~/.npmrc`, on EAS from the `GITHUB_PACKAGES_TOKEN` environment variable, which `scripts/eas-npmrc-auth.mjs` (`eas-build-pre-install`) writes to the worker's `~/.npmrc`. pnpm never expands `${...}` in repo credentials.
+- The sibling clone `../sinkplane-shared` is the development source: `pnpm run link:shared` points `node_modules/@sinkplane/shared/dist` at its build (re-run after every install), and Jest maps the package to its TypeScript sources (`jest.config.base.js`). Its `node_modules` is a symlink to this app's; never run `pnpm install` inside it.
+- The barrel still re-exports the retired TV companion server (`useTVServer`), so `react-native-tcp-socket`, `react-native-zeroconf` and the cookie manager stay installed.
 
-`@sinkplane/shared` is published to GitHub Packages and installed as a regular dependency (`@sinkplane/shared@^0.1.1`; registry/auth configured in `.npmrc`) so EAS builds resolve the compiled `dist/` output. The sibling repo `../sinkplane-shared` (cloned by `scripts/setup-dev-env.sh`) is the development source: `pnpm run link:shared` symlinks `node_modules/@sinkplane/shared/dist` to the clone's `dist/` build output (Metro watches the clone — see `metro.config.js`), and Jest maps the package to the clone's TypeScript sources directly (see `jest.config.js`). It holds everything reusable across Sinkplane apps:
+## Gotchas
 
-- Floatplane API client (`authenticatedFetch`), OIDC device flow, token refresh
-- Auth context (`SessionProvider` / `useSession`)
-- Content query hooks (videos, delivery, progress, history), `useStorageState`, theme context/hooks, shared colors
-- All shared Floatplane API types
-
-Import from the barrel: `import { useSession } from '@sinkplane/shared'`. The few names that collide with content-side types (`Channel`, `Creator`) are imported via subpath `@sinkplane/shared/types/creator-list.interface`.
-
-`sinkplane-shared` intentionally has **no `node_modules` of its own**: its `node_modules` is a symlink to `../sinkplane-tv/node_modules` (created by `setup-dev-env.sh`) so every tool resolves the exact same module instances. **Never run `pnpm install` inside `sinkplane-shared`** — its `pnpm-workspace.yaml` disables pnpm's install-before-run behavior for exactly this reason.
-
-> ⚠️ EAS builds resolve `@sinkplane/shared` from GitHub Packages — set `GITHUB_PACKAGES_TOKEN` as an EAS environment variable (a PAT with `read:packages` on the Sinkplane org; `eas env:create --scope project --name GITHUB_PACKAGES_TOKEN --value <PAT> --visibility sensitive`). pnpm never expands `${...}` in repo-controlled credentials — not locally and not on EAS workers — so the `eas-build-pre-install` npm script (`scripts/eas-npmrc-auth.mjs`) copies that variable into the worker's `~/.npmrc` before install; locally the token is read from `~/.npmrc` instead. Re-run `pnpm run link:shared` after `pnpm install` — a reinstall recreates `dist/` as a real directory.
-
-### Key Technologies
-
-| Concern | Library |
-|---|---|
-| React Native (TV fork) | `react-native-tvos@0.86.3-0` |
-| Routing | `expo-router` v57 (typed routes) |
-| Data fetching | `@tanstack/react-query` |
-| Animations | `react-native-reanimated` v4.5 |
-| Video | `react-native-video` + `@mux/mux-data-react-native-video` |
-| Auth/token storage | `expo-secure-store` |
-| Auth cookies | Sent manually on request headers (`sails.sid`) |
-| TV config plugin | `@react-native-tvos/config-tv` |
-
-## TV-Specific Development
-
-### The `EXPO_TV` Environment Variable
-
-`EXPO_TV=1` controls TV vs. mobile mode. It is set automatically by `pnpm start`, `pnpm run ios`, `pnpm run android`, and the `*_tv` EAS profiles. For manual commands, prefix with `EXPO_TV=1`.
-
-### TV File Extensions
-
-When `EXPO_TV=1`, Metro (see `metro.config.js`) resolves TV-specific source files in this priority order: `.ios.tv.tsx`, `.android.tv.tsx`, `.tv.tsx`, then standard extensions. Use these for platform-specific overrides.
-
-### Focus Management
-
-TV navigation is remote-based and focus-driven:
-- Use `onFocus` / `onBlur` handlers.
-- Use `TouchableHighlight` or `Pressable` with focus states.
-- Ensure all interactive elements are focusable.
-- Consider focus trapping for modals/overlays.
-- Reference: `components/EventHandlingDemo.tsx`.
-
-### Scaling
-
-Use the `useScale()` hook for all dimensions, margins, and font sizes so the UI stays consistent across TV resolutions.
-
-### TV Builds Require Clean Prebuild
-
-TV builds need `pnpm run prebuild:tv` (clean prebuild with TV modifications) to properly generate native code. Mobile uses `pnpm run prebuild` (no TV modifications).
-
-## Code Style & Conventions
-
-### TypeScript
-
-- **Strict mode** is on (`tsconfig.json` extends `expo/tsconfig.base`).
-- **Path alias**: `@/*` maps to project root — prefer `@/components/...` over relative imports.
-- **No `any`** (`@typescript-eslint/no-explicit-any: error`).
-- Avoid `any` types; document complex types/interfaces.
-- Prefer functional components with hooks over class components.
-
-### Linting / Formatting (enforced)
-
-- ESLint config in `eslint.config.js` runs on commit via Husky `pre-commit` → `lint-staged` → `expo lint --fix`.
-- Notable rules: `max-len: 140`, `complexity: 12`, `eqeqeq: smart`, `no-var`, `prefer-const`, `no-shadow`, `camelcase`, `no-bitwise`.
-- Prettier (`.prettierrc`): single quotes, no trailing comma issues (trailingComma `all`), 2-space indent, `printWidth: 140`, LF line endings, `arrowParens: avoid`.
-
-### File Naming
-
-- Component files: **PascalCase** (`MyComponent.tsx`).
-- Utility files: **kebab-case** (`my-utility.ts`).
-- TV-specific variants: `.tv.tsx`, `.ios.tv.tsx`, `.android.tv.tsx`.
-
-### Validation
-
-- Use **joi** for validation (not yup). Keep schemas near their usage.
-
-### Components
-
-- Use `ThemedText` / `ThemedView` for automatic light/dark mode.
-- Named exports preferred.
-- Reusable components → `/components`; screen components → `/app` (Expo Router conventions).
-
-## Known Issues & Gotchas
-
-1. **iOS/tvOS 27 require scene lifecycle** — UIKit asserts at launch unless the app adopts scene-based lifecycle. `plugins/with-tv-scene-lifecycle.js` registers `ExpoAppSceneDelegate` (shipped with Expo) via a config plugin. Drop the plugin when the Expo template adopts scenes natively.
-
-2. **pnpm settings live in `pnpm-workspace.yaml`** — pnpm v12 no longer reads the `pnpm` field in `package.json` or settings from `.npmrc`. `nodeLinker: hoisted` (required for RN/Metro/CocoaPods), `allowBuilds`, `patchedDependencies`, the `@react-native/metro-config` override, and `minimumReleaseAgeExclude` live there. EAS detects pnpm from `pnpm-lock.yaml` / the `packageManager` field. `react-native` is aliased to `npm:react-native-tvos@...` in dependencies and excluded via `expo.install.exclude`.
-
-3. **CocoaPods on Homebrew Ruby** — `pod` installs to `/opt/homebrew/lib/ruby/gems/<ver>/bin`, which is NOT on PATH by default. It is exported in `~/.zshrc`; `expo run:ios` from non-interactive shells may fail with `spawn pod ENOENT`.
-
-## Testing
-
-Jest is configured with two suites (both run in CI on PRs to `main`):
-- **Unit tests** — `pnpm exec jest --config jest.config.unit.js` (colocated `*.test.ts(x)` files).
-- **E2E integration tests** — `pnpm exec jest` (config in `jest.config.js`); boots the real Expo Router app in Jest against a mocked Floatplane API (see `__tests__/e2e/`), with a 90% coverage floor.
-
-Gates are **lint + typecheck + tests**.
-
-## Commit Conventions
-
-Follow **Conventional Commits**:
-
-```
-<type>(<scope>): <subject>
-
-feat(tv): add focus management for Android TV navigation
-fix(mobile): resolve crash on iOS device rotation
-docs(readme): update installation instructions
-refactor(hooks): simplify useScale hook logic
-```
-
-Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`, `ci`.
-
-### Pull Requests
-
-- Lint + typecheck must pass.
-- Test on relevant platforms (iOS/Android, TV/Mobile).
-- Include screenshots/videos for UI changes (especially TV).
-- Reference related issues.
-- **Do not commit unless explicitly asked.** Only stage intended files; never commit secrets.
-
-## Development Tips
-
-- Use absolute paths when running commands (avoid `cd` chains).
-- If Metro can't resolve modules, run `pnpm exec expo start --clear` and/or `rm -rf node_modules/.cache`.
-- If pod install fails: `cd ios && rm -rf Pods Podfile.lock ~/Library/Developer/Xcode/DerivedData/sinkplane-* && pod install`.
+- iOS/tvOS 27 require the UIKit scene lifecycle: `plugins/with-tv-scene-lifecycle.js` registers `ExpoAppSceneDelegate`. Drop it once the Expo template adopts scenes.
+- pnpm 12 reads settings only from `pnpm-workspace.yaml` (`nodeLinker: hoisted`, `allowBuilds`, `patchedDependencies`, overrides); `.npmrc` holds only registry and auth. `react-native` is aliased to `react-native-tvos` and excluded from `expo install`. Keep `patches/`.
+- CocoaPods on Homebrew Ruby is not on PATH in non-interactive shells (`spawn pod ENOENT`); it is exported in `~/.zshrc`.
+- Metro cannot resolve a module: `pnpm exec expo start --clear`.
