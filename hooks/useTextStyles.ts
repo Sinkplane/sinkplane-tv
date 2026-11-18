@@ -1,10 +1,10 @@
-import { useScale } from './useScale';
 import { useThemeColor } from '@sinkplane/shared';
 
-import { textStyles } from '@/constants/text-styles';
+import { type SizedTextStyle, type TextStyleName, textStyles } from '@/constants/text-styles';
+import { useScale } from '@/hooks/useScale';
 
-export function useTextStyles() {
+export function useTextStyles(): Record<TextStyleName, SizedTextStyle> {
   const linkColor = useThemeColor({}, 'link');
-  const scale = useScale() ?? 1.0;
+  const scale = useScale();
   return textStyles(scale, linkColor);
 }

@@ -1,19 +1,18 @@
-/**
- * E2E: Browsing the catalog — home video list, pagination, sorting, view
- * toggles, channel switching within a creator, and switching subscriptions
- * between creators.
- */
+import { holdRequestsMatching } from './helpers/browse-fetch-gate';
+import { loadRuntime, type Runtime } from './helpers/runtime';
 
-import { loadRuntime, Runtime } from './helpers/runtime';
-
-const videoId = (rt: Runtime, index: number, channelId = 'ch-tech-main'): string => {
-  const videos = rt.api.videosByChannel.get(channelId) ?? [];
-  return videos[index].id;
+const channelVideo = (rt: Runtime, index: number, channelId = 'ch-tech-main') => {
+  const video = rt.api.videosByChannel.get(channelId)?.[index];
+  if (video === undefined) {
+    throw new Error(`No fixture video ${String(index)} in ${channelId}`);
+  }
+  return video;
 };
 
-/** Boot the app signed-in and wait for the home list to appear. */
-async function bootHome(): Promise<Runtime> {
-  const rt = loadRuntime();
+const videoId = (rt: Runtime, index: number, channelId = 'ch-tech-main'): string =>
+  channelVideo(rt, index, channelId).id;
+
+async function bootHome(rt: Runtime = loadRuntime()): Promise<Runtime> {
   rt.seedSession();
   await rt.renderApp();
   await rt.until(() => {
@@ -22,34 +21,47 @@ async function bootHome(): Promise<Runtime> {
   return rt;
 }
 
-const scrollNearBottom = (rt: Runtime) => {
-  rt.fireEvent.scroll(rt.screen.getByTestId('parallax-scroll-view'), {
+const scrollTo = async (rt: Runtime, offsetY: number): Promise<void> => {
+  await rt.fireEvent.scroll(rt.screen.getByTestId('parallax-scroll-view'), {
     nativeEvent: {
-      contentOffset: { y: 5000, x: 0 },
+      contentOffset: { y: offsetY, x: 0 },
       contentSize: { height: 6000, width: 1920 },
       layoutMeasurement: { height: 1080, width: 1920 },
     },
   });
 };
 
+const pagedRequestCount = (rt: Runtime): number =>
+  rt.api
+    .requestsTo('/api/v3/content/creator')
+    .filter((req) => req.params.get('fetchAfter') === '20').length;
+
+const postRequested = (rt: Runtime, id: string): boolean =>
+  rt.api.requestsTo('/api/v3/content/post').some((req) => req.params.get('id') === id);
+
+async function pickChannel(rt: Runtime, title: string): Promise<void> {
+  await rt.fireEvent.press(rt.screen.getByText('Change Channel'));
+  await rt.until(() => {
+    expect(rt.screen.getByText('Select Channel')).toBeTruthy();
+  });
+  await rt.fireEvent.press(rt.screen.getByText(title));
+}
+
 describe('E2E: home video list', () => {
   it('renders the first page of 20 videos with metadata formatting', async () => {
     const rt = await bootHome();
 
-    // Cards for the whole first page exist…
     expect(rt.screen.getByTestId(`video-card-${videoId(rt, 0)}`)).toBeTruthy();
     expect(rt.screen.getByTestId(`video-card-${videoId(rt, 19)}`)).toBeTruthy();
-    // …and page two has not been fetched yet.
     expect(rt.screen.queryByText('Main Channel Video 21')).toBeNull();
 
-    // Formatting regression probes: 1,500,000 likes → "1.5M", 3725s → "1:02:05".
     expect(rt.screen.getByText('1.5M')).toBeTruthy();
     expect(rt.screen.getByText('1:02:05')).toBeTruthy();
   });
 
   it('loads the next page when scrolling near the bottom', async () => {
     const rt = await bootHome();
-    scrollNearBottom(rt);
+    await scrollTo(rt, 5000);
 
     await rt.until(() => {
       expect(rt.screen.getByText('Main Channel Video 21')).toBeTruthy();
@@ -58,51 +70,144 @@ describe('E2E: home video list', () => {
 
     const pagedRequest = rt.api
       .requestsTo('/api/v3/content/creator')
-      .find(req => req.params.get('fetchAfter') === '20');
+      .find((req) => req.params.get('fetchAfter') === '20');
     expect(pagedRequest).toBeDefined();
     expect(pagedRequest?.params.get('channel')).toBe('ch-tech-main');
+  });
+
+  it('shows a loading indicator while the next page is in flight', async () => {
+    const rt = await bootHome();
+    const releaseNextPage = holdRequestsMatching(rt, 'fetchAfter=20');
+
+    await scrollTo(rt, 5000);
+    await rt.until(() => {
+      expect(rt.screen.getByText('Loading more videos...')).toBeTruthy();
+    });
+
+    releaseNextPage();
+    await rt.until(() => {
+      expect(rt.screen.getByText('Main Channel Video 21')).toBeTruthy();
+    });
+    expect(rt.screen.queryByText('Loading more videos...')).toBeNull();
+  });
+
+  it('renders the home screen with the dark theme', async () => {
+    const rt = loadRuntime();
+    rt.secureStore.items.set('themeMode', JSON.stringify('dark'));
+    await bootHome(rt);
+
+    expect(rt.screen.getByTestId('parallax-scroll-view')).toBeTruthy();
+    expect(rt.screen.getByText('Main Channel Videos')).toBeTruthy();
+  });
+
+  it('does not request another page when the list is far from the bottom', async () => {
+    const rt = await bootHome();
+    await scrollTo(rt, 0);
+    await rt.advanceTime(500);
+
+    expect(pagedRequestCount(rt)).toBe(0);
+  });
+
+  it('stops paging once the last page has loaded', async () => {
+    const rt = await bootHome();
+    await scrollTo(rt, 5000);
+    await rt.until(() => {
+      expect(rt.screen.getByText('Main Channel Video 26')).toBeTruthy();
+    });
+
+    await scrollTo(rt, 5000);
+    await rt.advanceTime(500);
+
+    expect(pagedRequestCount(rt)).toBe(1);
+    expect(
+      rt.api
+        .requestsTo('/api/v3/content/creator')
+        .some((req) => req.params.get('fetchAfter') === '26'),
+    ).toBe(false);
   });
 
   it('toggles between newest and oldest sort', async () => {
     const rt = await bootHome();
     expect(rt.screen.getByText('Newest Videos')).toBeTruthy();
 
-    rt.fireEvent.press(rt.screen.getByText('Newest Videos'));
+    await rt.fireEvent.press(rt.screen.getByText('Newest Videos'));
 
     await rt.until(() => {
       expect(rt.screen.getByText('Oldest Videos')).toBeTruthy();
     });
-    // Oldest first → video 26 (the oldest fixture) is on the first page.
     await rt.until(() => {
       expect(rt.screen.getByText('Main Channel Video 26')).toBeTruthy();
     });
-    expect(rt.api.requestsTo('/api/v3/content/creator').some(req => req.params.get('sort') === 'ASC')).toBe(true);
+    expect(
+      rt.api.requestsTo('/api/v3/content/creator').some((req) => req.params.get('sort') === 'ASC'),
+    ).toBe(true);
+
+    await rt.fireEvent.press(rt.screen.getByText('Oldest Videos'));
+    await rt.until(() => {
+      expect(rt.screen.getByText('Newest Videos')).toBeTruthy();
+    });
   });
 
   it('toggles between card and list view', async () => {
     const rt = await bootHome();
     expect(rt.screen.getByTestId(`video-card-${videoId(rt, 0)}`)).toBeTruthy();
 
-    rt.fireEvent.press(rt.screen.getByText('List View'));
+    await rt.fireEvent.press(rt.screen.getByText('List View'));
 
     await rt.until(() => {
       expect(rt.screen.getByTestId(`video-list-item-${videoId(rt, 0)}`)).toBeTruthy();
     });
     expect(rt.screen.queryByTestId(`video-card-${videoId(rt, 0)}`)).toBeNull();
-    // List items show the description.
     expect(rt.screen.getByText(/Description for Main Channel video 01/)).toBeTruthy();
+
+    await rt.fireEvent.press(rt.screen.getByText('Card View'));
+    await rt.until(() => {
+      expect(rt.screen.getByTestId(`video-card-${videoId(rt, 0)}`)).toBeTruthy();
+    });
+  });
+
+  it('opens a video from the list view', async () => {
+    const rt = await bootHome();
+    await rt.fireEvent.press(rt.screen.getByText('List View'));
+    await rt.until(() => {
+      expect(rt.screen.getByTestId(`video-list-item-${videoId(rt, 0)}`)).toBeTruthy();
+    });
+
+    await rt.fireEvent(rt.screen.getByTestId(`video-list-item-${videoId(rt, 0)}`), 'focus');
+    await rt.fireEvent(rt.screen.getByTestId(`video-list-item-${videoId(rt, 0)}`), 'blur');
+    await rt.fireEvent.press(rt.screen.getByTestId(`video-list-item-${videoId(rt, 0)}`));
+
+    await rt.until(() => {
+      expect(postRequested(rt, videoId(rt, 0))).toBe(true);
+    });
+  });
+
+  it('opens a video from a focused card', async () => {
+    const rt = await bootHome();
+    const card = rt.screen.getByTestId(`video-card-${videoId(rt, 1)}`);
+
+    await rt.fireEvent(card, 'focus');
+    await rt.fireEvent(card, 'blur');
+    await rt.fireEvent.press(card);
+
+    await rt.until(() => {
+      expect(postRequested(rt, videoId(rt, 1))).toBe(true);
+    });
   });
 
   it('shows watch progress bars on in-progress videos', async () => {
     const rt = loadRuntime();
-    rt.api.seedProgress(rt.api.videosByChannel.get('ch-tech-main')![0], 600);
-    rt.seedSession();
-    await rt.renderApp();
-
+    rt.api.seedProgress(channelVideo(rt, 0), 600);
+    await bootHome(rt);
     await rt.until(() => {
       expect(rt.screen.getByTestId(`video-progress-${videoId(rt, 0)}`)).toBeTruthy();
     });
     expect(rt.screen.queryByTestId(`video-progress-${videoId(rt, 1)}`)).toBeNull();
+
+    await rt.fireEvent.press(rt.screen.getByText('List View'));
+    await rt.until(() => {
+      expect(rt.screen.getByTestId(`video-list-item-${videoId(rt, 0)}`)).toBeTruthy();
+    });
   });
 
   it('shows an error surface when the videos endpoint fails persistently', async () => {
@@ -121,21 +226,16 @@ describe('E2E: home video list', () => {
     });
   });
 
-  // TODO(e2e): presses inside the channel drawer fire handleChannelSelect
-  // (verified by instrumentation) but test-renderer does not commit the
-  // resulting setState, so the drawer never closes. Re-enable once the
-  // Modal/act interaction is resolved.
-  it.skip('shows an empty state for a channel with no videos', async () => {
+  it('shows an empty state for a channel with no videos', async () => {
     const rt = loadRuntime();
-    rt.api.registerChannelVideos(rt.api.creators[0], 'ch-tech-side', 0);
-    rt.seedSession();
-    await rt.renderApp();
+    const [techCreator] = rt.api.creators;
+    if (techCreator === undefined) {
+      throw new Error('No fixture creator');
+    }
+    rt.api.registerChannelVideos(techCreator, 'ch-tech-side', 0);
+    await bootHome(rt);
 
-    rt.fireEvent.press(rt.screen.getByText('Change Channel'));
-    await rt.until(() => {
-      expect(rt.screen.getByText('Select Channel')).toBeTruthy();
-    });
-    rt.fireEvent.press(rt.screen.getByText('Side Channel'));
+    await pickChannel(rt, 'Side Channel');
 
     await rt.until(() => {
       expect(rt.screen.getByText('Side Channel Videos')).toBeTruthy();
@@ -147,29 +247,34 @@ describe('E2E: home video list', () => {
 });
 
 describe('E2E: channel switching', () => {
-  // TODO(e2e): same drawer/act limitation as the empty-state test above —
-  // the selection handler runs but the modal never closes in the test env.
-  it.skip('switches channels through the channel drawer', async () => {
+  it('switches channels through the channel drawer', async () => {
     const rt = await bootHome();
 
-    rt.fireEvent.press(rt.screen.getByText('Change Channel'));
-    await rt.until(() => {
-      expect(rt.screen.getByText('Select Channel')).toBeTruthy();
-    });
-    // Both of the creator's channels are listed.
-    expect(rt.screen.getByText('Main Channel')).toBeTruthy();
-    expect(rt.screen.getByText('Side Channel')).toBeTruthy();
-
-    rt.fireEvent.press(rt.screen.getByText('Side Channel'));
+    await pickChannel(rt, 'Side Channel');
 
     await rt.until(() => {
       expect(rt.screen.getByText('Side Channel Videos')).toBeTruthy();
     });
-    // The list is now fetched for the other channel.
+    expect(rt.screen.queryByText('Select Channel')).toBeNull();
     const sideRequest = rt.api
       .requestsTo('/api/v3/content/creator')
-      .find(req => req.params.get('channel') === 'ch-tech-side');
+      .find((req) => req.params.get('channel') === 'ch-tech-side');
     expect(sideRequest).toBeDefined();
+  });
+
+  it('closes the channel drawer without changing the channel', async () => {
+    const rt = await bootHome();
+    await rt.fireEvent.press(rt.screen.getByText('Change Channel'));
+    await rt.until(() => {
+      expect(rt.screen.getByText('Select Channel')).toBeTruthy();
+    });
+
+    await rt.fireEvent.press(rt.screen.getByTestId('modal-close-button'));
+
+    await rt.until(() => {
+      expect(rt.screen.queryByText('Select Channel')).toBeNull();
+    });
+    expect(rt.screen.getByText('Main Channel Videos')).toBeTruthy();
   });
 });
 
@@ -177,20 +282,32 @@ describe('E2E: switching between creators', () => {
   it('switches the active subscription from the profile menu', async () => {
     const rt = await bootHome();
 
-    rt.fireEvent.press(rt.screen.getByTestId('profile-avatar-button'));
+    await rt.fireEvent.press(rt.screen.getByTestId('profile-avatar-button'));
     await rt.until(() => {
       expect(rt.screen.getByText('Switch Subscription')).toBeTruthy();
     });
 
-    rt.fireEvent.press(rt.screen.getByText('Gaming Channel'));
+    await rt.fireEvent.press(rt.screen.getByText('Gaming Channel'));
 
-    // Home now shows the gaming creator's default channel videos.
     await rt.until(() => {
       expect(rt.screen.getByTestId(`video-card-${videoId(rt, 0, 'ch-gaming-main')}`)).toBeTruthy();
     });
     const gamingRequest = rt.api
       .requestsTo('/api/v3/content/creator')
-      .find(req => req.params.get('id') === 'creator-gaming');
+      .find((req) => req.params.get('id') === 'creator-gaming');
     expect(gamingRequest).toBeDefined();
+  });
+});
+
+describe('E2E: subscribed creator without channels', () => {
+  it('shows the not-subscribed message', async () => {
+    const rt = loadRuntime();
+    rt.api.creators = rt.api.creators.map((creator) => ({ ...creator, channels: [] }));
+    rt.seedSession();
+    await rt.renderApp();
+
+    await rt.until(() => {
+      expect(rt.screen.getByText('You are not subscribed to any creators')).toBeTruthy();
+    });
   });
 });

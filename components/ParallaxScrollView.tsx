@@ -1,68 +1,94 @@
 import type { PropsWithChildren, ReactElement } from 'react';
-import { StyleSheet, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
+import { StyleSheet } from 'react-native';
 import Animated, {
+  type AnimatedRef,
   interpolate,
   useAnimatedRef,
   useAnimatedStyle,
-  useScrollViewOffset
+  useScrollOffset,
 } from 'react-native-reanimated';
 
+import type { ScrollEvent } from '@/components/infinite-scroll';
 import { ThemedView } from '@/components/ThemedView';
-import { useColorScheme } from '@sinkplane/shared';
+import { SPACE } from '@/constants/layout';
 import { useScale } from '@/hooks/useScale';
+import { useColorScheme } from '@sinkplane/shared';
 
 type Props = PropsWithChildren<{
   headerImage: ReactElement;
   headerBackgroundColor: { dark: string; light: string };
-  onScroll?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
+  onScroll?: ((event: ScrollEvent) => void) | undefined;
 }>;
 
-export default function ParallaxScrollView({
+const HEADER_HEIGHT = 125;
+const SCROLL_EVENT_THROTTLE_MS = 16;
+const OVERSCROLL_TRANSLATE_RATE = 0.5;
+const PARALLAX_RATE = 0.75;
+const OVERSCROLL_ZOOM = 2;
+
+function useParallaxScrollViewStyles() {
+  const scale = useScale();
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    header: {
+      height: HEADER_HEIGHT * scale,
+      overflow: 'hidden',
+    },
+    content: {
+      flex: 1,
+      padding: SPACE.xxxl * scale,
+      gap: SPACE.lg * scale,
+      overflow: 'hidden',
+    },
+  });
+}
+
+function useParallaxHeaderStyle(scrollRef: AnimatedRef<Animated.ScrollView>) {
+  const scrollOffset = useScrollOffset(scrollRef);
+  const headerHeight = HEADER_HEIGHT * useScale();
+  return useAnimatedStyle(() => {
+    const range = [-headerHeight, 0, headerHeight];
+    return {
+      transform: [
+        {
+          translateY: interpolate(scrollOffset.value, range, [
+            -headerHeight * OVERSCROLL_TRANSLATE_RATE,
+            0,
+            headerHeight * PARALLAX_RATE,
+          ]),
+        },
+        { scale: interpolate(scrollOffset.value, range, [OVERSCROLL_ZOOM, 1, 1]) },
+      ],
+    };
+  });
+}
+
+export function ParallaxScrollView({
   children,
   headerImage,
   headerBackgroundColor,
-  onScroll
-}: Props) {
+  onScroll,
+}: Props): ReactElement {
   const colorScheme = useColorScheme() === 'dark' ? 'dark' : 'light';
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
-  const scrollOffset = useScrollViewOffset(scrollRef);
-  const scale = useScale();
+  const headerAnimatedStyle = useParallaxHeaderStyle(scrollRef);
   const styles = useParallaxScrollViewStyles();
-
-  const HEADER_HEIGHT = 125 * scale;
-
-  const headerAnimatedStyle = useAnimatedStyle(() => ({
-      transform: [
-        {
-          translateY: interpolate(
-            scrollOffset.value,
-            [-HEADER_HEIGHT, 0, HEADER_HEIGHT],
-            [-HEADER_HEIGHT / 2, 0, HEADER_HEIGHT * 0.75]
-          )
-        },
-        {
-          scale: interpolate(
-            scrollOffset.value,
-            [-HEADER_HEIGHT, 0, HEADER_HEIGHT],
-            [2, 1, 1]
-          )
-        }
-      ]
-    }));
 
   return (
     <ThemedView style={styles.container}>
       <Animated.ScrollView
         ref={scrollRef}
         testID="parallax-scroll-view"
-        scrollEventThrottle={16}
+        scrollEventThrottle={SCROLL_EVENT_THROTTLE_MS}
         onScroll={onScroll}
       >
         <Animated.View
           style={[
             styles.header,
             { backgroundColor: headerBackgroundColor[colorScheme] },
-            headerAnimatedStyle
+            headerAnimatedStyle,
           ]}
         >
           {headerImage}
@@ -72,22 +98,3 @@ export default function ParallaxScrollView({
     </ThemedView>
   );
 }
-
-const useParallaxScrollViewStyles = function () {
-  const scale = useScale();
-  return StyleSheet.create({
-    container: {
-      flex: 1
-    },
-    header: {
-      height: 125 * scale,
-      overflow: 'hidden'
-    },
-    content: {
-      flex: 1,
-      padding: 32 * scale,
-      gap: 16 * scale,
-      overflow: 'hidden'
-    }
-  });
-};

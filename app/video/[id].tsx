@@ -1,187 +1,119 @@
-import { ActivityIndicator, Alert, StyleSheet, View } from 'react-native';
+import { type ReactElement, type RefObject, useRef, useState } from 'react';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
+import { useSession } from '@sinkplane/shared';
 
-import { useGetVideoDelivery, useGetVideoPost, useGetVideoProgress, useSession, VideoDelivery } from '@sinkplane/shared';
-import { useEffect, useState, useCallback, useMemo } from 'react';
-import { VideoPlayer } from '@/components/videos/VideoPlayer';
+import { alertLaunchError } from '@/components/videos/launch-error';
+import { PlaybackErrorAlert } from '@/components/videos/PlaybackErrorAlert';
 import { RelatedVideosGrid } from '@/components/videos/RelatedVideosGrid';
-import { toCaptionTracks } from '@/components/videos/caption-tracks';
-import { usePlaybackPreferences } from '@/hooks/usePlaybackPreferences';
+import { VideoPlayer, type VideoPlayerController } from '@/components/videos/VideoPlayer';
+import {
+  type PlaybackSession,
+  type ReadyPlayback,
+  type VideoPlayback,
+  useVideoPlayback,
+} from '@/hooks/useVideoPlayback';
 
-// eslint-disable-next-line complexity
-export default function VideoDetailScreen() {
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loader: {
+    position: 'absolute',
+    zIndex: 1,
+  },
+});
+
+const useScreenPlayback = (): {
+  id: string;
+  session: PlaybackSession;
+  playback: VideoPlayback;
+} => {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { token, tokenExpiration } = useSession();
-  const [streamUrl, setStreamUrl] = useState<{ uri: string; headers?: Record<string, string> }>({
-    uri: '',
-  });
+  const session = { token: token ?? undefined, tokenExpiration: tokenExpiration ?? undefined };
+  return { id, session, playback: useVideoPlayback(id, session) };
+};
+
+interface PlayerStageProps {
+  readonly id: string;
+  readonly session: PlaybackSession;
+  readonly playback: ReadyPlayback;
+  readonly controllerRef: RefObject<VideoPlayerController | null>;
+  readonly onLoadingChange: (loading: boolean) => void;
+  readonly onEndedChange: (ended: boolean) => void;
+}
+
+const PlayerStage = ({
+  id,
+  session,
+  playback,
+  controllerRef,
+  onLoadingChange,
+  onEndedChange,
+}: PlayerStageProps): ReactElement => (
+  <VideoPlayer
+    id={id}
+    token={session.token}
+    source={playback.source}
+    controllerRef={controllerRef}
+    handleLoad={() => {
+      onLoadingChange(false);
+    }}
+    handleBuffer={({ isBuffering }) => {
+      onLoadingChange(isBuffering);
+    }}
+    handleError={alertLaunchError}
+    handleEnd={() => {
+      onEndedChange(true);
+    }}
+    initialSeek={playback.initialSeek}
+    captionTracks={playback.captionTracks}
+    {...playback.preferences}
+  />
+);
+
+export default function VideoDetailScreen(): ReactElement {
+  const { id, session, playback } = useScreenPlayback();
+  const controllerRef = useRef<VideoPlayerController>(null);
   const [videoLoading, setVideoLoading] = useState(true);
   const [hasEnded, setHasEnded] = useState(false);
-  const [replayToken, setReplayToken] = useState(0);
-
-  // Fetch video post details
-  const { data: videoPost, error: postError } = useGetVideoPost(token ?? undefined, tokenExpiration ?? undefined, id);
-
-  // Fetch video delivery/stream URL
-  const { data: videoDelivery, error: deliveryError } = useGetVideoDelivery(
-    token ?? undefined,
-    tokenExpiration ?? undefined,
-    videoPost?.videoAttachments?.[0]?.guid ?? undefined,
-  );
-
-  // Fallback: Fetch progress from the batch endpoint
-  const videoIds = useMemo(() => (id ? [id] : []), [id]);
-  const { data: batchProgressData } = useGetVideoProgress(token ?? undefined, videoIds);
-
-  // Determine initial seek time
-  const initialProgress = useMemo(() => {
-    // 1. Check videoPost root
-    if (videoPost?.progress && videoPost.progress > 0) {
-      return videoPost.progress;
-    }
-
-    // 2. Check batch endpoint (treating as seconds)
-    if (batchProgressData && batchProgressData.length > 0) {
-      return batchProgressData[0].progress;
-    }
-
-    return 0;
-  }, [videoPost, batchProgressData]);
-
-  const error = postError || deliveryError;
-
-  // Shown in the native player's info panel and Now Playing.
-  const title = videoPost?.title;
-  const subtitle = videoPost?.channel?.title;
-  const description = videoPost?.text?.replace(/<[^>]*>/g, '').trim();
-  const imageUri = videoPost?.thumbnail?.path;
-  const source = useMemo(
-    () => ({ ...streamUrl, metadata: { title, subtitle, description, imageUri } }),
-    [streamUrl, title, subtitle, description, imageUri],
-  );
-
-  const authHeaders = useMemo(() => {
-    const headers: Record<string, string> = {
-      'User-Agent': 'SinkplaneTV/1.0 (AppleTV; iOS)',
-    };
-
-    if (token) {
-      if (token.startsWith('ey')) {
-        headers.Authorization = `Bearer ${token}`;
-      } else {
-        headers.Cookie = `sails.sid=${token}`;
-      }
-    }
-
-    return headers;
-  }, [token]);
-
-  const textTracks = videoPost?.videoAttachments?.[0]?.textTracks;
-  const captionTracks = useMemo(() => toCaptionTracks(textTracks, authHeaders), [textTracks, authHeaders]);
-  const { ready: preferencesReady, ...playbackPreferences } = usePlaybackPreferences(captionTracks);
-
-  const handleStreamUrl = useCallback((data: VideoDelivery) => {
-    if (!data) return;
-    const group = (data.groups ?? [undefined])[0];
-    const origin = (group?.origins ?? [undefined])[0];
-    const variants = (group.variants ?? []).filter(v => {
-      const isEnabled = v.enabled === undefined || v.enabled !== false;
-      const hasUrl = v.url && v.url !== '';
-      const isDenied = v.meta?.common?.access?.deniedReason;
-      return isEnabled && hasUrl && !isDenied;
-    });
-
-    const variant = variants[variants.length - 1];
-
-    if (!origin || !variant) {
-      return handleError(new Error('No playable video variants found.'));
-    }
-
-    const originUrl = origin.url.endsWith('/') ? origin.url.slice(0, -1) : origin.url;
-    const variantUrl = variant.url.startsWith('/') ? variant.url : '/' + variant.url;
-    const url = `${originUrl}${variantUrl}`;
-
-    setStreamUrl({ uri: url, headers: authHeaders });
-  }, [authHeaders]);
-
-  useEffect(() => {
-    if (error) handleError(error);
-    if (videoDelivery) handleStreamUrl(videoDelivery);
-  }, [videoDelivery, error, handleStreamUrl]);
-
-  const handleError = (err: Error | unknown) => {
-    console.error(err);
-    Alert.alert('Error', 'Error launching video. Please try again');
-  };
-
-  const handleLoad = () => {
-    setVideoLoading(false);
-  };
-
-  const handleBuffer = (data: { isBuffering: boolean }) => {
-    setVideoLoading(data.isBuffering);
-  };
-
-  const styles = useVideoDetailStyles();
-
-  const isReady = videoPost && videoDelivery && streamUrl.uri !== '' && preferencesReady;
-
-  const handleEnd = useCallback(() => {
-    setHasEnded(true);
-  }, []);
-
-  const handleReplay = useCallback(() => {
-    setHasEnded(false);
-    setVideoLoading(false);
-    setReplayToken(t => t + 1);
-  }, []);
 
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.container}>
-        {(!isReady || videoLoading) && <ActivityIndicator style={styles.loader} size="large" />}
-        {isReady && (
-          <VideoPlayer
+        {(playback.status !== 'ready' || videoLoading) && (
+          <ActivityIndicator testID="video-loading" style={styles.loader} size="large" />
+        )}
+        {playback.status === 'ready' && (
+          <PlayerStage
             id={id}
-            token={token ?? undefined}
-            source={source}
-            handleLoad={handleLoad}
-            handleBuffer={handleBuffer}
-            handleError={e => handleError(e.error)}
-            handleEnd={handleEnd}
-            title={videoPost.title}
-            initialSeek={initialProgress}
-            replayToken={replayToken}
-            captionTracks={captionTracks}
-            {...playbackPreferences}
+            session={session}
+            playback={playback}
+            controllerRef={controllerRef}
+            onLoadingChange={setVideoLoading}
+            onEndedChange={setHasEnded}
           />
         )}
-        {hasEnded && id && (
+        {hasEnded && (
           <RelatedVideosGrid
             videoId={id}
-            token={token ?? undefined}
-            tokenExpiration={tokenExpiration ?? undefined}
-            onReplay={handleReplay}
+            token={session.token}
+            tokenExpiration={session.tokenExpiration}
+            onReplay={() => {
+              setHasEnded(false);
+              setVideoLoading(false);
+              controllerRef.current?.replay();
+            }}
           />
         )}
+        {playback.status === 'failed' && <PlaybackErrorAlert />}
       </View>
     </>
   );
 }
-
-const useVideoDetailStyles = function () {
-  return StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: '#000',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    loader: {
-      position: 'absolute',
-      zIndex: 1,
-    },
-  });
-};

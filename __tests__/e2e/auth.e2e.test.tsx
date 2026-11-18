@@ -1,11 +1,6 @@
-/**
- * E2E: Login / authentication flows.
- *
- * Covers the OIDC device-code sign-in (the primary TV login path), its error
- * and expiry branches, session persistence across an app restart, and sign-out.
- */
+import { loadRuntime, type Runtime } from './helpers/runtime';
 
-import { loadRuntime, Runtime } from './helpers/runtime';
+const EVERY_ATTEMPT = Number.POSITIVE_INFINITY;
 
 describe('E2E: login (OIDC device flow)', () => {
   let rt: Runtime;
@@ -16,20 +11,16 @@ describe('E2E: login (OIDC device flow)', () => {
 
   it('starts the device flow, shows the code + QR and completes login', async () => {
     await rt.renderApp();
-
-    // The flow starts on mount: device-auth request → user code + QR rendered.
     await rt.until(() => {
       expect(rt.screen.getByText('FPQD-1001')).toBeTruthy();
     });
-    expect(rt.screen.getByTestId('qr-code').props.children).toBe('https://www.floatplane.com/link?code=FPQD-1001');
+    expect(rt.screen.getByTestId('qr-code')).toHaveTextContent(
+      'https://www.floatplane.com/link?code=FPQD-1001',
+    );
     expect(rt.screen.getByText('Scan the QR code to sign in on another device')).toBeTruthy();
     expect(rt.api.deviceAuthCalls).toBe(1);
-
-    // "Approve" the login on the other device; next poll exchanges the code.
     rt.api.approveDeviceLogin();
     await rt.advanceTime(1000);
-
-    // Profile → subscriptions → creators → signed in home screen.
     await rt.until(() => {
       expect(rt.screen.getByText('Main Channel Video 01')).toBeTruthy();
     });
@@ -63,8 +54,6 @@ describe('E2E: login (OIDC device flow)', () => {
     await rt.until(() => {
       expect(rt.screen.getByText('Login code expired. Please try again.')).toBeTruthy();
     });
-
-    // Auto-restart after 2s issues a brand new code.
     await rt.advanceTime(2100);
     await rt.until(() => {
       expect(rt.screen.getByText('FPQD-1002')).toBeTruthy();
@@ -82,9 +71,7 @@ describe('E2E: login (OIDC device flow)', () => {
     expect(rt.screen.getByText('Try Again')).toBeTruthy();
 
     rt.api.deviceAuthFailure = null;
-    rt.fireEvent.press(rt.screen.getByText('Try Again'));
-
-    // The retry issues a brand-new device request with a new code.
+    await rt.fireEvent.press(rt.screen.getByText('Try Again'));
     await rt.until(() => {
       expect(rt.screen.getByText('FPQD-1002')).toBeTruthy();
     });
@@ -108,9 +95,12 @@ describe('E2E: login (OIDC device flow)', () => {
 
   it('stays on sign-in when the profile cannot be fetched after approval', async () => {
     const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
-    // Persistent failure: the profile query auto-fetches, handleLogin
-    // refetches, and react-query retries — every attempt must see the 500.
-    rt.api.failRequests('GET', '/api/v3/status', { status: 500, body: { message: 'nope' } }, Number.POSITIVE_INFINITY);
+    rt.api.failRequests(
+      'GET',
+      '/api/v3/status',
+      { status: 500, body: { message: 'nope' } },
+      EVERY_ATTEMPT,
+    );
 
     await rt.renderApp();
     await rt.until(() => {
@@ -119,8 +109,6 @@ describe('E2E: login (OIDC device flow)', () => {
 
     rt.api.approveDeviceLogin();
     await rt.advanceTime(1000);
-
-    // Login bailed out after the token exchange — still signed out.
     await rt.until(() => {
       expect(consoleError).toHaveBeenCalledWith('[SignIn] Login failed:', expect.any(Error));
     });
@@ -146,7 +134,6 @@ describe('E2E: session persistence and sign-out', () => {
     await rt.until(() => {
       expect(rt.screen.getByText('Main Channel Video 01')).toBeTruthy();
     });
-    // The signed-out branch is not rendered at all.
     expect(rt.screen.queryByText('Sign In to Floatplane')).toBeNull();
   });
 
@@ -158,11 +145,11 @@ describe('E2E: session persistence and sign-out', () => {
       expect(rt.screen.getByText('Main Channel Video 01')).toBeTruthy();
     });
 
-    rt.fireEvent.press(rt.screen.getByTestId('profile-avatar-button'));
+    await rt.fireEvent.press(rt.screen.getByTestId('profile-avatar-button'));
     await rt.until(() => {
       expect(rt.screen.getByText('Logout')).toBeTruthy();
     });
-    rt.fireEvent.press(rt.screen.getByText('Logout'));
+    await rt.fireEvent.press(rt.screen.getByText('Logout'));
 
     await rt.until(() => {
       expect(rt.screen.getByText('Sign In to Floatplane')).toBeTruthy();

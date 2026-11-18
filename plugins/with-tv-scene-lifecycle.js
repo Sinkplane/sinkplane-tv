@@ -85,25 +85,23 @@ class ReactNativeDelegate: ExpoReactNativeFactoryDelegate {
 }
 `;
 
-function withSceneLifecycleAppDelegate (config) {
-  return withAppDelegate(config, (props) => {
-    props.modResults.language = 'swift';
-    props.modResults.contents = APP_DELEGATE_SWIFT;
-    return props;
-  });
+function withSceneLifecycleAppDelegate(config) {
+  return withAppDelegate(config, (props) => ({
+    ...props,
+    modResults: { ...props.modResults, language: 'swift', contents: APP_DELEGATE_SWIFT },
+  }));
 }
 
-function withSceneManifest (config) {
-  return withInfoPlist(config, (props) => {
-    props.modResults.UIApplicationSceneManifest = {
-      UIApplicationSupportsMultipleScenes: false,
-    };
-    return props;
-  });
+function withSceneManifest(config) {
+  return withInfoPlist(config, (props) => ({
+    ...props,
+    modResults: {
+      ...props.modResults,
+      UIApplicationSceneManifest: { UIApplicationSupportsMultipleScenes: false },
+    },
+  }));
 }
 
-module.exports = function withTVSceneLifecycle (config) {
-  config = withSceneManifest(config);
-  config = withSceneLifecycleAppDelegate(config);
-  return config;
+module.exports = function withTVSceneLifecycle(config) {
+  return withSceneLifecycleAppDelegate(withSceneManifest(config));
 };

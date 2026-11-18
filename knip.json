@@ -1,0 +1,19 @@
+{
+  "$schema": "./node_modules/knip/schema.json",
+  "entry": [
+    "app/**/*.tsx",
+    "{components,hooks,layouts}/**/*.{web,ios,android,tv}.{ts,tsx}",
+    "scripts/*.{mts,mjs}",
+    "plugins/*.js",
+    "jest.config.stryker.js"
+  ],
+  "project": [
+    "*.{js,mjs,cjs,ts}",
+    "{app,components,hooks,layouts,constants,types}/**/*.{ts,tsx}",
+    "__tests__/**/*.{ts,tsx}",
+    "plugins/**/*.js",
+    "scripts/**/*.{mts,mjs}"
+  ],
+  "ignoreBinaries": ["make"],
+  "ignoreDependencies": ["prettier", "expo-system-ui", "expo-updates"]
+}

@@ -1,41 +1,97 @@
-import { Modal, StyleSheet, Pressable, View } from 'react-native';
-import { ThemedView } from './ThemedView';
-import { ThemedText } from './ThemedText';
+import type { ReactElement } from 'react';
+import { Modal, Pressable, StyleSheet, View } from 'react-native';
+
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
+import { FONT_SIZE, RADIUS, SPACE } from '@/constants/layout';
+import { usePalette } from '@/hooks/usePalette';
 import { useScale } from '@/hooks/useScale';
-import { Colors, useColorScheme } from '@sinkplane/shared';
+
+const MODAL_MAX_WIDTH = 600;
+const LIST_MAX_HEIGHT = 400;
+const DIVIDER_ALPHA = '40';
 
 interface ThemedModalProps<T> {
-  visible: boolean;
-  onClose: () => void;
-  title: string;
-  data: T[];
-  renderItem: (item: T) => React.ReactElement | null;
-  keyExtractor: (item: T) => string;
+  readonly visible: boolean;
+  readonly onClose: () => void;
+  readonly title: string;
+  readonly data: readonly T[];
+  readonly renderItem: (item: T) => ReactElement | null;
+  readonly keyExtractor: (item: T) => string;
 }
 
-export function ThemedModal<T>({ visible, onClose, title, data, renderItem, keyExtractor }: ThemedModalProps<T>) {
+const staticStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+  },
+  headerTitle: {
+    flex: 1,
+  },
+  closeButtonText: {
+    fontWeight: 'bold',
+  },
+});
+
+function useThemedModalStyles() {
+  const scale = useScale();
+  const palette = usePalette();
+  return StyleSheet.create({
+    modalContainer: { width: '80%', maxWidth: MODAL_MAX_WIDTH * scale, maxHeight: '80%' },
+    modalContent: { borderRadius: RADIUS.lg * scale, padding: SPACE.xxl * scale },
+    header: {
+      marginBottom: SPACE.xl * scale,
+      borderBottomColor: `${palette.tint}${DIVIDER_ALPHA}`,
+      paddingBottom: SPACE.md * scale,
+    },
+    closeButton: { padding: SPACE.sm * scale, marginLeft: SPACE.lg * scale },
+    closeButtonText: { fontSize: FONT_SIZE.heading * scale },
+    listView: { maxHeight: LIST_MAX_HEIGHT * scale },
+  });
+}
+
+export function ThemedModal<T>({
+  visible,
+  onClose,
+  title,
+  data,
+  renderItem,
+  keyExtractor,
+}: ThemedModalProps<T>): ReactElement {
   const styles = useThemedModalStyles();
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-    >
-      <View style={styles.overlay}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={staticStyles.overlay}>
         <View style={styles.modalContainer}>
-          <ThemedView style={styles.modalContent}>
-            <ThemedView style={styles.header}>
-              <ThemedText type="title" style={styles.headerTitle}>
+          <ThemedView style={[staticStyles.modalContent, styles.modalContent]}>
+            <ThemedView style={[staticStyles.header, styles.header]}>
+              <ThemedText type="title" style={staticStyles.headerTitle}>
                 {title}
               </ThemedText>
               <Pressable onPress={onClose} style={styles.closeButton} testID="modal-close-button">
-                <ThemedText style={styles.closeButtonText}>✕</ThemedText>
+                <ThemedText style={[staticStyles.closeButtonText, styles.closeButtonText]}>
+                  ✕
+                </ThemedText>
               </Pressable>
             </ThemedView>
             <View style={styles.listView}>
-              {data.map(item => (
+              {data.map((item) => (
                 <View key={keyExtractor(item)}>{renderItem(item)}</View>
               ))}
             </View>
@@ -45,54 +101,3 @@ export function ThemedModal<T>({ visible, onClose, title, data, renderItem, keyE
     </Modal>
   );
 }
-
-const useThemedModalStyles = function () {
-  const scale = useScale();
-  const colorScheme = useColorScheme();
-
-  return StyleSheet.create({
-    overlay: {
-      flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.7)',
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    modalContainer: {
-      width: '80%',
-      maxWidth: 600 * scale,
-      maxHeight: '80%',
-    },
-    modalContent: {
-      borderRadius: 12 * scale,
-      padding: 24 * scale,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.25,
-      shadowRadius: 4,
-      elevation: 5,
-    },
-    header: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 20 * scale,
-      borderBottomWidth: 1,
-      borderBottomColor: Colors[colorScheme === 'dark' ? 'dark' : 'light'].tint + '40',
-      paddingBottom: 12 * scale,
-    },
-    headerTitle: {
-      flex: 1,
-    },
-    closeButton: {
-      padding: 8 * scale,
-      marginLeft: 16 * scale,
-    },
-    closeButtonText: {
-      fontSize: 24 * scale,
-      fontWeight: 'bold',
-    },
-    listView: {
-      maxHeight: 400 * scale,
-    },
-  });
-};

@@ -1,135 +1,81 @@
-import { StyleSheet, ActivityIndicator } from 'react-native';
-import { useRef, useEffect, type RefObject, useMemo, useState } from 'react';
+import type { ReactElement } from 'react';
+import { StyleSheet } from 'react-native';
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { FeedError, FeedLoadingMore, FeedSpinner } from '@/components/videos/FeedStatus';
+import type { VideoFeed } from '@/components/videos/useVideoFeed';
 import { VideoGrid } from '@/components/videos/VideoGrid';
+import { VideoListItem } from '@/components/videos/VideoList';
+import { SPACE } from '@/constants/layout';
 import { useScale } from '@/hooks/useScale';
-import { AssDass, useGetVideosInfinite, useGetVideoProgress } from '@sinkplane/shared';
-import { Channel } from '@sinkplane/shared/types/creator-list.interface';
-import { VideoListItem } from './VideoList';
+
+export type VideoView = 'card' | 'list';
 
 interface VideosProps {
-  channel: Channel;
-  token: string;
-  tokenExpiration?: string;
-  creatorId: string;
-  view: VideoView;
-  sort: AssDass;
-  onFetchMoreRef?: RefObject<(() => void) | null>;
+  readonly feed: VideoFeed;
+  readonly view: VideoView;
 }
 
-export enum VideoView {
-  CARD,
-  LIST,
-}
-
-export const Videos = ({ token, tokenExpiration, creatorId, channel, view, onFetchMoreRef, sort }: VideosProps) => {
-  const styles = useVideosStyles();
-  const isLoadingMoreRef = useRef(false);
-
-  const { data, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage } = useGetVideosInfinite(token, tokenExpiration, {
-    id: creatorId,
-    channel: channel.id,
-    limit: 20,
-    sort,
-  });
-
-  // Flatten all pages into a single array of videos
-  const videos = useMemo(() => data?.pages.flatMap(page => page) ?? [], [data?.pages]);
-
-  // Collect video IDs to fetch progress
-  const videoIds = useMemo(() => videos.map(v => v.id), [videos]);
-
-  // Fetch progress for all videos
-  const { data: progressData } = useGetVideoProgress(token, videoIds);
-
-  // Create a map for quick progress lookup - persisted in state to avoid flickering
-  const [persistedProgressMap, setPersistedProgressMap] = useState<Record<string, number>>({});
-
-  useEffect(() => {
-    if (progressData) {
-      setPersistedProgressMap(prev => {
-        const next = { ...prev };
-        progressData.forEach(p => {
-          next[p.id] = p.progress;
-        });
-        return next;
-      });
-    }
-  }, [progressData]);
-
-  // Expose the fetch more function to the parent via ref
-  useEffect(() => {
-    if (onFetchMoreRef) {
-      onFetchMoreRef.current = () => {
-        if (hasNextPage && !isFetchingNextPage && !isLoadingMoreRef.current) {
-          isLoadingMoreRef.current = true;
-          fetchNextPage().finally(() => {
-            isLoadingMoreRef.current = false;
-          });
-        }
-      };
-    }
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage, onFetchMoreRef]);
-
-  return (
-    <ThemedView>
-      {isLoading && (
-        <ThemedView style={styles.centerContainer}>
-          <ActivityIndicator size="large" />
-        </ThemedView>
-      )}
-
-      {error && (
-        <ThemedView style={styles.centerContainer}>
-          <ThemedText>Error loading videos: {error.message}</ThemedText>
-        </ThemedView>
-      )}
-
-      {videos && videos.length > 0 && (
-        <>
-          {view === VideoView.CARD ? (
-            <VideoGrid videos={videos} progressMap={persistedProgressMap} />
-          ) : (
-            <ThemedView style={styles.videosContainer}>
-              {videos.map(video => (
-                <VideoListItem key={video.id} video={video} progress={persistedProgressMap[video.id]} />
-              ))}
-            </ThemedView>
-          )}
-
-          {isFetchingNextPage && (
-            <ThemedView style={styles.centerContainer}>
-              <ActivityIndicator size="large" />
-              <ThemedText style={styles.loadingText}>Loading more videos...</ThemedText>
-            </ThemedView>
-          )}
-        </>
-      )}
-
-      {videos && videos.length === 0 && !isLoading && (
-        <ThemedView style={styles.centerContainer}>
-          <ThemedText>No videos found</ThemedText>
-        </ThemedView>
-      )}
-    </ThemedView>
-  );
-};
-
-const useVideosStyles = function () {
+function useVideosStyles() {
   const scale = useScale();
   return StyleSheet.create({
     centerContainer: {
       alignItems: 'center',
       justifyContent: 'center',
-      padding: 20 * scale,
+      padding: SPACE.xl * scale,
     },
     videosContainer: {
-      marginTop: 16 * scale,
+      marginTop: SPACE.lg * scale,
     },
     loadingText: {
-      marginTop: 8 * scale,
+      marginTop: SPACE.sm * scale,
     },
   });
-};
+}
+
+function VideoResults({ feed, view }: VideosProps): ReactElement {
+  const styles = useVideosStyles();
+  if (view === 'card') {
+    return <VideoGrid videos={feed.videos} progressMap={feed.progressMap} />;
+  }
+  return (
+    <ThemedView style={styles.videosContainer}>
+      {feed.videos.map((video) => (
+        <VideoListItem key={video.id} video={video} progress={feed.progressMap[video.id]} />
+      ))}
+    </ThemedView>
+  );
+}
+
+function NoVideos({
+  style,
+}: {
+  readonly style: ReturnType<typeof useVideosStyles>['centerContainer'];
+}): ReactElement {
+  return (
+    <ThemedView style={style}>
+      <ThemedText>No videos found</ThemedText>
+    </ThemedView>
+  );
+}
+
+export function Videos({ feed, view }: VideosProps): ReactElement {
+  const styles = useVideosStyles();
+  const hasVideos = feed.videos.length > 0;
+
+  return (
+    <ThemedView>
+      <FeedSpinner visible={feed.isLoading} style={styles.centerContainer} />
+      <FeedError error={feed.error} label="Error loading videos" style={styles.centerContainer} />
+      {hasVideos && <VideoResults feed={feed} view={view} />}
+      <FeedLoadingMore
+        visible={hasVideos && feed.isFetchingNextPage}
+        label="Loading more videos..."
+        style={styles.centerContainer}
+        textStyle={styles.loadingText}
+      />
+      {!hasVideos && !feed.isLoading && <NoVideos style={styles.centerContainer} />}
+    </ThemedView>
+  );
+}

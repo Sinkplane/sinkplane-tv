@@ -1,84 +1,136 @@
-import { StyleSheet, Pressable, Image, View } from 'react-native';
-import { useState } from 'react';
-import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { useState, type ReactElement } from 'react';
+import { Image, Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { formatDuration, formatLikes } from '@/components/videos/video-format';
+import { WatchProgressBar } from '@/components/videos/WatchProgressBar';
+import { BORDER_WIDTH, FONT_SIZE, ICON_SIZE, RADIUS, SPACE } from '@/constants/layout';
 import { useScale } from '@/hooks/useScale';
-import { Video } from '@sinkplane/shared';
+import { type Video } from '@sinkplane/shared';
 
 interface VideoCardProps {
-  video: Video;
-  progress?: number;
+  readonly video: Video;
+  readonly progress?: number | undefined;
 }
 
-const formatDuration = (seconds: number): string => {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const secs = Math.floor(seconds % 60);
+const CARD_WIDTH = '23.5%';
+const THUMBNAIL_SIZE = { width: 16, height: 9 };
+const OVERLAY_PADDING = { horizontal: 6, vertical: 3 };
+const SHADOW = { radius: 6, focusedRadius: 8 };
 
-  if (hours > 0) {
-    return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  }
-  return `${minutes}:${secs.toString().padStart(2, '0')}`;
-};
+const staticStyles = StyleSheet.create({
+  container: { width: CARD_WIDTH },
+  shadow: { shadowColor: '#000', shadowOpacity: 0.3, elevation: 6, flex: 1 },
+  shadowFocused: { shadowOpacity: 0.5, elevation: 10 },
+  card: { overflow: 'hidden', borderColor: 'transparent', flex: 1 },
+  cardFocused: { borderColor: '#007AFF' },
+  thumbnailContainer: { position: 'relative', width: '100%' },
+  thumbnail: { width: '100%', aspectRatio: THUMBNAIL_SIZE.width / THUMBNAIL_SIZE.height },
+  overlayContainer: { position: 'absolute', flexDirection: 'column' },
+  overlayItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+  },
+  overlayText: { color: '#fff', fontWeight: '600' },
+  content: { flex: 1 },
+});
 
-const formatLikes = (likes: number): string => {
-  if (likes >= 1000000) {
-    return `${(likes / 1000000).toFixed(1)}M`;
-  }
-  if (likes >= 1000) {
-    return `${(likes / 1000).toFixed(1)}K`;
-  }
-  return likes.toString();
-};
+function useVideoCardStyles(): ReturnType<typeof createScaledStyles> {
+  return createScaledStyles(useScale());
+}
 
-export const VideoCard = ({ video, progress }: VideoCardProps) => {
+function createScaledStyles(scale: number) {
+  return StyleSheet.create({
+    shadow: {
+      borderRadius: RADIUS.md * scale,
+      shadowOffset: { width: 0, height: SPACE.xs * scale },
+      shadowRadius: SHADOW.radius * scale,
+    },
+    shadowFocused: { shadowRadius: SHADOW.focusedRadius * scale },
+    card: { borderRadius: RADIUS.md * scale, borderWidth: BORDER_WIDTH.thick * scale },
+    overlayContainer: { bottom: SPACE.sm * scale, right: SPACE.sm * scale, gap: SPACE.xs * scale },
+    overlayItem: {
+      borderRadius: RADIUS.sm * scale,
+      paddingHorizontal: OVERLAY_PADDING.horizontal * scale,
+      paddingVertical: OVERLAY_PADDING.vertical * scale,
+      gap: SPACE.xs * scale,
+    },
+    overlayText: { fontSize: FONT_SIZE.caption * scale },
+    content: { padding: SPACE.md * scale },
+    title: { marginBottom: SPACE.xs * scale },
+  });
+}
+
+function CardOverlay({ video }: { readonly video: Video }): ReactElement {
   const scale = useScale();
+  const styles = useVideoCardStyles();
+  const itemStyle = [staticStyles.overlayItem, styles.overlayItem];
+  const textStyle = [staticStyles.overlayText, styles.overlayText];
+  return (
+    <View style={[staticStyles.overlayContainer, styles.overlayContainer]}>
+      <View style={itemStyle}>
+        <Ionicons name="heart" size={ICON_SIZE.sm * scale} color="#fff" />
+        <ThemedText style={textStyle}>{formatLikes(video.likes)}</ThemedText>
+      </View>
+      <View style={itemStyle}>
+        <Ionicons name="time" size={ICON_SIZE.sm * scale} color="#fff" />
+        <ThemedText style={textStyle}>{formatDuration(video.metadata.videoDuration)}</ThemedText>
+      </View>
+    </View>
+  );
+}
+
+function CardThumbnail({ video, progress }: VideoCardProps): ReactElement {
+  return (
+    <View style={staticStyles.thumbnailContainer}>
+      <Image
+        source={{ uri: video.thumbnail.path }}
+        style={staticStyles.thumbnail}
+        resizeMode="cover"
+      />
+      <WatchProgressBar
+        progress={progress}
+        duration={video.metadata.videoDuration}
+        testID={`video-progress-${video.id}`}
+      />
+      <CardOverlay video={video} />
+    </View>
+  );
+}
+
+export function VideoCard({ video, progress }: VideoCardProps): ReactElement {
   const styles = useVideoCardStyles();
   const [isFocused, setIsFocused] = useState(false);
   const router = useRouter();
 
-  const handlePress = () => {
-    router.push(`/video/${video.id}`);
-  };
-
-  const duration = video.metadata.videoDuration;
-  const progressPercentage = progress && duration ? (progress / duration) * 100 : 0;
-
   return (
     <Pressable
       testID={`video-card-${video.id}`}
-      onPress={handlePress}
-      onFocus={() => setIsFocused(true)}
-      onBlur={() => setIsFocused(false)}
-      style={styles.container}
+      onPress={() => {
+        router.push(`/video/${video.id}`);
+      }}
+      onFocus={() => {
+        setIsFocused(true);
+      }}
+      onBlur={() => {
+        setIsFocused(false);
+      }}
+      style={staticStyles.container}
     >
-      <ThemedView style={[styles.shadow, isFocused && styles.shadowFocused]}>
-        <ThemedView style={[styles.card, isFocused && styles.cardFocused]}>
-          <View style={styles.thumbnailContainer}>
-            <Image source={{ uri: video?.thumbnail?.path ?? '' }} style={styles.thumbnail} resizeMode="cover" />
-            {progress !== undefined && progress > 0 && (
-              <View style={styles.progressBarContainer}>
-                <View
-                  testID={`video-progress-${video.id}`}
-                  style={[styles.progressBar, { width: `${Math.min(progressPercentage, 100)}%` }]}
-                />
-              </View>
-            )}
-            <View style={styles.overlayContainer}>
-              <View style={styles.overlayItem}>
-                <Ionicons name="heart" size={14 * scale} color="#fff" />
-                <ThemedText style={styles.overlayText}>{formatLikes(video.likes)}</ThemedText>
-              </View>
-              <View style={styles.overlayItem}>
-                <Ionicons name="time" size={14 * scale} color="#fff" />
-                <ThemedText style={styles.overlayText}>{formatDuration(video.metadata.videoDuration)}</ThemedText>
-              </View>
-            </View>
-          </View>
-          <ThemedView style={styles.content}>
+      <ThemedView
+        style={[
+          staticStyles.shadow,
+          styles.shadow,
+          isFocused && [staticStyles.shadowFocused, styles.shadowFocused],
+        ]}
+      >
+        <ThemedView style={[staticStyles.card, styles.card, isFocused && staticStyles.cardFocused]}>
+          <CardThumbnail video={video} progress={progress} />
+          <ThemedView style={[staticStyles.content, styles.content]}>
             <ThemedText type="defaultSemiBold" numberOfLines={1} style={styles.title}>
               {video.title}
             </ThemedText>
@@ -87,93 +139,4 @@ export const VideoCard = ({ video, progress }: VideoCardProps) => {
       </ThemedView>
     </Pressable>
   );
-};
-
-const useVideoCardStyles = function () {
-  const scale = useScale();
-  return StyleSheet.create({
-    container: {
-      width: '23.5%', // 4 columns with gap spacing
-    },
-    shadow: {
-      borderRadius: 8 * scale,
-      shadowColor: '#000',
-      shadowOffset: {
-        width: 0,
-        height: 4 * scale,
-      },
-      shadowOpacity: 0.3,
-      shadowRadius: 6 * scale,
-      elevation: 6,
-      flex: 1,
-    },
-    shadowFocused: {
-      shadowOpacity: 0.5,
-      shadowRadius: 8 * scale,
-      elevation: 10,
-    },
-    card: {
-      borderRadius: 8 * scale,
-      overflow: 'hidden',
-      borderWidth: 3 * scale,
-      borderColor: 'transparent',
-      flex: 1,
-    },
-    cardFocused: {
-      borderColor: '#007AFF',
-    },
-    thumbnailContainer: {
-      position: 'relative',
-      width: '100%',
-    },
-    thumbnail: {
-      width: '100%',
-      aspectRatio: 16 / 9,
-    },
-    progressBarContainer: {
-      position: 'absolute',
-      bottom: 0,
-      left: 0,
-      right: 0,
-      height: 4 * scale,
-      backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    },
-    progressBar: {
-      height: '100%',
-      backgroundColor: '#FF0000',
-    },
-    overlayContainer: {
-      position: 'absolute',
-      bottom: 8 * scale,
-      right: 8 * scale,
-      flexDirection: 'column',
-      gap: 4 * scale,
-    },
-    overlayItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: 'rgba(0, 0, 0, 0.7)',
-      borderRadius: 4 * scale,
-      paddingHorizontal: 6 * scale,
-      paddingVertical: 3 * scale,
-      gap: 4 * scale,
-    },
-    overlayText: {
-      color: '#fff',
-      fontSize: 12 * scale,
-      fontWeight: '600',
-    },
-    content: {
-      padding: 12 * scale,
-      flex: 1,
-    },
-    title: {
-      marginBottom: 4 * scale,
-    },
-    channel: {
-      marginTop: 4 * scale,
-      opacity: 0.7,
-      fontSize: 12 * scale,
-    },
-  });
-};
+}

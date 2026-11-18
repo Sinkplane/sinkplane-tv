@@ -2,22 +2,36 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true,
     "allowArbitraryExtensions": true,
-    "types": [
-      "jest",
-      "node"
-    ],
+    "skipLibCheck": true,
+    "types": ["jest", "node"],
     "paths": {
-      "@/*": [
-        "./*"
-      ]
+      "@/*": ["./*"]
     }
   },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    ".expo/types/**/*.ts",
-    "expo-env.d.ts",
-    "types/**/*.d.ts"
+  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts", "types/**/*.d.ts"],
+  "exclude": [
+    "scripts",
+    "node_modules",
+    "android",
+    "ios",
+    "dist",
+    "coverage",
+    "reports",
+    ".stryker-tmp"
   ]
 }

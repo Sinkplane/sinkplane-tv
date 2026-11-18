@@ -1,0 +1,13 @@
+pnpm-lock.yaml
+coverage/
+dist/
+reports/
+.stryker-tmp/
+.expo/
+ios/
+android/
+web-build/
+patches/
+.cursor/
+.claude/
+CLAUDE.md

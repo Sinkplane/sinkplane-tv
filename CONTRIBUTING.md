@@ -58,6 +58,7 @@ The project uses the `EXPO_TV` environment variable to control TV vs. mobile bui
 ### Running the App
 
 **For TV:**
+
 ```bash
 pnpm start           # Starts Expo with TV mode
 pnpm run ios         # Build and run for Apple TV
@@ -66,6 +67,7 @@ pnpm run prebuild:tv # Generate native code for TV
 ```
 
 **For Mobile:**
+
 ```bash
 pnpm run prebuild    # Generate native code for mobile
 pnpm exec expo run:ios    # Run on iOS mobile
@@ -73,6 +75,7 @@ pnpm exec expo run:android # Run on Android mobile
 ```
 
 **For Web:**
+
 ```bash
 pnpm run web         # Run web version
 ```
@@ -80,6 +83,7 @@ pnpm run web         # Run web version
 ## Development Workflow
 
 1. **Create a feature branch** from `main`:
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
@@ -88,14 +92,16 @@ pnpm run web         # Run web version
 
 3. **Test your changes** on relevant platforms (TV and/or mobile)
 
-4. **Lint your code**:
+4. **Run the gates**:
+
    ```bash
-   pnpm run lint
+   make check
    ```
 
 5. **Commit your changes** following our commit guidelines
 
 6. **Push to your fork**:
+
    ```bash
    git push origin feature/your-feature-name
    ```
@@ -200,23 +206,19 @@ When opening a PR, please include:
 
 ## Testing
 
+### Automated Testing
+
+`make check` runs the unit and E2E suites with coverage (≥ 90%) and CRAP (≤ 6) gates; `make mutate SCOPE=changed` runs mutation testing on the files you changed. New behavior needs an E2E scenario in `__tests__/e2e/` (see the `specifier` skill) or a colocated unit test.
+
 ### Manual Testing
 
-Currently, the project relies on manual testing. When testing:
+Walk the relevant procedure in `qa/procedures/` on a TV development build. When testing:
 
 - Test on both **TV and mobile** platforms if your change affects both
 - Test on **iOS and Android** when possible
 - Test different **screen sizes and orientations**
 - For TV: Test **focus navigation** with remote controls
 - For TV: Test on both **Apple TV and Android TV** simulators/devices
-
-### Future Testing Infrastructure
-
-We're planning to add:
-- Unit tests with Jest
-- Component tests with React Testing Library
-- E2E tests with Detox
-- Integration tests (will go in `apps/api-provisioning-api-e2e`)
 
 ## TV-Specific Considerations
 
@@ -256,6 +258,7 @@ We're planning to add:
 ### Issue Template
 
 **Bug Report:**
+
 - Description
 - Steps to reproduce
 - Expected behavior
@@ -265,6 +268,7 @@ We're planning to add:
 - Screenshots/videos if applicable
 
 **Feature Request:**
+
 - Description
 - Use case
 - Proposed solution (optional)

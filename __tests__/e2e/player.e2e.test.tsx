@@ -1,8 +1,16 @@
-import { TextTrack } from '@sinkplane/shared';
+import type { TextTrack } from '@sinkplane/shared';
 
-import { loadRuntime, Runtime } from './helpers/runtime';
+import {
+  actAndSettle,
+  channelVideo,
+  openVideo,
+  PREFERENCES_KEY,
+  storedPreferences,
+} from './helpers/player-flows';
+import { loadRuntime, type Runtime } from './helpers/runtime';
 
-const PREFERENCES_KEY = 'playback-preferences';
+const AUTHORIZATION = 'Authorization';
+const USER_AGENT = 'User-Agent';
 
 const track = (id: string, language: string, overrides: Partial<TextTrack> = {}): TextTrack => ({
   id,
@@ -21,20 +29,8 @@ describe('E2E: video player captions', () => {
     rt = loadRuntime();
   });
 
-  const firstVideos = (count: number) => [...rt.api.videosByChannel.values()][0].slice(0, count);
-
-  const openVideo = async (videoId: string) => {
-    rt.seedSession();
-    await rt.renderApp(`/video/${videoId}`);
-    await rt.until(() => {
-      expect(rt.videoDriver.mounted()).toBe(true);
-    });
-  };
-
-  const storedPreferences = () => JSON.parse(rt.asyncStorage.items.get(PREFERENCES_KEY) ?? 'null');
-
   it('passes the attachment text tracks to the native player as caption tracks', async () => {
-    const [video] = firstVideos(1);
+    const video = channelVideo(rt, 0);
     rt.api.textTracks.set(video.id, [
       track('en', 'en', { src: 'https://www.floatplane.com/captions/en.vtt' }),
       track('fr', 'fr', { src: '/captions/fr.vtt', generated: true }),
@@ -42,74 +38,101 @@ describe('E2E: video player captions', () => {
       track('de', 'de', { src: '', generated: true, processing: true }),
     ]);
 
-    await openVideo(video.id);
+    await openVideo(rt, video.id);
 
     const authHeaders = {
-      'User-Agent': 'SinkplaneTV/1.0 (AppleTV; iOS)',
-      Authorization: `Bearer ${rt.api.accessToken}`,
+      [USER_AGENT]: 'SinkplaneTV/1.0 (AppleTV; iOS)',
+      [AUTHORIZATION]: `Bearer ${rt.api.accessToken}`,
     };
     expect(rt.videoDriver.props().captionTracks).toEqual([
-      { id: 'en', uri: 'https://www.floatplane.com/captions/en.vtt', language: 'en', subtitle: undefined, headers: authHeaders },
-      { id: 'fr', uri: 'https://www.floatplane.com/captions/fr.vtt', language: 'fr', subtitle: 'Auto-generated', headers: authHeaders },
-      { id: 'es', uri: 'https://cdn.example.com/es.vtt', language: 'es', subtitle: undefined, headers: undefined },
+      {
+        id: 'en',
+        uri: 'https://www.floatplane.com/captions/en.vtt',
+        language: 'en',
+        subtitle: undefined,
+        headers: authHeaders,
+      },
+      {
+        id: 'fr',
+        uri: 'https://www.floatplane.com/captions/fr.vtt',
+        language: 'fr',
+        subtitle: 'Auto-generated',
+        headers: authHeaders,
+      },
+      {
+        id: 'es',
+        uri: 'https://cdn.example.com/es.vtt',
+        language: 'es',
+        subtitle: undefined,
+        headers: undefined,
+      },
     ]);
   });
 
   it('starts with captions off at normal speed when nothing is saved', async () => {
-    const [video] = firstVideos(1);
+    const video = channelVideo(rt, 0);
     rt.api.textTracks.set(video.id, [track('en', 'en')]);
 
-    await openVideo(video.id);
+    await openVideo(rt, video.id);
 
     expect(rt.videoDriver.props().rate).toBe(1);
     expect(rt.videoDriver.props().selectedCaptionTrackId).toBeUndefined();
   });
 
   it('restores the saved speed and caption language', async () => {
-    const [video] = firstVideos(1);
+    const video = channelVideo(rt, 0);
     rt.api.textTracks.set(video.id, [track('en', 'en'), track('fr', 'fr')]);
-    rt.asyncStorage.items.set(PREFERENCES_KEY, JSON.stringify({ playbackRate: 1.5, captionLanguage: 'fr-CA' }));
+    rt.asyncStorage.items.set(
+      PREFERENCES_KEY,
+      JSON.stringify({ playbackRate: 1.5, captionLanguage: 'fr-CA' }),
+    );
 
-    await openVideo(video.id);
+    await openVideo(rt, video.id);
 
     expect(rt.videoDriver.props().rate).toBe(1.5);
     expect(rt.videoDriver.props().selectedCaptionTrackId).toBe('fr');
   });
 
-  it('ignores corrupt saved preferences', async () => {
-    const [video] = firstVideos(1);
+  it.each([
+    ['corrupt JSON', '{not json'],
+    ['a non-object', '5'],
+    ['null', 'null'],
+    ['unknown values', JSON.stringify({ playbackRate: 3, captionLanguage: 7 })],
+  ])('ignores %s saved as preferences', async (_label, stored) => {
+    const video = channelVideo(rt, 0);
     rt.api.textTracks.set(video.id, [track('en', 'en')]);
-    rt.asyncStorage.items.set(PREFERENCES_KEY, '{not json');
+    rt.asyncStorage.items.set(PREFERENCES_KEY, stored);
 
-    await openVideo(video.id);
+    await openVideo(rt, video.id);
 
     expect(rt.videoDriver.props().rate).toBe(1);
     expect(rt.videoDriver.props().selectedCaptionTrackId).toBeUndefined();
   });
 
   it('remembers speed and caption choices from the native menus across videos', async () => {
-    const [first, second] = firstVideos(2);
+    const first = channelVideo(rt, 0);
+    const second = channelVideo(rt, 1);
     rt.api.textTracks.set(first.id, [track('first-en', 'en'), track('first-de', 'de')]);
     rt.api.textTracks.set(second.id, [track('second-de', 'de'), track('second-en', 'en')]);
 
-    await openVideo(first.id);
-    await rt.act(async () => {
+    await openVideo(rt, first.id);
+    await actAndSettle(rt, () => {
       rt.videoDriver.props().onCaptionTrackChange?.({ trackId: 'first-en' });
-      rt.videoDriver.props().onPlaybackRateChange?.({ playbackRate: 1.25, selectedPlaybackRate: 1.25 });
+      rt.videoDriver
+        .props()
+        .onPlaybackRateChange?.({ playbackRate: 1.25, selectedPlaybackRate: 1.25 });
     });
 
-    expect(storedPreferences()).toEqual({ playbackRate: 1.25, captionLanguage: 'en' });
+    expect(storedPreferences(rt)).toEqual({ playbackRate: 1.25, captionLanguage: 'en' });
     expect(rt.videoDriver.props().selectedCaptionTrackId).toBe('first-en');
     expect(rt.videoDriver.props().rate).toBe(1.25);
 
-    await rt.act(async () => {
-      rt.videoDriver.props().onEnd?.();
-    });
+    await rt.videoDriver.fireEnd();
     await rt.until(() => {
       expect(rt.screen.getByText(second.title)).toBeTruthy();
     });
     await rt.act(async () => {
-      rt.fireEvent.press(rt.screen.getByText(second.title));
+      await rt.fireEvent.press(rt.screen.getByText(second.title));
     });
     await rt.until(() => {
       expect(rt.videoDriver.props().captionTracks?.[0]?.id).toBe('second-de');
@@ -118,23 +141,39 @@ describe('E2E: video player captions', () => {
     expect(rt.videoDriver.props().selectedCaptionTrackId).toBe('second-en');
     expect(rt.videoDriver.props().rate).toBe(1.25);
 
-    await rt.act(async () => {
+    await actAndSettle(rt, () => {
       rt.videoDriver.props().onCaptionTrackChange?.({});
     });
 
-    expect(storedPreferences()).toEqual({ playbackRate: 1.25, captionLanguage: null });
+    expect(storedPreferences(rt)).toEqual({ playbackRate: 1.25, captionLanguage: null });
     expect(rt.videoDriver.props().selectedCaptionTrackId).toBeUndefined();
   });
 
   it('does not save rates outside the speed menu, such as pauses', async () => {
-    const [video] = firstVideos(1);
-    await openVideo(video.id);
+    const video = channelVideo(rt, 0);
+    await openVideo(rt, video.id);
 
-    await rt.act(async () => {
+    await actAndSettle(rt, () => {
       rt.videoDriver.props().onPlaybackRateChange?.({ playbackRate: 0, selectedPlaybackRate: 1 });
       rt.videoDriver.props().onPlaybackRateChange?.({ playbackRate: 8 });
     });
 
+    expect(rt.asyncStorage.items.has(PREFERENCES_KEY)).toBe(false);
+  });
+
+  it('keeps playing when the preferences cannot be saved', async () => {
+    const storage = jest.requireMock<{ default: { setItem: jest.Mock } }>(
+      '@react-native-async-storage/async-storage',
+    );
+    storage.default.setItem.mockRejectedValueOnce(new Error('disk full'));
+    const video = channelVideo(rt, 0);
+    await openVideo(rt, video.id);
+
+    await actAndSettle(rt, () => {
+      rt.videoDriver.props().onPlaybackRateChange?.({ playbackRate: 2, selectedPlaybackRate: 2 });
+    });
+
+    expect(rt.videoDriver.props().rate).toBe(2);
     expect(rt.asyncStorage.items.has(PREFERENCES_KEY)).toBe(false);
   });
 });

@@ -1,14 +1,22 @@
+/**
+ * Unit tests: colocated `*.test.ts(x)` files exercising components, hooks and
+ * pure helpers in isolation. Route modules (app/**) are driven by the E2E suite.
+ */
+const base = require('./jest.config.base');
+
 module.exports = {
-  preset: 'jest-expo',
-  roots: ['<rootDir>'],
-  testMatch: ['**/*.test.@(ts|tsx|js|jsx)'],
-  testPathIgnorePatterns: ['/node_modules/', '/ios/', '/android/', '\\.e2e\\.test\\.'],
-  moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/$1',
-    '^@sinkplane/shared$': '<rootDir>/../sinkplane-shared/index.ts',
-    '^@sinkplane/shared/(.*)$': '<rootDir>/../sinkplane-shared/$1',
-  },
-  clearMocks: true,
-  modulePaths: ['<rootDir>/node_modules'],
-  testTimeout: 30000,
+  ...base,
+  displayName: 'unit',
+  roots: ['<rootDir>/components', '<rootDir>/hooks', '<rootDir>/layouts', '<rootDir>/constants'],
+  testMatch: ['**/*.test.@(ts|tsx)'],
+  collectCoverageFrom: [
+    'components/**/*.{ts,tsx}',
+    'hooks/**/*.{ts,tsx}',
+    'layouts/**/*.{ts,tsx}',
+    'constants/**/*.{ts,tsx}',
+    '!**/*.d.ts',
+    '!app/+html.tsx',
+    '!**/*.test.{ts,tsx}',
+  ],
+  coverageDirectory: '<rootDir>/coverage/unit',
 };

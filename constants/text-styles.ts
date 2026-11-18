@@ -1,39 +1,39 @@
-/**
- * Below are text styles used in the app, primarily in the ThemedText component.
- */
+import type { TextStyle } from 'react-native';
 
-import { TextStyle } from 'react-native';
+import { FONT_SIZE, LINE_HEIGHT } from '@/constants/layout';
 
-export const textStyles = function (
+export type TextStyleName = 'default' | 'defaultSemiBold' | 'title' | 'subtitle' | 'link';
+
+export type SizedTextStyle = TextStyle & { fontSize: number; lineHeight: number };
+
+export function textStyles(
   scale: number,
-  linkColor: string
-): {
-  [key: string]: TextStyle & { fontSize: number; lineHeight: number };
-} {
+  linkColor: string,
+): Record<TextStyleName, SizedTextStyle> {
   return {
     default: {
-      fontSize: 16 * scale,
-      lineHeight: 24 * scale
+      fontSize: FONT_SIZE.body * scale,
+      lineHeight: LINE_HEIGHT.body * scale,
     },
     defaultSemiBold: {
-      fontSize: 16 * scale,
-      lineHeight: 24 * scale,
-      fontWeight: '600'
+      fontSize: FONT_SIZE.body * scale,
+      lineHeight: LINE_HEIGHT.body * scale,
+      fontWeight: '600',
     },
     title: {
-      fontSize: 32 * scale,
+      fontSize: FONT_SIZE.title * scale,
       fontWeight: 'bold',
-      lineHeight: 32 * scale
+      lineHeight: LINE_HEIGHT.title * scale,
     },
     subtitle: {
-      fontSize: 20 * scale,
-      lineHeight: 20 * scale,
-      fontWeight: 'bold'
+      fontSize: FONT_SIZE.subtitle * scale,
+      lineHeight: LINE_HEIGHT.subtitle * scale,
+      fontWeight: 'bold',
     },
     link: {
-      lineHeight: 30 * scale,
-      fontSize: 16 * scale,
-      color: linkColor
-    }
+      lineHeight: LINE_HEIGHT.link * scale,
+      fontSize: FONT_SIZE.body * scale,
+      color: linkColor,
+    },
   };
-};
+}

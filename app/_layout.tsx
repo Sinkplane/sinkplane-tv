@@ -1,31 +1,37 @@
+import type { ReactElement } from 'react';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import {
+  useColorScheme,
+  SessionProvider,
+  useSession,
+  ThemeProvider as AppThemeProvider,
+  useTVServer,
+} from '@sinkplane/shared';
 
-import { useColorScheme, SessionProvider, useSession, ThemeProvider as AppThemeProvider, useTVServer } from '@sinkplane/shared';
 import { SplashScreenController } from '@/components/SplashScreenController';
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
+const QUERY_RETRIES = 2;
 
-// Disable reanimated warnings
+void SplashScreen.preventAutoHideAsync();
+
 configureReanimatedLogger({
   level: ReanimatedLogLevel.warn,
   strict: false,
 });
 
-// Create a query client instance
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 2,
+      retry: QUERY_RETRIES,
       refetchOnWindowFocus: false,
     },
   },
 });
 
-export default function RootLayout() {
+export default function RootLayout(): ReactElement {
   return (
     <AppThemeProvider>
       <RootNavigation />
@@ -33,8 +39,7 @@ export default function RootLayout() {
   );
 }
 
-// Inner component so the navigation theme reacts to the app theme override.
-function RootNavigation() {
+function RootNavigation(): ReactElement {
   const colorScheme = useColorScheme();
 
   return (
@@ -49,12 +54,10 @@ function RootNavigation() {
   );
 }
 
-// Create a new component that can access the SessionProvider context later.
-function RootNavigator() {
+function RootNavigator(): ReactElement {
   const { token } = useSession();
-  const signedIn = !!token;
+  const signedIn = (token ?? '').length > 0;
 
-  // Initialize the TV server (must be inside SessionProvider)
   useTVServer();
   return (
     <Stack screenOptions={{ headerShown: false }}>

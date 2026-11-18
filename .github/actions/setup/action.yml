@@ -1,0 +1,33 @@
+name: Setup
+description: Check out sinkplane-shared next to the app, then pnpm + Node (from .nvmrc) + GitHub Packages auth + frozen install
+inputs:
+  packages-token:
+    description: Token with read:packages for @sinkplane/shared
+    required: true
+runs:
+  using: composite
+  steps:
+    # Jest maps @sinkplane/shared to the sibling clone's TypeScript sources
+    # (jest.config.base.js), so the shared repo is checked out next to the app.
+    - uses: actions/checkout@v7
+      with:
+        repository: Sinkplane/sinkplane-shared
+        path: sinkplane-shared
+    - uses: pnpm/action-setup@v6
+      with:
+        package_json_file: sinkplane-tv/package.json
+    - uses: actions/setup-node@v7
+      with:
+        node-version-file: sinkplane-tv/.nvmrc
+        cache: pnpm
+        cache-dependency-path: sinkplane-tv/pnpm-lock.yaml
+    # pnpm never expands ${...} in the repo .npmrc, so the token goes in the user-level one.
+    - name: Configure GitHub Packages auth
+      shell: bash
+      run: echo "//npm.pkg.github.com/:_authToken=${PACKAGES_AUTH_TOKEN}" >> ~/.npmrc
+      env:
+        PACKAGES_AUTH_TOKEN: ${{ inputs.packages-token }}
+    - name: Install dependencies
+      shell: bash
+      working-directory: sinkplane-tv
+      run: make setup

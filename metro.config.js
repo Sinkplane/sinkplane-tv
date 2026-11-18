@@ -1,4 +1,3 @@
-/* global __dirname */
 // Learn more https://docs.expo.io/guides/customizing-metro
 const fs = require('fs');
 const path = require('path');
@@ -32,10 +31,7 @@ config.resolver.nodeModulesPaths = [
 //
 if (process.env?.EXPO_TV === '1') {
   const originalSourceExts = config.resolver.sourceExts;
-  const tvSourceExts = [
-    ...originalSourceExts.map((e) => `tv.${e}`),
-    ...originalSourceExts
-  ];
+  const tvSourceExts = [...originalSourceExts.map((e) => `tv.${e}`), ...originalSourceExts];
   config.resolver.sourceExts = tvSourceExts;
 }
 

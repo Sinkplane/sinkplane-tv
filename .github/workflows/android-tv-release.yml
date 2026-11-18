@@ -62,16 +62,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --ignore-scripts
 
-      - name: Resolve release tag
-        id: tag
-        run: |
-          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
-            echo "tag=$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
-          else
-            VERSION=$(jq -r '.expo.version' app.json)
-            echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
-          fi
-
       # NOTE: do NOT "normalize" the multi-document pnpm-lock.yaml before
       # `eas build`. pnpm 12 natively writes a two-document lockfile
       # (self-management stub + lockfile) and the EAS worker's pnpm accepts
@@ -95,12 +85,38 @@ jobs:
           fi
           echo "url=$BUILD_URL" >> "$GITHUB_OUTPUT"
 
+      # Version comes from the build EAS actually produced. app.json has no
+      # expo.version (Expo falls back to package.json), so reading it with jq
+      # yields the string "null" and published a vnull release.
+      - name: Resolve release tag
+        id: tag
+        run: |
+          VERSION=$(jq -r '.[0].appVersion // empty' eas-build.json)
+          BUILD_NUMBER=$(jq -r '.[0].appBuildVersion // empty' eas-build.json)
+          if [ -z "$VERSION" ]; then
+            echo "EAS build output has no appVersion" >&2
+            exit 1
+          fi
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            TAG="$GITHUB_REF_NAME"
+            if [[ "${TAG#v}" != "$VERSION" ]]; then
+              echo "::warning::Tag $TAG does not match the built app version $VERSION"
+            fi
+          else
+            TAG="v$VERSION"
+          fi
+          {
+            echo "tag=$TAG"
+            echo "version=$VERSION"
+            echo "build_number=$BUILD_NUMBER"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Print EAS build diagnostics on failure
         if: failure()
         run: |
           if [ -s eas-build.json ] && jq -e 'type == "array"' eas-build.json > /dev/null 2>&1; then
             jq -r '.[0] | "EAS build \(.id): status=\(.status)"' eas-build.json
-            echo "Full logs: https://expo.dev/accounts/sinkplane/projects/sinkplane/builds"
+            echo "Full logs: https://expo.dev/accounts/sinkplane/projects/sinkplane-tv/builds"
           else
             echo "eas-build.json is empty or invalid — build failed before scheduling"
             cat eas-build.json 2>/dev/null || true
@@ -110,8 +126,9 @@ jobs:
         run: |
           URL="${{ steps.build.outputs.url }}"
           EXT="${URL##*.}"
-          TAG="${{ steps.tag.outputs.tag }}"
-          curl --fail --location --output "sinkplane-tv-${TAG#v}.${EXT}" "$URL"
+          VERSION="${{ steps.tag.outputs.version }}"
+          BUILD_NUMBER="${{ steps.tag.outputs.build_number }}"
+          curl --fail --location --output "sinkplane-tv-${VERSION}${BUILD_NUMBER:+-$BUILD_NUMBER}.${EXT}" "$URL"
 
       - name: Create or update GitHub release
         env:

@@ -46,7 +46,7 @@
       "environment": "production"
     },
     "production_tv": {
-      "extends": "production", 
+      "extends": "production",
       "env": {
         "EXPO_TV": "1"
       }
