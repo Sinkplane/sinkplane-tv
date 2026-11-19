@@ -38,15 +38,33 @@ function NotSubscribed(): ReactElement {
   );
 }
 
-function useHomeControls(defaultChannel: Channel) {
-  const [channel, setChannel] = useState(defaultChannel);
+interface DisplayPrefs {
+  readonly view: VideoView;
+  readonly sort: AssDass;
+  readonly toggleView: () => void;
+  readonly toggleSort: () => void;
+}
+
+function useDisplayPrefs(): DisplayPrefs {
   const [view, setView] = useState<VideoView>('card');
   const [sort, setSort] = useState(AssDass.DESC);
+  return {
+    view,
+    sort,
+    toggleView: (): void => {
+      setView(view === 'card' ? 'list' : 'card');
+    },
+    toggleSort: (): void => {
+      setSort(sort === AssDass.ASC ? AssDass.DESC : AssDass.ASC);
+    },
+  };
+}
+
+function useChannelPicker(defaultChannel: Channel) {
+  const [channel, setChannel] = useState(defaultChannel);
   const [isPickerVisible, setIsPickerVisible] = useState(false);
   return {
     channel,
-    view,
-    sort,
     isPickerVisible,
     openPicker: (): void => {
       setIsPickerVisible(true);
@@ -58,19 +76,18 @@ function useHomeControls(defaultChannel: Channel) {
       setChannel(selected);
       setIsPickerVisible(false);
     },
-    toggleView: (): void => {
-      setView(view === 'card' ? 'list' : 'card');
-    },
-    toggleSort: (): void => {
-      setSort(sort === AssDass.ASC ? AssDass.DESC : AssDass.ASC);
-    },
   };
 }
 
-function CreatorHome(props: CreatorHomeProps): ReactElement {
-  const { creator, token, tokenExpiration } = props;
-  const controls = useHomeControls(props.defaultChannel);
-  const { channel, view, sort } = controls;
+interface CreatorHomeScreenProps extends CreatorHomeProps {
+  readonly prefs: DisplayPrefs;
+}
+
+function CreatorHome(props: CreatorHomeScreenProps): ReactElement {
+  const { creator, token, tokenExpiration, prefs } = props;
+  const controls = useChannelPicker(props.defaultChannel);
+  const { channel } = controls;
+  const { view, sort } = prefs;
   const feed = useVideoFeed({
     token,
     tokenExpiration,
@@ -92,8 +109,8 @@ function CreatorHome(props: CreatorHomeProps): ReactElement {
           view={view}
           sort={sort}
           onOpenChannels={controls.openPicker}
-          onToggleView={controls.toggleView}
-          onToggleSort={controls.toggleSort}
+          onToggleView={prefs.toggleView}
+          onToggleSort={prefs.toggleSort}
         />
         <Videos feed={feed} view={view} />
         <ChannelPicker
@@ -124,6 +141,7 @@ function signedInHome(
 
 export default function HomeScreen(): ReactElement {
   const { creator, token, tokenExpiration } = useSession();
+  const prefs = useDisplayPrefs();
   const home = signedInHome(
     creator,
     presentOrUndefined(token),
@@ -139,5 +157,5 @@ export default function HomeScreen(): ReactElement {
       </CreatorScrollView>
     );
   }
-  return <CreatorHome key={home.creator.id} {...home} />;
+  return <CreatorHome key={home.creator.id} {...home} prefs={prefs} />;
 }
