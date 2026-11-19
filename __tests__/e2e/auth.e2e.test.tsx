@@ -1,6 +1,7 @@
 import { loadRuntime, type Runtime } from './helpers/runtime';
 
 const EVERY_ATTEMPT = Number.POSITIVE_INFINITY;
+const PROFILE_ATTEMPTS = 3;
 
 describe('E2E: login (OIDC device flow)', () => {
   let rt: Runtime;
@@ -116,6 +117,45 @@ describe('E2E: login (OIDC device flow)', () => {
       expect(rt.screen.getByText('Sign In to Floatplane')).toBeTruthy();
     });
     expect(rt.secureStore.items.has('fptoken')).toBe(false);
+    consoleError.mockRestore();
+  });
+
+  it('recovers with a new device code after the profile fails to load', async () => {
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    rt.api.failRequests(
+      'GET',
+      '/api/v3/status',
+      { status: 500, body: { message: 'nope' } },
+      PROFILE_ATTEMPTS,
+    );
+
+    await rt.renderApp();
+    await rt.until(() => {
+      expect(rt.screen.getByText('FPQD-1001')).toBeTruthy();
+    });
+
+    rt.api.approveDeviceLogin();
+    await rt.advanceTime(1000);
+    await rt.until(() => {
+      expect(rt.screen.getByText('Try Again')).toBeTruthy();
+    });
+    expect(
+      rt.screen.getByText("Couldn't load your Floatplane profile. Please try again."),
+    ).toBeTruthy();
+    expect(rt.secureStore.items.has('fptoken')).toBe(false);
+
+    await rt.fireEvent.press(rt.screen.getByText('Try Again'));
+    await rt.until(() => {
+      expect(rt.screen.getByText('FPQD-1002')).toBeTruthy();
+    });
+    expect(rt.api.deviceAuthCalls).toBe(2);
+
+    rt.api.approveDeviceLogin();
+    await rt.advanceTime(1000);
+    await rt.until(() => {
+      expect(rt.screen.getByText('Main Channel Video 01')).toBeTruthy();
+    });
+    expect(rt.secureStore.items.get('fptoken')).toBe(JSON.stringify(rt.api.accessToken));
     consoleError.mockRestore();
   });
 });

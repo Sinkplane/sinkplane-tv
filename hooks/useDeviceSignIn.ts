@@ -1,6 +1,6 @@
 import { type OIDCStatus, useOIDCDeviceFlow } from '@sinkplane/shared';
 
-import { countdownLabel, statusMessage } from '@/constants/device-sign-in';
+import { countdownLabel, PROFILE_LOAD_ERROR, statusMessage } from '@/constants/device-sign-in';
 import { useCompleteDeviceSignIn } from '@/hooks/useCompleteDeviceSignIn';
 import { type MountCallback, useMountCallback } from '@/hooks/useMountCallback';
 import { useNow } from '@/hooks/useNow';
@@ -25,7 +25,9 @@ export interface DeviceSignIn extends DeviceSignInState {
 export function useDeviceSignIn(): DeviceSignIn {
   const flow = useOIDCDeviceFlow();
   const now = useNow();
-  useCompleteDeviceSignIn(flow.tokenResponse);
+  const profileFailed = useCompleteDeviceSignIn(flow.tokenResponse);
+  const status = profileFailed ? 'error' : flow.status;
+  const errorMessage = profileFailed ? PROFILE_LOAD_ERROR : flow.errorMessage;
 
   const restart = (): void => {
     void flow.startFlow();
@@ -42,11 +44,11 @@ export function useDeviceSignIn(): DeviceSignIn {
   });
 
   return {
-    status: flow.status,
+    status,
     userCode: flow.userCode,
     verificationUriComplete: flow.verificationUriComplete,
-    timeRemaining: countdownLabel(flow.status, flow.expiresAt, now),
-    message: statusMessage(flow.status, flow.errorMessage),
+    timeRemaining: countdownLabel(status, flow.expiresAt, now),
+    message: statusMessage(status, errorMessage),
     attachFlow,
     attachExpiryRestart,
     restart,

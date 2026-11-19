@@ -16,6 +16,8 @@ const STATUS_MESSAGES: Record<OIDCStatus, string> = {
   error: 'An error occurred. Please try again.',
 };
 
+export const PROFILE_LOAD_ERROR = "Couldn't load your Floatplane profile. Please try again.";
+
 export function isFailedStatus(status: OIDCStatus): boolean {
   return status === 'error' || status === 'expired';
 }

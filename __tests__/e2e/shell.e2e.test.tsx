@@ -58,7 +58,12 @@ describe('E2E: sign-in screen controls', () => {
     await rt.until(() => {
       expect(consoleError).toHaveBeenCalledWith('[SignIn] Login failed:', expect.any(Error));
     });
-    expect(rt.screen.getByText('Login successful! Loading your profile...')).toBeTruthy();
+    await rt.until(() => {
+      expect(rt.screen.getByText('Try Again')).toBeTruthy();
+    });
+    expect(
+      rt.screen.getByText("Couldn't load your Floatplane profile. Please try again."),
+    ).toBeTruthy();
     expect(rt.secureStore.items.has('fptoken')).toBe(false);
     consoleError.mockRestore();
   });

@@ -28,12 +28,13 @@ async function completeSignIn(
   return user.id;
 }
 
-export function useCompleteDeviceSignIn(tokenResponse: TokenResponse | null): void {
+export function useCompleteDeviceSignIn(tokenResponse: TokenResponse | null): boolean {
   const { signIn } = useSession();
-  useQuery({
+  const { isError } = useQuery({
     queryKey: ['device-sign-in', tokenResponse?.accessToken],
     queryFn: tokenResponse === null ? skipToken : () => completeSignIn(tokenResponse, signIn),
     gcTime: 0,
     retry: (failureCount, error) => failureCount < LOGIN_RETRIES || reportLoginFailure(error),
   });
+  return isError;
 }
