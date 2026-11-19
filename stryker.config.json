@@ -38,7 +38,7 @@
   "thresholds": {
     "high": 100,
     "low": 80,
-    "break": 0
+    "break": 55
   },
   "reporters": ["clear-text", "progress", "html", "json"],
   "htmlReporter": {
