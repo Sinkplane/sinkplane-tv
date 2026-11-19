@@ -8,7 +8,6 @@ import {
   SessionProvider,
   useSession,
   ThemeProvider as AppThemeProvider,
-  useTVServer,
 } from '@sinkplane/shared';
 
 import { SplashScreenController } from '@/components/SplashScreenController';
@@ -58,7 +57,6 @@ function RootNavigator(): ReactElement {
   const { token } = useSession();
   const signedIn = (token ?? '').length > 0;
 
-  useTVServer();
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Protected guard={signedIn}>

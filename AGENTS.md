@@ -47,6 +47,7 @@ Layers, top to bottom (`make arch` enforces it): `app` → `layouts` → `compon
 - `components/`: `ThemedText`/`ThemedView`/`ThemedButton`/`ThemedModal` for light/dark, `videos/` for lists, cards and the player.
 - `hooks/`: `useScale` (`width / 1000` on TV) and `useTextStyles`. Size everything with them, using the tokens in `constants/layout.ts` (`SPACE.md * scale`).
 - `constants/`, `types/`: pure values, helpers and typings.
+- `store/`: Play listing images and the icon generator (`store/logo/make-tv-icons.py` renders `assets/images/icon.png`, `android-icon-*` and `assets/tv_icons/*` from the mobile repo's logo SVGs).
 - Unit tests sit next to the code as `*.test.ts(x)`. E2E: `__tests__/e2e/*.e2e.test.tsx` boot the real router against an in-memory Floatplane API (`__tests__/e2e/helpers`). QA procedures: `qa/procedures/`.
 
 ## TV specifics
@@ -61,7 +62,7 @@ API client, OIDC device flow, token refresh, `SessionProvider`/`useSession`, con
 
 - Installed from GitHub Packages (`.npmrc`); locally the token comes from `~/.npmrc`, on EAS from the `GITHUB_PACKAGES_TOKEN` environment variable, which `scripts/eas-npmrc-auth.mjs` (`eas-build-pre-install`) writes to the worker's `~/.npmrc`. pnpm never expands `${...}` in repo credentials.
 - The sibling clone `../sinkplane-shared` is the development source: `pnpm run link:shared` points `node_modules/@sinkplane/shared/dist` at its build (re-run after every install), and Jest maps the package to its TypeScript sources (`jest.config.base.js`). Its `node_modules` is a symlink to this app's; never run `pnpm install` inside it.
-- The barrel still re-exports the retired TV companion server (`useTVServer`), so `react-native-tcp-socket`, `react-native-zeroconf` and the cookie manager stay installed.
+- The barrel still re-exports the retired TV companion server (`useTVServer`). The app never calls it, but Metro bundles the whole barrel, so `react-native-tcp-socket`, `react-native-zeroconf` and the cookie manager stay installed.
 
 ## Gotchas
 
