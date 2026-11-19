@@ -26,7 +26,7 @@ changed="$(
   {
     git diff --name-only --relative --diff-filter=d "$(git merge-base "$base" HEAD)" -- "${dirs[@]}"
     git ls-files --others --exclude-standard -- "${dirs[@]}"
-  } | grep -E '\.tsx?$' | grep -vE '\.test\.tsx?$|\.d\.ts$|^app/\+html\.tsx$' | sort -u | paste -sd, - || true
+  } | grep -E '\.tsx?$' | grep -vE '\.test\.tsx?$|\.d\.ts$|^app/\+html\.tsx$' | sed -E 's/\[|\]/[&]/g' | sort -u | paste -sd, - || true
 )"
 
 if [[ -z "$changed" ]]; then
