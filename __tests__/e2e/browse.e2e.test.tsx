@@ -297,6 +297,51 @@ describe('E2E: switching between creators', () => {
       .find((req) => req.params.get('id') === 'creator-gaming');
     expect(gamingRequest).toBeDefined();
   });
+
+  it('keeps the view and sort while the channel resets when switching creator', async () => {
+    const rt = await bootHome();
+
+    await pickChannel(rt, 'Side Channel');
+    await rt.until(() => {
+      expect(rt.screen.getByText('Side Channel Videos')).toBeTruthy();
+    });
+    await rt.fireEvent.press(rt.screen.getByText('List View'));
+    await rt.until(() => {
+      expect(
+        rt.screen.getByTestId(`video-list-item-${videoId(rt, 0, 'ch-tech-side')}`),
+      ).toBeTruthy();
+    });
+    await rt.fireEvent.press(rt.screen.getByText('Newest Videos'));
+    await rt.until(() => {
+      expect(rt.screen.getByText('Oldest Videos')).toBeTruthy();
+    });
+
+    await rt.fireEvent.press(rt.screen.getByTestId('profile-avatar-button'));
+    await rt.until(() => {
+      expect(rt.screen.getByText('Switch Subscription')).toBeTruthy();
+    });
+    await rt.fireEvent.press(rt.screen.getByText('Gaming Channel'));
+
+    await rt.until(() => {
+      expect(
+        rt.screen.getByTestId(`video-list-item-${videoId(rt, 25, 'ch-gaming-main')}`),
+      ).toBeTruthy();
+    });
+    expect(rt.screen.getByText('Oldest Videos')).toBeTruthy();
+    expect(rt.screen.queryByTestId(`video-card-${videoId(rt, 25, 'ch-gaming-main')}`)).toBeNull();
+    expect(rt.screen.getByText('Main Channel Videos')).toBeTruthy();
+    expect(rt.screen.queryByText('Side Channel Videos')).toBeNull();
+    expect(
+      rt.api
+        .requestsTo('/api/v3/content/creator')
+        .some(
+          (req) =>
+            req.params.get('id') === 'creator-gaming' &&
+            req.params.get('channel') === 'ch-gaming-main' &&
+            req.params.get('sort') === 'ASC',
+        ),
+    ).toBe(true);
+  });
 });
 
 describe('E2E: subscribed creator without channels', () => {
