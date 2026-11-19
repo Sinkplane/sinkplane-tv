@@ -289,7 +289,7 @@ If you have questions about contributing:
 
 - Open a **Discussion** on GitHub
 - Tag maintainers in your PR
-- Check existing documentation in `/WARP.md` and `README.md`
+- Check existing documentation in `README.md` and `AGENTS.md`
 
 ## License
 
