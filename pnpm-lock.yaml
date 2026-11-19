@@ -183,8 +183,8 @@ importers:
         specifier: 2.2.0
         version: 2.2.0(react-native-tvos@0.86.3-0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/jest-preset@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react-native-tvos@0.86.3-0)(react@19.2.3)(supports-color@8.1.1))
       '@sinkplane/shared':
-        specifier: ^0.1.1
-        version: 0.1.1(5f6b7deed55b4ff569d2cd3320c10a81)
+        specifier: ^0.1.3
+        version: 0.1.3(5f6b7deed55b4ff569d2cd3320c10a81)
       '@tanstack/react-query':
         specifier: ^5.104.2
         version: 5.104.2(react@19.2.3)
@@ -2345,8 +2345,8 @@ packages:
     resolution: {integrity: sha512-tlqY9xq5ukxTUZBmoOp+m61cqwQD5pHJtFY3Mn8CA8ps6yghLH/Hw8UPdqg4OLmFW3IFlcXnQNmo/dh8HzXYIQ==}
     engines: {node: '>=18'}
 
-  '@sinkplane/shared@0.1.1':
-    resolution: {integrity: sha512-C5HHiWJQjMtG/kFM47eT6oNs5tXOBXB64z67JHf/4hpcVetHY7umQ6nkIn2aXFGH949D7WPv2A+u1Gu0lBQ5+A==, tarball: https://npm.pkg.github.com/download/@sinkplane/shared/0.1.1/6149afbb550d8db0fd7c4fcf38e964e5ede93ab0}
+  '@sinkplane/shared@0.1.3':
+    resolution: {integrity: sha512-PaKwKna6R4G3WMmMwyIONOSlMQctVHPsMnVYqGtJ4bRSzoZYNwjzZrBsTMIMKgCSeBGyub2qnDrhztIIG3LALA==, tarball: https://npm.pkg.github.com/download/@sinkplane/shared/0.1.3/b89addc20bbc0b80d8aa9f83c25a4e34f2b954fe}
     peerDependencies:
       '@preeternal/react-native-cookie-manager': ^7.0.0
       '@tanstack/react-query': ^5.104.2
@@ -8752,7 +8752,7 @@ snapshots:
 
   '@sindresorhus/merge-streams@4.0.0': {}
 
-  '@sinkplane/shared@0.1.1(5f6b7deed55b4ff569d2cd3320c10a81)':
+  '@sinkplane/shared@0.1.3(5f6b7deed55b4ff569d2cd3320c10a81)':
     dependencies:
       '@preeternal/react-native-cookie-manager': 7.0.0(patch_hash=b2e1cd6f44dfa9dac63d6326a9fae39bb09fd9d16de1cd553c546079f1453ca1)(react-native-tvos@0.86.3-0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/jest-preset@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react-native-tvos@0.86.3-0)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)
       '@tanstack/react-query': 5.104.2(react@19.2.3)
