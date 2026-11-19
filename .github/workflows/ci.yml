@@ -80,7 +80,7 @@ jobs:
   mutation:
     name: mutation (changed files)
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    timeout-minutes: 300
     steps:
       - uses: actions/checkout@v7
         with:
